@@ -8,5 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="primary_color">#FF3DBFDC</color>
-    <color name="splashbg">#FFffffff</color>
+    <color name="splashbg">#FF000000</color>
 </resources>

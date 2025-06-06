@@ -2,75 +2,41 @@ package com.vinaykpro.chatbuilder
 
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
-import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.onebone.toolbar.CollapsingToolbarScaffold
-import me.onebone.toolbar.ScrollStrategy
-import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -78,15 +44,6 @@ import java.security.SecureRandom
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            AppNavigation()
-        }
-    }
-}
 
 var months = arrayOf(
     "January",
@@ -102,177 +59,6 @@ var months = arrayOf(
     "November",
     "December"
 )
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-
-@Composable
-fun Home(navController: NavController) {
-    val state = rememberCollapsingToolbarScaffoldState()
-    val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })
-    val selectedTabIndex = remember { derivedStateOf { pagerState.currentPage } }
-    val context = LocalContext.current;
-    val fileSearch=
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
-            openFile(it, context)
-        }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        CollapsingToolbarScaffold(modifier = Modifier.weight(1f),
-            state = state,
-            scrollStrategy = ScrollStrategy.ExitUntilCollapsed,
-            toolbar = {
-
-                val textSize = (20 + 18 * state.toolbarState.progress).sp
-                val iconSize = (32 + 18 * state.toolbarState.progress).dp
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .pin()
-                        .background(color = Color(0xFF3DBFDC))
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(color = Color.White)
-                        .road(
-                            whenCollapsed = Alignment.BottomCenter,
-                            whenExpanded = Alignment.BottomCenter
-                        )
-                        .background(
-                            color = Color(0xFF3DBFDC),
-                            shape = RoundedCornerShape(bottomStart = 15.dp, bottomEnd = 15.dp)
-                        ),
-                    horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = {
-                        fileSearch.launch("*/*")
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                        )
-                    }
-                    IconButton(onClick = { /* Handle navigation click */ }) {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Search",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                        )
-                    }
-                    IconButton(onClick = { /* Handle navigation click */ }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Search",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .size(24.dp)
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .road(whenCollapsed = Alignment.TopStart, whenExpanded = Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.iconalpha),
-                        contentDescription = "brand",
-                        modifier = Modifier.size(iconSize)
-                    )
-                    Text(
-                        "ChatBuilder",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = textSize,
-                            fontWeight = FontWeight(500)
-                        ),
-                        modifier = Modifier
-                    )
-                }
-            }) {
-            HorizontalPager(state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(5) {
-                            ChatListItem(
-                                icon = R.drawable.iconalpha,
-                                name = "Vinaykpro $it",
-                                lastMessage = "Bye ra",
-                                lastSeen = "9:13 PM",
-                                navController = navController
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Row (modifier = Modifier
-            .fillMaxWidth()
-            .height(65.dp)
-            .background(
-                color = Color(0xFF3DBFDC),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-            )) {
-            Box(modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .clickable(
-                    indication = rememberRipple(
-                        bounded = true,
-                        color = Color(0xFF056175),
-                        radius = 80.dp
-                    ),
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
-                )) {
-                Text(text = "Chats", style = TextStyle(
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight(500)
-                ), modifier = Modifier
-                    .align(Alignment.Center)
-                    .alpha(if (selectedTabIndex.value == 0) 1f else 0.7f))
-            }
-            Box(modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .clickable(
-                    indication = rememberRipple(
-                        bounded = true,
-                        color = Color(0xFF056175),
-                        radius = 80.dp
-                    ),
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
-                )) {
-                Text(text = "Settings", style = TextStyle(
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight(500)
-                ), modifier = Modifier
-                    .align(Alignment.Center)
-                    .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f))
-            }
-
-        }
-
-
-    }
-}
 
 fun openFile(uri: Uri?, context : Context){
     if (uri == null) {
@@ -352,7 +138,6 @@ fun openFile(uri: Uri?, context : Context){
         Toast.makeText(context, "No application found to open this file.", Toast.LENGTH_SHORT).show()
     }*/
 }
-
 
 @Composable
 fun FileProcessorScreen(uri: Uri, zipFileName: String, context: Context) {
@@ -563,50 +348,6 @@ fun generateRandomTableName(len: Int): String? {
 fun generateChatName(zipFileName: String, names: List<String>): String {
     return if (names.size == 1) names[0] else zipFileName
 }
-
-
-
-enum class HomeTabs (
-    val text : String
-) {
-    Chats(
-        text = "Chats"
-    ),
-    Settings(
-        text = "Settings"
-    )
-}
-
-
-
-@Composable
-fun ChatListItem(
-    icon: Int,
-    name: String,
-    lastMessage: String,
-    lastSeen: String,
-    navController: NavController
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(indication = rememberRipple(),
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = { navController.navigate("chat") })
-            .padding(10.dp)
-    ) {
-        Image(painter = painterResource(id = R.drawable.user), contentDescription = "icon", modifier = Modifier.size(42.dp))
-        Column(modifier = Modifier
-            .padding(start = 10.dp)
-            .weight(1f)) {
-            Text(text = name, style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight(500), color = Color.Black))
-            Text(text = lastMessage, style = TextStyle(fontSize = 13.sp, color = Color.Gray))
-        }
-        Text(text = lastSeen, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight(500), color = Color.Gray))
-    }
-}
-
-
 
 @Composable
 fun ListItem(

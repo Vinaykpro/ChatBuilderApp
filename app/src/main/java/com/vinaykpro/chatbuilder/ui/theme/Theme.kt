@@ -44,7 +44,7 @@ fun ChatBuilderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
-    isInHomeScreen: Boolean,
+    isInHomeScreen: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

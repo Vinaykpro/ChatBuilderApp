@@ -13,7 +13,7 @@
         android:theme="@style/Theme.ChatBuilder"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.ChatBuilder">

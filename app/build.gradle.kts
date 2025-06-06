@@ -69,4 +69,6 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("me.onebone:toolbar-compose:2.3.5")
+    implementation("com.airbnb.android:lottie-compose:6.6.6")
+
 }
