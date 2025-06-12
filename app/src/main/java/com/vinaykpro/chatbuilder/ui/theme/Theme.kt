@@ -17,16 +17,34 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
+public val DarkColorScheme = darkColorScheme(
+    primary = headerDark,
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    tertiary = Pink80,
+
+    background = Black,
+    primaryContainer = Black,
+    secondaryContainer = Color.Gray,
+
+    onPrimaryContainer = White,
+    onSecondaryContainer = Color.LightGray,
+
+    onTertiaryContainer = White
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
+public val LightColorScheme = lightColorScheme(
+    primary = headerLight,
     secondary = PurpleGrey40,
-    tertiary = Pink40
+    tertiary = Pink40,
+
+    background = White,
+    primaryContainer = White,
+    secondaryContainer = Color.LightGray,
+
+    onPrimaryContainer = Black,
+    onSecondaryContainer = Color.Gray,
+
+    onTertiaryContainer = headerLight
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -42,26 +60,17 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun ChatBuilderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     isInHomeScreen: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if(darkTheme) DarkColorScheme else LightColorScheme
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = if(isInHomeScreen) Color(0xFF3DBFDC).toArgb() else Color(0xFFFFFFFF).toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isInHomeScreen
+//            val window = (view.context as Activity).window
+//            window.statusBarColor = if(isInHomeScreen) Color(0xFF3DBFDC).toArgb() else Color(0xFFFFFFFF).toArgb()
+//            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isInHomeScreen
         }
     }
 

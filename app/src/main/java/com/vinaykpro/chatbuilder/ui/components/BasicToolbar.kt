@@ -1,16 +1,22 @@
 package com.vinaykpro.chatbuilder.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,17 +36,18 @@ fun BasicToolbar(
     icon1: Painter? = null,
     icon2: Painter? = null
 ) {
-    Row(modifier = Modifier.height(60.dp).fillMaxWidth()
+    Row(modifier = Modifier.fillMaxWidth()
         .background(MaterialTheme.colorScheme.primary)
-        .padding(12.dp),
+        .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+        .padding(bottom = 6.dp, start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            modifier = Modifier.size(24.dp),
-            imageVector = Icons.Default.ArrowBack,
-            contentDescription = "back",
-            tint = Color.White
-        )
-        Spacer(modifier = Modifier.width(12.dp))
+        IconButton( onClick = {} ) {
+            Icon( modifier = Modifier.size(24.dp),
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "back",
+                tint = Color.White )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = "Chat theme",
             fontSize = 20.sp,
