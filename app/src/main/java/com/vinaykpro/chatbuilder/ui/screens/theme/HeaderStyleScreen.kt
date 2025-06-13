@@ -4,21 +4,37 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
+import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
+import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
+import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 
 @Preview
 @Composable
@@ -32,5 +48,27 @@ fun HeaderStyleScreen(
             ChatToolbar(preview = true)
             Spacer(modifier = Modifier.height(60.dp))
         }
+        Column(Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
+            SelectModeWidget()
+
+            Text(text = "Colors:", fontSize = 17.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+            ColorSelectionItem(name = "Navbar Color", color = MaterialTheme.colorScheme.primary)
+            ColorSelectionItem(name = "Name text color", color = Color.White)
+            ColorSelectionItem(name = "Status text color",  color = Color.Gray)
+
+            val backBtnState = remember { mutableStateOf(true) }
+            Text(text = "Widgets:", fontSize = 17.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+
+            SwitchItem(state = backBtnState)
+            if(backBtnState.value) {
+                Box(modifier = Modifier.height(IntrinsicSize.Min)) {
+                    Spacer(modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+
+                    }
+                }
+            }
+        }
+
     }
 }

@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.vinaykpro.chatbuilder"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.vinaykpro.chatbuilder"
