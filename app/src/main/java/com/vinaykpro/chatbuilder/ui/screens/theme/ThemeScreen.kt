@@ -33,13 +33,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 
 @Preview
 @Composable
-fun ThemeScreen() {
+fun ThemeScreen(navController: NavController = rememberNavController()) {
     var selectedTheme by remember { mutableIntStateOf(0) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()
@@ -50,14 +52,8 @@ fun ThemeScreen() {
             LazyColumn(modifier = Modifier.weight(1f).padding(bottom = 10.dp)) {
                 items(5) { i ->
                     if (i == 0)
-                        Text(
-                            text = "Select or customize themes",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight(500),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(top = 18.dp, start = 20.dp, bottom = 6.dp)
-                        )
-                    ThemeItem(selected = i == selectedTheme, name = "Theme $i", onClick = { selectedTheme = i }, onNextClick = {})
+                        Text(text = "Select or customize themes", fontSize = 18.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, start = 20.dp, bottom = 6.dp))
+                    ThemeItem(selected = i == selectedTheme, name = "Theme $i", onClick = { selectedTheme = i }, onNextClick = { navController.navigate("theme/Theme $i") })
                 }
             }
         }

@@ -263,7 +263,7 @@ fun HomeScreen(
                             SettingsItem(icon = painterResource(R.drawable.ic_theme),
                                 name = "Chat theme",
                                 context = "Create, import or customize the current chat theme",
-                                onClick = {navController.navigate("themes")}
+                                onClick = { navController.navigate("themes") }
                             )
                             SettingsItem(icon = painterResource(R.drawable.ic_animate),
                                 name = "Animate a chat",

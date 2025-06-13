@@ -49,7 +49,7 @@ fun BasicToolbar(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Chat theme",
+            text = name,
             fontSize = 20.sp,
             fontWeight = FontWeight(600),
             color = Color.White

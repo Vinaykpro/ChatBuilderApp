@@ -21,7 +21,7 @@ class SplashActivity : ComponentActivity() {
         enableEdgeToEdge(window)
         setContent {
             val theme = isSystemInDarkTheme();
-            val isDarkTheme = remember { mutableStateOf(false) };
+            val isDarkTheme = remember { mutableStateOf(theme) };
             ChatBuilderTheme(darkTheme = isDarkTheme.value) {
                 val navController = rememberNavController()
                 AppNavHost(navController = navController, isDarkTheme = isDarkTheme)
