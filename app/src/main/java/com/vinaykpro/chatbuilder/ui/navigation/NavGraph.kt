@@ -15,7 +15,10 @@ import androidx.navigation.compose.composable
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
+import com.vinaykpro.chatbuilder.ui.screens.theme.BodyStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.EditThemeScreen
+import com.vinaykpro.chatbuilder.ui.screens.theme.HeaderStyleScreen
+import com.vinaykpro.chatbuilder.ui.screens.theme.MessageBarStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.ThemeScreen
 
 object Routes {
@@ -24,6 +27,9 @@ object Routes {
     const val Chat = "chat"
     const val Themes = "themes"
     const val EditTheme = "theme/{name}"
+    const val HeaderStyle = "headerstyle"
+    const val BodyStyle = "bodystyle"
+    const val MessagebarStyle = "barstyle"
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -33,7 +39,7 @@ fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boole
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
     NavHost(
         navController = navController,
-        startDestination = Routes.EditTheme
+        startDestination = Routes.HeaderStyle
     ) {
         composable(Routes.Splash) {
             SplashScreen(navController, isDarkTheme)
@@ -67,7 +73,34 @@ fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boole
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) { backStackEntry ->
             EditThemeScreen(themename = (backStackEntry.arguments?.getString("name")
-                ?: "Default"))
+                ?: "Default"), navController = navController)
+        }
+        composable(Routes.HeaderStyle,
+            enterTransition = {
+                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            }) {
+            HeaderStyleScreen(navController = navController)
+        }
+        composable(Routes.BodyStyle,
+            enterTransition = {
+                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            }) {
+            BodyStyleScreen(navController = navController)
+        }
+        composable(Routes.MessagebarStyle,
+            enterTransition = {
+                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
+            }) {
+            MessageBarStyleScreen(navController = navController)
         }
     }
 }

@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
@@ -37,7 +39,7 @@ import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 
 @Preview
 @Composable
-fun EditThemeScreen(themename : String = "Default theme") {
+fun EditThemeScreen(themename : String = "Default theme", navController: NavController = rememberNavController()) {
     Column(modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)) {
@@ -82,9 +84,13 @@ fun EditThemeScreen(themename : String = "Default theme") {
                 .background(Color(0x0F7B7B7B))
                 .padding(vertical = 10.dp)
             ) {
-                StyleItem(onClick = {})
-                StyleItem(icon = painterResource(R.drawable.ic_body), name = "Body", context = "Chat bubbles, background, widgets, etc.,")
-                StyleItem(icon = painterResource(R.drawable.ic_msgbar), name = "Message Bar", context = "Chat input, buttons, actions, etc.,")
+                StyleItem(onClick = { navController.navigate("headerstyle") })
+                StyleItem(icon = painterResource(R.drawable.ic_body), name = "Body", context = "Chat bubbles, background, widgets, etc.,",
+                    onClick = { navController.navigate("bodystyle")
+                })
+                StyleItem(icon = painterResource(R.drawable.ic_msgbar), name = "Message Bar", context = "Chat input, buttons, actions, etc.,",
+                    onClick = { navController.navigate("barstyle")
+                })
             }
         }
     }
