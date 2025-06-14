@@ -46,65 +46,21 @@ import com.vinaykpro.chatbuilder.R
 @Preview
 @Composable
 fun SwitchItem(
-    state: MutableState<Boolean> = remember { mutableStateOf(false) },
+    state: MutableState<Boolean>? = null,
     name: String = "Show back button",
-    context: String = "Show/hide that allows users to exit",
-    onClick: () -> Unit = {}
+    context: String = "Show/hide that allows users to exit.",
+    enabled: Boolean = true,
+    onClick: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    Row(modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 2.dp, end = 6.dp).clickable(indication = null, interactionSource =interactionSource ) { state.value = !state.value }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 2.dp, end = 6.dp).clickable(indication = null, interactionSource =interactionSource ) { if(state!=null) state.value = !state.value }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(verticalArrangement = Arrangement.Top) {
             Text(text = name, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight(500), fontSize = 16.sp, lineHeight = 20.sp)
             Text(text = context, color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 12.sp, lineHeight = 20.sp)
         }
         Spacer(modifier = Modifier.weight(1f))
-        Switch(checked = state.value, onCheckedChange = { state.value = it })
-    }
-}
-
-
-@SuppressLint("UseOfNonLambdaOffsetOverload")
-@Composable
-fun MySwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
-) {
-    val thumbColor by animateColorAsState(
-        targetValue = if (checked) Color.White else Color.Gray,
-        label = "ThumbColor"
-    )
-
-    val trackColor by animateColorAsState(
-        targetValue = if (checked) Color(0xFF34C759) else Color(0xFFDFDFDF),
-        label = "TrackColor"
-    )
-
-    val alignment by animateDpAsState(
-        targetValue = if (checked) 20.dp else 2.dp,
-        label = "ThumbPosition"
-    )
-
-    Box(
-        modifier = modifier
-            .width(50.dp)
-            .height(height = 30.dp)
-            .clip(RoundedCornerShape(50))
-            .background(trackColor)
-            .clickable(enabled = enabled) {
-                onCheckedChange(!checked)
-            },
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(2.dp)
-                .offset(x = alignment)
-                .size(26.dp)
-                .clip(CircleShape)
-                .background(thumbColor)
-        )
+        if(enabled && state != null) Switch(checked = state.value, onCheckedChange = { state.value = it })
+        else Switch(checked = true, onCheckedChange = null, enabled = false)
     }
 }

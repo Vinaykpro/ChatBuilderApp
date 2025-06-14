@@ -33,6 +33,8 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
+import com.vinaykpro.chatbuilder.ui.components.EditIcon
+import com.vinaykpro.chatbuilder.ui.components.ProgressItem
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 
@@ -56,18 +58,56 @@ fun HeaderStyleScreen(
             ColorSelectionItem(name = "Name text color", color = Color.White)
             ColorSelectionItem(name = "Status text color",  color = Color.Gray)
 
-            val backBtnState = remember { mutableStateOf(true) }
+
             Text(text = "Widgets:", fontSize = 17.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+            val backBtnState = remember { mutableStateOf(true) }
+            val profilePicState = remember { mutableStateOf(true) }
+            val showNameState = remember { mutableStateOf(true) }
+            val showStatusState = remember { mutableStateOf(true) }
 
             SwitchItem(state = backBtnState)
             if(backBtnState.value) {
-                Box(modifier = Modifier.height(IntrinsicSize.Min)) {
+                Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
                     Spacer(modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-
+                        ProgressItem(name = "Icon size")
+                        ProgressItem(name = "Left gap")
+                        EditIcon(name = "Back button icon")
                     }
                 }
             }
+
+            SwitchItem(state = profilePicState, name = "Show profile pic", context = "Show/hide the profile picture and customize.")
+            if(profilePicState.value) {
+                Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
+                    Spacer(modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        ProgressItem(name = "Icon size")
+                        ProgressItem(name = "Horizontal gap")
+                        EditIcon(name = "Default profile icon")
+                    }
+                }
+            }
+
+            SwitchItem(state = showNameState, name = "Show name", context = "Show/hide the name as shown in the preview.")
+
+            SwitchItem(state = showStatusState, name = "Show status/username", context = "Show/hide the status as shown in the preview.")
+
+            SwitchItem(enabled = false, name = "Show three dots", context = "You can only customize the icon.")
+            Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
+                Spacer(modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    ProgressItem(name = "Icon size")
+                    ProgressItem(name = "Horizontal gap")
+                    EditIcon(name = "Default profile icon")
+                }
+            }
+
+            Text(text = "Action icons:", fontSize = 17.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+            // TODO movable items layout :-)
+
+
+
         }
 
     }
