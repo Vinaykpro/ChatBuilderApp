@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
@@ -104,9 +105,12 @@ fun HeaderStyleScreen(
             }
 
             Text(text = "Action icons:", fontSize = 17.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
-            // TODO movable items layout :-)
-
-
+            Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
+                Spacer(modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    ActionIcons()
+                }
+            }
 
         }
 
