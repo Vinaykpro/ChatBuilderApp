@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,8 +44,10 @@ import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
+import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.ProgressItem
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
+import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
@@ -55,8 +59,15 @@ fun BodyStyleScreen(
     Column {
         BasicToolbar(name = "Body Style")
 
-        // TODO body-preview
-
+        var selectedBubbleStyle by remember { mutableIntStateOf(1) }
+        Column (modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp).clip(shape = RoundedCornerShape(12.dp)).border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp)).
+        background(Color(0xFFFFB55C)).padding(vertical = 5.dp, horizontal = 5.dp)) {
+            SenderMessage(text = "Hii", bubbleStyle = selectedBubbleStyle, isFirst = true)
+            SenderMessage(text = "Hope you love using our app. Please leave a rating", bubbleStyle = selectedBubbleStyle, isLast = true)
+            Spacer(modifier = Modifier.size(4.dp))
+            Message(text = "Yep!", bubbleStyle = selectedBubbleStyle, isFirst = true)
+            Message(text = "Definitely :-)", bubbleStyle = selectedBubbleStyle, isLast = true)
+        }
         Column(Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
             SelectModeWidget()
 
@@ -68,7 +79,6 @@ fun BodyStyleScreen(
                 modifier = Modifier.padding(top = 18.dp, bottom = 14.dp)
             )
 
-            var selectedBubbleStyle by remember { mutableStateOf(0) }
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 BubbleItem(selected = selectedBubbleStyle == 0, onClick = { selectedBubbleStyle = 0})
                 BubbleItem(painterResource(R.drawable.ic_topbubble), "Start bubble", selected = selectedBubbleStyle == 1, { selectedBubbleStyle = 1})
@@ -208,7 +218,7 @@ fun BubbleItem(
         modifier = Modifier.padding(end = 6.dp)
             .clip(shape = RoundedCornerShape(14.dp))
             .clickable { onClick() }
-            .border(2.dp, color = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(14.dp))
+            .border(if(selected) 2.dp else 1.dp, color = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(14.dp))
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -219,6 +229,6 @@ fun BubbleItem(
             tint = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
             modifier = Modifier.padding(bottom = 5.dp).width(70.dp)
         )
-        Text(text = name, color = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer, fontWeight = FontWeight(500), fontSize = 13.sp, lineHeight = 14.sp)
+        Text(text = name, color = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer, fontWeight = FontWeight(if(selected) 500 else 400), fontSize = 13.sp, lineHeight = 14.sp)
     }
 }

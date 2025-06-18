@@ -46,8 +46,7 @@ fun HeaderStyleScreen(
 ) {
     Column {
         BasicToolbar(name = "Header Style")
-        Spacer(Modifier.height(12.dp))
-        Column (modifier = Modifier.padding(horizontal = 10.dp).clip(shape = RoundedCornerShape(12.dp)).border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))) {
+        Column (modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp).clip(shape = RoundedCornerShape(12.dp)).border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))) {
             ChatToolbar(preview = true)
             Spacer(modifier = Modifier.height(60.dp))
         }

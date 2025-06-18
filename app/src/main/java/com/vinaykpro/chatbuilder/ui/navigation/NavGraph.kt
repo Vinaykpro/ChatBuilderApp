@@ -39,7 +39,7 @@ fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boole
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
     NavHost(
         navController = navController,
-        startDestination = Routes.BodyStyle
+        startDestination = Routes.Splash
     ) {
         composable(Routes.Splash) {
             SplashScreen(navController, isDarkTheme)

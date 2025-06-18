@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.ui.components.SenderMessage
+
 
 var messageWidthLimit : Double = 0.0;
 @Preview(showBackground = true)
@@ -110,7 +112,7 @@ fun ChatScreen() {
         ) {
             items(items = sampleItems) { item ->
                 //  if((0..1).random() == 0)
-                SentMessage(text = item, sentTime = "1:00 PM")
+                SenderMessage(text = item, sentTime = "1:00 PM")
                 Message(text = item, time = "1:00 PM")
             }
         }
@@ -128,8 +130,8 @@ fun Message() {
 }
 
 val TriangleShape = GenericShape { size, _ ->
-    moveTo(size.width / 2, 0f)
-    lineTo(size.width, size.height)
+    moveTo(0f, 0f)
+    lineTo(size.width, 0f)
     lineTo(0f, size.height)
     close()
 }
@@ -160,48 +162,6 @@ fun MessageArrow(modifier: Modifier = Modifier) {
             }
             .background(color = Color.White, shape = TriangleShape)
     )
-}
-
-@Composable
-fun SentMessage(text: String, sentTime: String) {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Box(
-            modifier = Modifier
-                .padding(1.dp)
-                .padding(end = 10.dp)
-                .widthIn(max = messageWidthLimit.dp)
-                .background(color = Color(0xFFE1FFC7), shape = RoundedCornerShape(10.dp))
-                .padding(vertical = 4.dp)
-                .padding(start = 10.dp, end = 5.dp)
-                .align(Alignment.CenterEnd)
-        ) {
-            // Message text
-            Text(
-                text = "$text ⠀ ⠀ ⠀ ⠀", // Extra spaces for spacing
-                color = Color.Black,
-                fontSize = 16.sp,
-                lineHeight = 20.sp
-            )
-
-            // Sent time
-            Row(modifier = Modifier.align(Alignment.BottomEnd), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = sentTime,
-                    color = Color.Gray,
-                    fontSize = 11.sp,
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.doubleticks),
-                    contentDescription = "Custom SVG Image",
-                    modifier = Modifier.padding(start = 2.dp).size(15.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
-                )
-            }
-        }
-
-        // Arrow at the top-end
-        SentArrow(modifier = Modifier.align(Alignment.TopEnd))
-    }
 }
 
 @Composable
