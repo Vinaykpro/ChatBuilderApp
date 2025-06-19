@@ -60,7 +60,6 @@ public val LightColorScheme = lightColorScheme(
 @Composable
 fun ChatBuilderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    isInHomeScreen: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if(darkTheme) DarkColorScheme else LightColorScheme

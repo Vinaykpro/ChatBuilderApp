@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
 
+@SuppressLint("SuspiciousIndentation")
 @Preview
 @Composable
 fun Input(

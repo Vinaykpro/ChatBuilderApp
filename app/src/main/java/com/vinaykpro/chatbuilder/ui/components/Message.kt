@@ -29,8 +29,8 @@ import com.vinaykpro.chatbuilder.R
 fun Message(text: String = "Hii man",
             sentTime: String = "11:25 pm",
             bubbleStyle: Int = 0,
-            bubbleRadius: Int = 10,
-            bubbleTipRadius: Int = 8,
+            bubbleRadius: Float = 10f,
+            bubbleTipRadius: Float = 8f,
             isFirst: Boolean = false,
             isLast: Boolean = false) {
     var bubbleModifier: Modifier = when(bubbleStyle) {
@@ -64,7 +64,7 @@ fun Message(text: String = "Hii man",
             Modifier
         }
     }
-    Box(modifier = Modifier.fillMaxWidth().padding(1.dp).padding(end = 40.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxWidth().padding(1.dp).padding(top = if(isFirst) 2.dp else 0.dp).padding(end = 40.dp), contentAlignment = Alignment.Center) {
         if(bubbleStyle == 1 && isFirst) Arrow(modifier = Modifier.align(Alignment.TopStart), bubbleTipRadius)
         else if(bubbleStyle == 3 && isLast) ArrowBottom(modifier = Modifier.align(Alignment.BottomStart))
 
@@ -73,38 +73,31 @@ fun Message(text: String = "Hii man",
         ) {
             // Message text
             Text(
-                text = "$text ⠀ ⠀ ⠀   ⠀", // Extra spaces for spacing
+                text = "$text ⠀ ⠀    ", // Extra spaces for spacing
                 color = Color.Black,
                 fontSize = 16.sp,
                 lineHeight = 20.sp
             )
 
             // Sent time
-            Row(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = sentTime,
-                    color = Color.Gray,
-                    fontSize = 11.sp,
-                    lineHeight = 11.sp
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.doubleticks),
-                    contentDescription = "Custom SVG Image",
-                    modifier = Modifier.padding(start = 2.dp).size(13.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
-                )
-            }
+            Text(
+                text = sentTime,
+                color = Color.Gray,
+                fontSize = 11.sp,
+                lineHeight = 11.sp,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+            )
         }
     }
 }
 
 @Composable
-fun Arrow(modifier: Modifier = Modifier, bubbleRadius: Int) {
+fun Arrow(modifier: Modifier = Modifier, bubbleRadius: Float) {
     Box(
         modifier = modifier
             .size(11.dp)
             .scale(-1f, 1f)
-            .background(color = Color.White, shape = BubbleShape(bubbleRadius = bubbleRadius.toFloat()))
+            .background(color = Color.White, shape = BubbleShape(bubbleRadius = bubbleRadius))
     )
 }
 

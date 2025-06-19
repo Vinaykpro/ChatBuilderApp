@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,8 +42,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
-import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
+import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.Message
@@ -56,17 +58,20 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 fun BodyStyleScreen(
     navController: NavController = rememberNavController()
 ) {
-    Column {
+    Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize()) {
         BasicToolbar(name = "Body Style")
 
         var selectedBubbleStyle by remember { mutableIntStateOf(1) }
+        var bubbleRadius = remember { mutableFloatStateOf(10f) }
+        var bubbleTipRadius = remember { mutableFloatStateOf(8f) }
         Column (modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp).clip(shape = RoundedCornerShape(12.dp)).border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp)).
         background(Color(0xFFFFB55C)).padding(vertical = 5.dp, horizontal = 5.dp)) {
-            SenderMessage(text = "Hii", bubbleStyle = selectedBubbleStyle, isFirst = true)
-            SenderMessage(text = "Hope you love using our app. Please leave a rating", bubbleStyle = selectedBubbleStyle, isLast = true)
+            ChatNote("19 June 2025")
+            SenderMessage(text = "Hii", bubbleStyle = selectedBubbleStyle, bubbleRadius = bubbleRadius.floatValue, bubbleTipRadius = bubbleTipRadius.floatValue, isFirst = true)
+            SenderMessage(text = "Hope you love using our app. Please leave a rating", bubbleStyle = selectedBubbleStyle, bubbleRadius = bubbleRadius.floatValue, bubbleTipRadius = bubbleTipRadius.floatValue, isLast = true)
             Spacer(modifier = Modifier.size(4.dp))
-            Message(text = "Yep!", bubbleStyle = selectedBubbleStyle, isFirst = true)
-            Message(text = "Definitely :-)", bubbleStyle = selectedBubbleStyle, isLast = true)
+            Message(text = "Yep!", bubbleStyle = selectedBubbleStyle, bubbleRadius = bubbleRadius.floatValue, bubbleTipRadius = bubbleTipRadius.floatValue, isFirst = true)
+            Message(text = "Definitely :-)", bubbleStyle = selectedBubbleStyle, bubbleRadius = bubbleRadius.floatValue, bubbleTipRadius = bubbleTipRadius.floatValue, isLast = true)
         }
         Column(Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
             SelectModeWidget()
@@ -78,13 +83,14 @@ fun BodyStyleScreen(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.padding(top = 18.dp, bottom = 14.dp)
             )
-
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 BubbleItem(selected = selectedBubbleStyle == 0, onClick = { selectedBubbleStyle = 0})
-                BubbleItem(painterResource(R.drawable.ic_topbubble), "Start bubble", selected = selectedBubbleStyle == 1, { selectedBubbleStyle = 1})
-                BubbleItem(painterResource(R.drawable.ic_groupbubble), "Group bubble", selected = selectedBubbleStyle == 2, { selectedBubbleStyle = 2})
-                BubbleItem(painterResource(R.drawable.ic_endbubble), "End bubble", selected = selectedBubbleStyle == 3, { selectedBubbleStyle = 3})
+                BubbleItem(painterResource(R.drawable.ic_topbubble), "Start bubble", selected = selectedBubbleStyle == 1, onClick = { selectedBubbleStyle = 1})
+                BubbleItem(painterResource(R.drawable.ic_groupbubble), "Group bubble", selected = selectedBubbleStyle == 2, onClick = { selectedBubbleStyle = 2})
+                BubbleItem(painterResource(R.drawable.ic_endbubble), "End bubble", selected = selectedBubbleStyle == 3, onClick = { selectedBubbleStyle = 3})
             }
+            ProgressItem(name = "Bubble radius", max = 30f, progress = bubbleRadius)
+            if(selectedBubbleStyle == 1) ProgressItem(name = "Bubble tip radius", max = 20f, progress = bubbleTipRadius)
 
             Text(
                 text = "Colors:",
@@ -108,13 +114,15 @@ fun BodyStyleScreen(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
             )
-            val backBtnState = remember { mutableStateOf(true) }
-            val profilePicState = remember { mutableStateOf(true) }
-            val showNameState = remember { mutableStateOf(true) }
-            val showStatusState = remember { mutableStateOf(true) }
+            val showTime = remember { mutableStateOf(true) }
+            val use12HrFormat = remember { mutableStateOf(true) }
+            val showTicks = remember { mutableStateOf(true) }
+            val showReceiverPic = remember { mutableStateOf(true) }
 
-            SwitchItem(state = backBtnState)
-            if (backBtnState.value) {
+            SwitchItem(state = showTime, name = "Show time inside message",  context = "Show/hide time inside message bubble")
+            SwitchItem(state = use12HrFormat, name = "Use 12hr format",  context = "Will show time in 12hr throughout the messages")
+            SwitchItem(state = showTicks, name = "Show ticks inside message",  context = "Show/hide ticks inside message bubble")
+            if (showTicks.value) {
                 Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
                     Spacer(
                         modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
@@ -123,84 +131,11 @@ fun BodyStyleScreen(
                             )
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ProgressItem(name = "Icon size")
-                        ProgressItem(name = "Left gap")
-                        EditIcon(name = "Back button icon")
+                        EditIcon(name = "Seen ticks icon", icon = painterResource(R.drawable.doubleticks))
                     }
                 }
             }
-
-            SwitchItem(
-                state = profilePicState,
-                name = "Show profile pic",
-                context = "Show/hide the profile picture and customize."
-            )
-            if (profilePicState.value) {
-                Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                    Spacer(
-                        modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                            .background(
-                                MaterialTheme.colorScheme.secondaryContainer
-                            )
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ProgressItem(name = "Icon size")
-                        ProgressItem(name = "Horizontal gap")
-                        EditIcon(name = "Default profile icon")
-                    }
-                }
-            }
-
-            SwitchItem(
-                state = showNameState,
-                name = "Show name",
-                context = "Show/hide the name as shown in the preview."
-            )
-
-            SwitchItem(
-                state = showStatusState,
-                name = "Show status/username",
-                context = "Show/hide the status as shown in the preview."
-            )
-
-            SwitchItem(
-                enabled = false,
-                name = "Show three dots",
-                context = "You can only customize the icon."
-            )
-            Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                Spacer(
-                    modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                        .background(
-                            MaterialTheme.colorScheme.secondaryContainer
-                        )
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    ProgressItem(name = "Icon size")
-                    ProgressItem(name = "Horizontal gap")
-                    EditIcon(name = "Default profile icon")
-                }
-            }
-
-            Text(
-                text = "Action icons:",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-            )
-            Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                Spacer(
-                    modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                        .background(
-                            MaterialTheme.colorScheme.secondaryContainer
-                        )
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    ActionIcons()
-                }
-            }
-
+            SwitchItem(state = showReceiverPic, name = "Show receiver pic",  context = "Show/hide user picture")
         }
 
     }

@@ -30,7 +30,7 @@ class SplashActivity : ComponentActivity() {
     }
 
     @Suppress("DEPRECATION")
-    fun enableEdgeToEdge(window: Window) {
+    private fun enableEdgeToEdge(window: Window) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
             WindowCompat.setDecorFitsSystemWindows(window, false)

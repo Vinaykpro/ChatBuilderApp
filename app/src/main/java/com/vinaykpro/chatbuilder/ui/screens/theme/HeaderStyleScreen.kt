@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -44,7 +45,7 @@ import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 fun HeaderStyleScreen(
     navController: NavController = rememberNavController()
 ) {
-    Column {
+    Column(modifier = Modifier.fillMaxSize()) {
         BasicToolbar(name = "Header Style")
         Column (modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp).clip(shape = RoundedCornerShape(12.dp)).border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))) {
             ChatToolbar(preview = true)

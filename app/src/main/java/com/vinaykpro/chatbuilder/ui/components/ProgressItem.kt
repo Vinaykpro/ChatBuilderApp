@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ProgressItem(
     name: String = "Progress",
-    min: Float = 1f,
+    min: Float = 0f,
     max: Float = 10f,
     progress: MutableFloatState = remember { mutableFloatStateOf(5f) }
 ) {
@@ -35,7 +35,7 @@ fun ProgressItem(
                 value = progress.floatValue,
                 onValueChange = { progress.floatValue = it },
                 valueRange = min..max,
-                steps = max.toInt(),
+                steps = max.toInt() - 1,
                 modifier = Modifier.weight(1f)
             )
             Text(text = progress.floatValue.toInt().toString(), color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight(500), fontSize = 14.sp, lineHeight = 14.sp, modifier = Modifier.padding(start = 8.dp, end = 15.dp))
