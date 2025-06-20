@@ -64,15 +64,6 @@ fun ChatBuilderTheme(
 ) {
     val colorScheme = if(darkTheme) DarkColorScheme else LightColorScheme
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-//            val window = (view.context as Activity).window
-//            window.statusBarColor = if(isInHomeScreen) Color(0xFF3DBFDC).toArgb() else Color(0xFFFFFFFF).toArgb()
-//            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isInHomeScreen
-        }
-    }
-
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

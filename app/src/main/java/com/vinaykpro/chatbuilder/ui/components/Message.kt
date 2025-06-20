@@ -33,7 +33,7 @@ fun Message(text: String = "Hii man",
             bubbleTipRadius: Float = 8f,
             isFirst: Boolean = false,
             isLast: Boolean = false) {
-    var bubbleModifier: Modifier = when(bubbleStyle) {
+    val bubbleModifier: Modifier = when(bubbleStyle) {
         0 -> {
             Modifier
                 .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(bubbleRadius.dp))
