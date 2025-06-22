@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
@@ -34,7 +35,7 @@ object Routes {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boolean>) {
+fun AppNavHost(themeViewModel: ThemeViewModel, navController: NavHostController, isDarkTheme: MutableState<Boolean>) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
     NavHost(
@@ -54,7 +55,7 @@ fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boole
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            ChatScreen()
+            ChatScreen(isDarkTheme.value)
         }
         composable(Routes.Themes,
             enterTransition = {
@@ -63,7 +64,7 @@ fun AppNavHost(navController: NavHostController, isDarkTheme: MutableState<Boole
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            ThemeScreen(navController = navController)
+            ThemeScreen(themeViewModel = themeViewModel, navController = navController)
         }
         composable(Routes.EditTheme,
             enterTransition = {

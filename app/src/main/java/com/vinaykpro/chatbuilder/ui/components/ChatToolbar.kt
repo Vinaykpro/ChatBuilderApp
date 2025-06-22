@@ -38,6 +38,7 @@ import com.vinaykpro.chatbuilder.R
 fun ChatToolbar(
     name: String = "Vinaykpro",
     status: String = "online",
+    color: Color = MaterialTheme.colorScheme.primary,
     icon1: Painter? = painterResource(R.drawable.ic_call),
     icon2: Painter? = painterResource(R.drawable.ic_videocall),
     icon3: Painter? = null,
@@ -45,7 +46,7 @@ fun ChatToolbar(
     preview: Boolean = false
 ) {
     Row(modifier = Modifier.fillMaxWidth()
-        .background(MaterialTheme.colorScheme.primary)
+        .background(color)
         .padding(top = if(preview) 6.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
         .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically) {

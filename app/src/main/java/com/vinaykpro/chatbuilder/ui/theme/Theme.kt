@@ -1,23 +1,15 @@
 package com.vinaykpro.chatbuilder.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import com.vinaykpro.chatbuilder.data.local.ThemeEntity
 
-public val DarkColorScheme = darkColorScheme(
+val DarkColorScheme = darkColorScheme(
     primary = headerDark,
     secondary = PurpleGrey80,
     tertiary = Pink80,
@@ -32,7 +24,7 @@ public val DarkColorScheme = darkColorScheme(
     onTertiaryContainer = White
 )
 
-public val LightColorScheme = lightColorScheme(
+val LightColorScheme = lightColorScheme(
     primary = headerLight,
     secondary = PurpleGrey40,
     tertiary = Pink40,
@@ -59,14 +51,25 @@ public val LightColorScheme = lightColorScheme(
 
 @Composable
 fun ChatBuilderTheme(
+    theme: ThemeEntity?,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if(darkTheme) DarkColorScheme else LightColorScheme
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    if(theme != null) {
+        CompositionLocalProvider(
+            LocalThemeEntity provides theme
+        ) {
+            MaterialTheme(
+                colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+                typography = Typography,
+                content = content
+            )
+        }
+    } else {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

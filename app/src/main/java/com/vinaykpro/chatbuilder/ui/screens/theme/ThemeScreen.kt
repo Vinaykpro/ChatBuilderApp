@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -20,40 +21,39 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
+import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 
-@Preview
+
 @Composable
-fun ThemeScreen(navController: NavController = rememberNavController()) {
-    var selectedTheme by remember { mutableIntStateOf(0) }
+fun ThemeScreen(themeViewModel: ThemeViewModel, navController: NavController = rememberNavController()) {
+    val themes by themeViewModel.themes.collectAsState()
+    val selectedTheme by themeViewModel.selectedThemeId.collectAsState()
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
         ) {
-            BasicToolbar(name = "Chat theme", icon1 = painterResource(R.drawable.ic_info))
+            BasicToolbar(name = "Chat theme",
+                color = Color(LocalThemeEntity.current.appcolor.toColorInt()),
+                icon1 = painterResource(R.drawable.ic_info))
             LazyColumn(modifier = Modifier.weight(1f).padding(bottom = 10.dp)) {
-                items(5) { i ->
-                    if (i == 0)
-                        Text(text = "Select or customize themes", fontSize = 18.sp, fontWeight = FontWeight(500), color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, start = 20.dp, bottom = 6.dp))
-                    ThemeItem(selected = i == selectedTheme, name = "Theme $i", onClick = { selectedTheme = i }, onNextClick = { navController.navigate("theme/Theme $i") })
+                items(themes) { i ->
+                    ThemeItem(selected = i.id == selectedTheme, name = i.name, author = i.author, onClick = { themeViewModel.changeTheme(i.id) }, onNextClick = { navController.navigate("theme/${i.name}") })
                 }
             }
         }
@@ -61,7 +61,7 @@ fun ThemeScreen(navController: NavController = rememberNavController()) {
             onClick = { /* TO-DO Add new theme */ },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 40.dp, end = 16.dp),
-            containerColor = MaterialTheme.colorScheme.primary,
+            containerColor = Color(LocalThemeEntity.current.appcolor.toColorInt()),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
