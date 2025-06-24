@@ -16,9 +16,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.navigation.AppNavHost
+import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
 import com.vinaykpro.chatbuilder.ui.theme.ChatBuilderTheme
 
-class SplashActivity : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     private lateinit var themeViewModel: ThemeViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,9 +36,17 @@ class SplashActivity : ComponentActivity() {
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
             val isSystemDark = isSystemInDarkTheme()
             val isDarkTheme = remember { mutableStateOf(false) }
-            ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
-                val navController = rememberNavController()
-                AppNavHost(themeViewModel = themeViewModel, navController = navController, isDarkTheme = isDarkTheme)
+            if(theme != null) {
+                ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
+                    val navController = rememberNavController()
+                    AppNavHost(
+                        themeViewModel = themeViewModel,
+                        navController = navController,
+                        isDarkTheme = isDarkTheme
+                    )
+                }
+            } else {
+                SplashScreen()
             }
         }
     }

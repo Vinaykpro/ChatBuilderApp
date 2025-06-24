@@ -8,6 +8,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 @Database(entities = [ThemeEntity::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
@@ -27,9 +29,23 @@ abstract class AppDatabase : RoomDatabase() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
                         CoroutineScope(Dispatchers.IO).launch {
-                            INSTANCE?.themeDao()?.insertTheme(ThemeEntity())
+                            val json = Json {
+                                encodeDefaults = true
+                            }
                             INSTANCE?.themeDao()?.insertTheme(
-                                ThemeEntity(name = "Theme 2", appcolor = "#FF017F6C")
+                                ThemeEntity(
+                                    headerstyle = json.encodeToString(HeaderStyle()),
+                                    bodystyle = json.encodeToString(BodyStyle()),
+                                    messagebarstyle = json.encodeToString(MessageBarStyle())
+                                )
+                            )
+                            INSTANCE?.themeDao()?.insertTheme(
+                                ThemeEntity(
+                                    name = "Theme 2", appcolor = "#FF017F6C",
+                                    headerstyle = json.encodeToString(HeaderStyle(color_navbar = "#FF017F6C")),
+                                    bodystyle = json.encodeToString(BodyStyle(color_senderbubble = "#FFE1FFC7")),
+                                    messagebarstyle = json.encodeToString(MessageBarStyle(color_outerbutton = "#FF017F6C", color_rightinnerbutton = "#FF017F6C", color_outerbutton_dark = "#FF017F6C", color_rightinnerbutton_dark = "#FF017F6C"))
+                                )
                             )
                         }
                     }

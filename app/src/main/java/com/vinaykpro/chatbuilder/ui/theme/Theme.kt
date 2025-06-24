@@ -51,21 +51,13 @@ val LightColorScheme = lightColorScheme(
 
 @Composable
 fun ChatBuilderTheme(
-    theme: ThemeEntity?,
+    theme: ThemeEntity,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    if(theme != null) {
-        CompositionLocalProvider(
-            LocalThemeEntity provides theme
-        ) {
-            MaterialTheme(
-                colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
-                typography = Typography,
-                content = content
-            )
-        }
-    } else {
+    CompositionLocalProvider(
+        LocalThemeEntity provides theme
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
             typography = Typography,

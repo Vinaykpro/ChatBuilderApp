@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.data.local
 
+import android.annotation.SuppressLint
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
@@ -10,24 +11,27 @@ data class ThemeEntity(
     val icon: String? = null,
     val name: String = "Default theme",
     val author: String = "Vinaykpro",
-    val appcolor: String = "#FF3DBFDC",
+    val appcolor: String = "#FF1283A6",
     val appcolordark: String = "#FF323232",
 
     val headerstyle: String = "",
-    val headerstyledark: String = "",
 
     val bodystyle: String = "",
-    val bodystyedark: String = "",
 
-    val messagestyle: String = "",
-    val messagestyledark: String = ""
+    val messagebarstyle: String = "",
 )
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class HeaderStyle(
-    val color_navbar: String = "#FF3DBFDC",
+    val color_navbar: String = "#FF1283A6",
+    val color_navicons: String = "#FFffffff",
     val color_text_primary: String = "#FFffffff",
     val color_text_secondary: String = "#FFBDBDBD",
+    val color_navbar_dark: String = "#FF222222",
+    val color_navicons_dark: String = "#FFffffff",
+    val color_text_primary_dark: String = "FFffffff",
+    val color_text_secondary_dark: String = "#FF999999",
     val showbackbtn: Boolean = true,
     val backbtn_size: Int = 24,
     val backbtn_gap: Int = 2,
@@ -48,6 +52,7 @@ data class HeaderStyle(
     val icon3: String? = null,
 )
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class BodyStyle(
     val bubble_style: Int = 1,
@@ -59,6 +64,12 @@ data class BodyStyle(
     val color_datetext: String = "#FF818181",
     val color_text_primary: String = "#FF000000",
     val color_text_secondary: String = "#FF5E5E5E",
+    val color_chatbackground_dark: String = "#FF000000",
+    val color_senderbubble_dark: String = "#FF1A7585",
+    val color_receiverbubble_dark: String = "#FF323232",
+    val color_datetext_dark: String = "#FFdddddd",
+    val color_text_primary_dark: String = "#FFffffff",
+    val color_text_secondary_dark: String = "#FF999999",
     val show_time: Boolean = true,
     val use12hr: Boolean = true,
     val showticks: Boolean = true,
@@ -66,21 +77,43 @@ data class BodyStyle(
     val showreceiverpic: Boolean = false
 )
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class MessageBarStyle(
-    val color_widgetbackground: String,
-    val color_barbackground: String,
-    val color_outerbutton: String,
-    val color_rightinnerbutton: String,
-    val color_leftinnerbutton: String,
-    val color_inputtext: String,
-    val color_hinttext: String,
-    val showleftinnerbutton: Boolean,
-    val showrightinnerbutton: Boolean,
-    val showouterbutton: Boolean,
+    val color_widgetbackground: String = "#00000000",
+    val color_barbackground: String = "#FFffffff",
+    val color_outerbutton: String = "#FF1283A6",
+    val color_rightinnerbutton: String = "#FF1283A6",
+    val color_leftinnerbutton: String = "#00000000",
+    val color_outerbutton_icon: String = "#FFffffff",
+    val color_rightinnerbutton_icon: String = "#FFffffff",
+    val color_leftinnerbutton_icon: String = "#FF000000",
+    val color_icons: String = "#FF000000",
+    val color_inputtext: String = "#FF000000",
+    val color_hinttext: String = "#FF888888",
+    val color_widgetbackground_dark: String = "#00000000",
+    val color_barbackground_dark: String = "#FF323232",
+    val color_outerbutton_dark: String = "#FF1283A6",
+    val color_rightinnerbutton_dark: String = "#FF1283A6",
+    val color_leftinnerbutton_dark: String = "#00000000",
+    val color_outerbutton_icon_dark: String = "#FFffffff",
+    val color_rightinnerbutton_icon_dark: String = "#FFffffff",
+    val color_leftinnerbutton_icon_dark: String = "#FF000000",
+    val color_icons_dark: String = "#FF000000",
+    val color_inputtext_dark: String = "#FFffffff",
+    val color_hinttext_dark: String = "#FF888888",
+    val showleftinnerbutton: Boolean = true,
+    val showrightinnerbutton: Boolean = false,
+    val showouterbutton: Boolean = true,
     val leftinnerbutton_icon: String? = null,
     val rightinnerbutton_icon: String? = null,
-    val outerbutton_icon: String? = null
+    val outerbutton_icon: String? = null,
+    val actionicons_order: List<Int> = listOf(1,2,3),
+    val is_icon1_visible: Boolean = true,
+    val is_icon2_visible: Boolean = true,
+    val is_icon3_visible: Boolean = false,
+    val icon1: String? = null,
+    val icon2: String? = null,
+    val icon3: String? = null,
 )
-
 

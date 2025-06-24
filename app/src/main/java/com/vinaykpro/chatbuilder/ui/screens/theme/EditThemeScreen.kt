@@ -37,7 +37,6 @@ import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.Input
-import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 
 @Preview
