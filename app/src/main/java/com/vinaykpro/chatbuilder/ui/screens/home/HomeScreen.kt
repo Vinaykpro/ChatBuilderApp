@@ -7,7 +7,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +57,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -64,29 +65,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.utils.ChatsList
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
+import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
+import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
+import com.vinaykpro.chatbuilder.ui.components.SettingsItem
+import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
+import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.onebone.toolbar.CollapsingToolbarScaffold
 import me.onebone.toolbar.ScrollStrategy
 import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.layout.positionInRoot
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.rememberLottieComposition
-import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
-import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
-import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
-import kotlinx.coroutines.delay
-import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
-import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -100,10 +99,14 @@ fun HomeScreen(
 ) {
     val uiState = viewModel.state.value
     val colors = MaterialTheme.colorScheme
-    val fakeColors = if (isDarkTheme.value) LightColorScheme else DarkColorScheme
+    val themeColors = LocalThemeEntity.current
+    val appColor = remember(themeColors.appcolor, themeColors.appcolordark, isDarkTheme.value) {
+        val colorHex = if (isDarkTheme.value) themeColors.appcolordark else themeColors.appcolor
+        Color(colorHex.toColorInt())
+    }
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current;
+    val context = LocalContext.current
 
     val toolbarState = rememberCollapsingToolbarScaffoldState()
 
@@ -122,7 +125,10 @@ fun HomeScreen(
         .background(colors.background)) {
         // real screen
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.background(color = colors.primary).fillMaxWidth().padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()))
+            Spacer(modifier = Modifier
+                .background(color = appColor)
+                .fillMaxWidth()
+                .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()))
             CollapsingToolbarScaffold(modifier = Modifier.weight(1f),
                 state = toolbarState,
                 scrollStrategy = ScrollStrategy.ExitUntilCollapsed,
@@ -134,7 +140,7 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(175.dp)
                             .pin()
-                            .background(color = colors.primary)
+                            .background(color = appColor)
                     )
                     Row(
                         modifier = Modifier
@@ -146,7 +152,7 @@ fun HomeScreen(
                                 whenExpanded = Alignment.BottomCenter
                             )
                             .background(
-                                color = colors.primary,
+                                color = appColor,
                                 shape = RoundedCornerShape(bottomStart = 15.dp, bottomEnd = 15.dp)
                             ),
                         horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically
@@ -171,11 +177,11 @@ fun HomeScreen(
                             tint = Color.White,
                             modifier = Modifier
                                 .size(24.dp)
-                                .clickable  (
+                                .clickable(
                                     indication = null,
                                     interactionSource = remember { MutableInteractionSource() },
                                     onClick = {
-                                        if(!isDarkTheme.value) {
+                                        if (!isDarkTheme.value) {
                                             switchThemeAnim = true
                                             blockTouches = true
                                             triggerAnimation = true
@@ -185,7 +191,7 @@ fun HomeScreen(
                                                 blockTouches = true
                                                 triggerAnimation = true
                                                 delay(50)
-                                                isDarkTheme.value = false;
+                                                isDarkTheme.value = false
                                             }
                                         }
                                     }
@@ -242,7 +248,6 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    beyondViewportPageCount = 1
                 ) { page -> when(page) {
                         0 -> Box(modifier = Modifier
                             .weight(1f)
@@ -259,7 +264,9 @@ fun HomeScreen(
                                 }
                             }
                         }
-                        1 -> Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        1 -> Column(modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())) {
                             SettingsItem(icon = painterResource(R.drawable.ic_theme),
                                 name = "Chat theme",
                                 context = "Create, import or customize the current chat theme",
@@ -283,7 +290,7 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .height(60.dp)
                 .background(
-                    color = colors.primary,
+                    color = appColor,
                     shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                 )
             ) {
@@ -328,12 +335,17 @@ fun HomeScreen(
                         .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f))
                 }
             }
-            Spacer(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()))
+            Spacer(modifier = Modifier
+                .fillMaxWidth()
+                .background(appColor)
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                ))
         }
     }
 
     // Real FAMB Button
-    FloatingMenu()
+    FloatingMenu(color = appColor)
 
     // fake screen for light/dark mode switch
     if(switchThemeAnim) {
@@ -485,7 +497,9 @@ fun HomeScreen(
                         }
                     ) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(Color(0xFF000000)),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF000000)),
                             contentAlignment = Alignment.Center
                         ) {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -568,7 +582,8 @@ fun HomeScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .background(Color.Transparent)
-            .clickable(indication = null,
+            .clickable(
+                indication = null,
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = {}))
     }

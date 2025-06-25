@@ -22,9 +22,9 @@ import com.airbnb.lottie.compose.rememberLottieAnimatable
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.vinaykpro.chatbuilder.ui.navigation.Routes
 
-@Preview
+
 @Composable
-fun SplashScreen(navController: NavController = rememberNavController(), isDarkTheme: MutableState<Boolean> = mutableStateOf(false)) {
+fun SplashScreen(navController: NavController? = null, isDarkTheme: MutableState<Boolean> = mutableStateOf(false)) {
     val colors = MaterialTheme.colorScheme
     Box(modifier = Modifier.fillMaxSize().background(colors.background), contentAlignment = Alignment.Center) {
         val composition by rememberLottieComposition(
@@ -36,7 +36,7 @@ fun SplashScreen(navController: NavController = rememberNavController(), isDarkT
             composition?.let {
                 animatable.animate(it, iterations = 1)
                 // ⏱ After animation ends, navigate
-                navController.navigate(Routes.Home) {
+                navController?.navigate(Routes.Home) {
                     popUpTo(Routes.Splash) { inclusive = true }
                 }
             }

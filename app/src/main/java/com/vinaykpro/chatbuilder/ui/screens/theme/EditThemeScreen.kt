@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
@@ -35,15 +37,22 @@ import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.Input
-import com.vinaykpro.chatbuilder.ui.components.SettingsItem
+import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 
 @Preview
 @Composable
 fun EditThemeScreen(themename : String = "Default theme", navController: NavController = rememberNavController()) {
+    val themeColors = LocalThemeEntity.current
+    val appColor = remember(themeColors.appcolor) {
+        Color(themeColors.appcolor.toColorInt())
+    }
+    val appColorDark = remember(themeColors.appcolordark) {
+        Color(themeColors.appcolordark.toColorInt())
+    }
     Column(modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)) {
-        BasicToolbar(name = themename)
+        BasicToolbar(name = themename, color = appColor)
         Column(modifier = Modifier
             .weight(1f)
             .padding(start = 18.dp)) {
@@ -68,8 +77,8 @@ fun EditThemeScreen(themename : String = "Default theme", navController: NavCont
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.padding(top = 18.dp, bottom = 10.dp)
             )
-            ColorSelectionItem(name = "Primary Color", color = Color(0xFF29C6CB))
-            ColorSelectionItem(name = "Primary Color (Dark)", color = Color(0xFF2A2B2B))
+            ColorSelectionItem(name = "Primary Color", color = appColor)
+            ColorSelectionItem(name = "Primary Color (Dark)", color = appColorDark)
             Text(
                 text = "Chat Screen Styles",
                 fontSize = 17.sp,
