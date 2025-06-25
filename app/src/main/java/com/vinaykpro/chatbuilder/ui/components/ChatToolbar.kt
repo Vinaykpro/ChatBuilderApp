@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -29,16 +28,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.vinaykpro.chatbuilder.R
-import com.vinaykpro.chatbuilder.data.local.BodyStyle
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
-import kotlin.String
 
-@Preview
+//@Preview
 @Composable
 fun ChatToolbar(
     name: String = "Vinaykpro",
@@ -49,9 +45,10 @@ fun ChatToolbar(
     icon2: Painter? = painterResource(R.drawable.ic_videocall),
     icon3: Painter? = null,
     icon4: Painter = painterResource(R.drawable.ic_more),
-    preview: Boolean = false
+    preview: Boolean = false,
+    previewColors: ParsedHeaderStyle = ParsedHeaderStyle()
 ) {
-    val themeColors = remember(style, isDarkTheme) {
+    val themeColors = if(preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
     }
     Row(modifier = Modifier.fillMaxWidth()
@@ -63,7 +60,7 @@ fun ChatToolbar(
             Icon( modifier = Modifier.size(24.dp),
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "back",
-                tint = Color.White )
+                tint = themeColors.navIcons )
         }
         Spacer(modifier = Modifier.width(2.dp))
         Image(
@@ -78,13 +75,13 @@ fun ChatToolbar(
                 fontSize = 18.sp,
                 fontWeight = FontWeight(500),
                 lineHeight = 20.sp,
-                color = Color.White
+                color = themeColors.textPrimary
             )
             Text(
                 text = status,
                 fontSize = 14.sp,
                 lineHeight = 14.sp,
-                color = Color.White
+                color = themeColors.textSecondary
             )
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -95,7 +92,7 @@ fun ChatToolbar(
                         modifier = Modifier.size(24.dp),
                         painter = icon1,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = themeColors.navIcons
                     )
                 }
             }
@@ -105,7 +102,7 @@ fun ChatToolbar(
                         modifier = Modifier.size(24.dp),
                         painter = icon2,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = themeColors.navIcons
                     )
                 }
             }
@@ -115,7 +112,7 @@ fun ChatToolbar(
                         modifier = Modifier.size(24.dp),
                         painter = icon3,
                         contentDescription = null,
-                        tint = Color.White
+                        tint = themeColors.navIcons
                     )
                 }
             }
@@ -124,7 +121,7 @@ fun ChatToolbar(
                     modifier = Modifier.size(24.dp),
                     painter = icon4,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = themeColors.navIcons
                 )
             }
         }
@@ -143,8 +140,8 @@ fun HeaderStyle.toParsed(isDarkTheme: Boolean): ParsedHeaderStyle {
 }
 
 data class ParsedHeaderStyle(
-    val navBar: Color,
-    val navIcons: Color,
-    val textPrimary: Color,
-    val textSecondary: Color
+    val navBar: Color = Color(0x00000000),
+    val navIcons: Color = Color(0x00000000),
+    val textPrimary: Color = Color(0x00000000),
+    val textSecondary: Color = Color(0x00000000)
 )

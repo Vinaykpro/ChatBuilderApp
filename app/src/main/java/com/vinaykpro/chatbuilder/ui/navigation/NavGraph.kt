@@ -83,7 +83,7 @@ fun AppNavHost(themeViewModel: ThemeViewModel, navController: NavHostController,
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            HeaderStyleScreen(navController = navController)
+            HeaderStyleScreen()
         }
         composable(Routes.BodyStyle,
             enterTransition = {

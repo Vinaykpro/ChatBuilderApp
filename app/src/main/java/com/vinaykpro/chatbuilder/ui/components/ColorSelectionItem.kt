@@ -29,9 +29,10 @@ import androidx.compose.ui.unit.sp
 fun ColorSelectionItem(
     name: String = "Primary color",
     bubbleSize: Int = 42,
-    color: Color = Color(0xff4b48ff)
+    color: Color = Color(0xff4b48ff),
+    onClick: () -> Unit = {}
 ) {
-    Row(modifier = Modifier.fillMaxWidth().padding(end = 10.dp).clickable {  }.padding(vertical = 8.dp, horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().padding(end = 10.dp).clickable { onClick() }.padding(vertical = 8.dp, horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier.size(bubbleSize.dp).clip(CircleShape).background(color = color).border(2.dp, color = Color(0xffB1B1B1), shape = CircleShape)
         )

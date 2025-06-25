@@ -30,7 +30,7 @@ data class HeaderStyle(
     val color_text_secondary: String = "#FFBDBDBD",
     val color_navbar_dark: String = "#FF222222",
     val color_navicons_dark: String = "#FFffffff",
-    val color_text_primary_dark: String = "FFffffff",
+    val color_text_primary_dark: String = "#FFffffff",
     val color_text_secondary_dark: String = "#FF999999",
     val showbackbtn: Boolean = true,
     val backbtn_size: Int = 24,

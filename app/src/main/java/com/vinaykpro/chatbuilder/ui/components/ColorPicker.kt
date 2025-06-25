@@ -33,6 +33,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,11 +46,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,16 +66,20 @@ import com.vinaykpro.chatbuilder.R
 @Composable
 fun ColorPicker(
     initialColor: Color = Color.Red,
-    onColorPicked: (Color) -> Unit = {
-    },
+    onColorPicked: (Color) -> Unit = {},
+    onClose: () -> Unit = {}
 ) {
     var state by remember {
-        mutableStateOf(ColorPickerState(0f, 1f, 1f, 1f).apply {
+        mutableStateOf(ColorPickerState(0f, 1f, 1f, 1f))
+    }
+    var hexInputText by remember(state) { mutableStateOf(state.toHex()) }
+
+    LaunchedEffect(initialColor) {
+        state = ColorPickerState(0f, 1f, 1f, 1f).apply {
             updateFromColor(initialColor)
-        })
+        }
     }
 
-    var hexInputText by remember(state) { mutableStateOf(state.toHex()) }
     Box(modifier = Modifier.fillMaxSize().background(Color(0x77000000))
         .padding(bottom =  WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
         Column(
@@ -83,7 +90,7 @@ fun ColorPicker(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                Modifier.padding(top = 8.dp, bottom = 12.dp, start = 15.dp),
+                Modifier.padding(vertical = 10.dp, horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -93,7 +100,7 @@ fun ColorPicker(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = {}) {
+                IconButton(onClick = { onClose() }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_close),
                         contentDescription = "Close",
@@ -103,6 +110,23 @@ fun ColorPicker(
                 }
             }
 
+                Box(
+                    Modifier
+                        .padding(vertical = 10.dp)
+                        .height(48.dp)
+                        .fillMaxWidth(0.7f)
+                        .background(state.toColor(), RoundedCornerShape(10.dp))
+                        .border(2.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(10.dp))
+                ) {
+                    Text(
+                        text = "Preview",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight(500),
+                        color = MaterialTheme.colorScheme.background,
+                        modifier = Modifier.align(Alignment.Center),
+                        style = TextStyle(shadow = Shadow(color = MaterialTheme.colorScheme.onPrimaryContainer, blurRadius = 8f))
+                    )
+                }
 
             SVBox(
                 hue = state.hue,
@@ -111,6 +135,7 @@ fun ColorPicker(
             ) { s, v ->
                 state = state.copy(sat = s, value = v)
                 hexInputText = state.toHex()
+                onColorPicked(state.toColor())
             }
 
             Spacer(Modifier.height(12.dp))
@@ -119,6 +144,7 @@ fun ColorPicker(
             HueSlider(hue = state.hue) {
                 state = state.copy(hue = it)
                 hexInputText = state.toHex()
+                onColorPicked(state.toColor())
             }
 
             Spacer(Modifier.height(12.dp))
@@ -127,38 +153,58 @@ fun ColorPicker(
             AlphaSlider(color = state.toColor().copy(alpha = 1f), alpha = state.alpha) {
                 state = state.copy(alpha = it)
                 hexInputText = state.toHex()
+                onColorPicked(state.toColor())
             }
 
             Spacer(Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(0.85f)) {
-                Column(modifier = Modifier.weight(1f)) {
+            Row(modifier = Modifier.fillMaxWidth(0.85f), verticalAlignment = Alignment.CenterVertically) {
+                Column {
                     Text(
-                        text = "Preview",
-                        fontSize = 17.sp,
+                        text = "Hex code",
+                        fontSize = 15.sp,
                         fontWeight = FontWeight(500),
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 5.dp, bottom = 8.dp)
                     )
-                    Box(
-                        Modifier
-                            .height(48.dp)
-                            .fillMaxWidth()
-                            .background(initialColor, RoundedCornerShape(8.dp))
+                    // Hex input (2-way binding)
+                    OutlinedTextField(
+                        value = hexInputText,
+                        onValueChange = {
+                            hexInputText = it.uppercase()
+                            runCatching {
+                                val parsed = Color(hexInputText.toColorInt())
+                                state.updateFromColor(parsed)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_copy),
+                                contentDescription = "Copy",
+                                tint = Color.Unspecified,
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(24.dp)
+                                    .clickable {}
+                            )
+                        }
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
-                Column {
+                Column(modifier =Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Image",
-                        fontSize = 17.sp,
+                        text = "Pick Image",
+                        fontSize = 15.sp,
                         fontWeight = FontWeight(500),
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
                     )
                     Box(
                         Modifier
-                            .height(48.dp)
+                            .height(60.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .border(
                                 width = 1.dp,
@@ -177,40 +223,7 @@ fun ColorPicker(
             }
 
             Spacer(Modifier.height(12.dp))
-            Column(modifier = Modifier.fillMaxWidth(0.85f)) {
-                Text(
-                    text = "Hex code",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.padding(top = 5.dp, bottom = 8.dp)
-                )
-                // Hex input (2-way binding)
-                OutlinedTextField(
-                    value = hexInputText,
-                    onValueChange = {
-                        hexInputText = it.uppercase()
-                        runCatching {
-                            val parsed = Color(hexInputText.toColorInt())
-                            state.updateFromColor(parsed)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    trailingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_copy),
-                            contentDescription = "Copy",
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(24.dp)
-                                .clickable {}
-                        )
-                    }
-                )
-            }
+
         }
     }
 }
