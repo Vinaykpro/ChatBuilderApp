@@ -2,6 +2,6 @@
 <resources>
     <style name="Theme.ChatBuilder" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@color/primary_color</item>
-        <item name="android:windowBackground">@color/splashbg</item>
+        <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
 </resources>

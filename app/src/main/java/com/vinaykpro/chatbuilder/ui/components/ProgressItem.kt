@@ -1,9 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.components
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -26,8 +24,11 @@ fun ProgressItem(
     name: String = "Progress",
     min: Float = 0f,
     max: Float = 10f,
-    progress: MutableFloatState = remember { mutableFloatStateOf(5f) }
+    value: Float = 10f,
+    progress: MutableFloatState? = null,
+    onChange: (Int) -> Unit = {}
 ) {
+    val progress = progress?: remember { mutableFloatStateOf(value) }
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = "$name:", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight(500), fontSize = 14.sp, lineHeight = 14.sp, modifier = Modifier.padding(start = 5.dp, top = 8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -38,6 +39,7 @@ fun ProgressItem(
                 steps = max.toInt() - 1,
                 modifier = Modifier.weight(1f)
             )
+            onChange(progress.floatValue.toInt())
             Text(text = progress.floatValue.toInt().toString(), color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight(500), fontSize = 14.sp, lineHeight = 14.sp, modifier = Modifier.padding(start = 8.dp, end = 15.dp))
         }
     }

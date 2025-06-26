@@ -43,7 +43,7 @@ fun AppNavHost(themeViewModel: ThemeViewModel, navController: NavHostController,
         startDestination = Routes.Home
     ) {
         composable(Routes.Splash) {
-            SplashScreen(navController, isDarkTheme)
+            SplashScreen(navController, isDarkTheme.value)
         }
         composable(route = Routes.Home,) {
             HomeScreen(navController = navController, isDarkTheme = isDarkTheme)

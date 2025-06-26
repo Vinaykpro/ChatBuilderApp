@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             } else {
-                SplashScreen()
+                SplashScreen(isDarkTheme = isSystemDark)
             }
         }
     }
