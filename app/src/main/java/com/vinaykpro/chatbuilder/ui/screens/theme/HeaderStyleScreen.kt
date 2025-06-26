@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
+import com.vinaykpro.chatbuilder.data.local.ThemeEntity
 import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
@@ -49,8 +51,6 @@ import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.json.Json
 
-
-@Preview
 @Composable
 fun HeaderStyleScreen() {
     var isDark by remember { mutableStateOf(false) }
@@ -87,6 +87,10 @@ fun HeaderStyleScreen() {
         }
     }
 
+    var previewAttrs by remember {
+        mutableStateOf(themeStyle)
+    }
+
 
     var loadPicker by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
@@ -101,7 +105,7 @@ fun HeaderStyleScreen() {
                     .clip(shape = RoundedCornerShape(12.dp))
                     .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
             ) {
-                ChatToolbar(preview = true, previewColors = previewColors)
+                ChatToolbar(preview = true, previewColors = previewColors, previewAttrs = previewAttrs)
                 Spacer(modifier = Modifier.height(60.dp))
             }
             Column(
@@ -137,10 +141,10 @@ fun HeaderStyleScreen() {
                 )
                 val backBtnState = remember { mutableStateOf(true) }
                 val profilePicState = remember { mutableStateOf(true) }
-                val showNameState = remember { mutableStateOf(true) }
                 val showStatusState = remember { mutableStateOf(true) }
 
                 SwitchItem(state = backBtnState)
+                previewAttrs = previewAttrs.copy(showbackbtn = backBtnState.value)
                 if (backBtnState.value) {
                     Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
                         Spacer(
@@ -148,8 +152,14 @@ fun HeaderStyleScreen() {
                                 .background(MaterialTheme.colorScheme.secondaryContainer)
                         )
                         Column(modifier = Modifier.padding(start = 16.dp)) {
-                            ProgressItem(name = "Icon size")
-                            ProgressItem(name = "Left gap")
+                            ProgressItem(name = "Icon size", value = themeStyle.backbtn_size.toFloat(), min = 10f, max = 40f,
+                                onChange = {
+                                previewAttrs = previewAttrs.copy(backbtn_size = it)
+                            })
+                            ProgressItem(name = "Left gap", value = themeStyle.backbtn_gap.toFloat(), min = 0f, max = 15f,
+                                onChange = {
+                                previewAttrs = previewAttrs.copy(backbtn_gap = it)
+                            })
                             EditIcon(name = "Back button icon")
                         }
                     }
@@ -160,6 +170,7 @@ fun HeaderStyleScreen() {
                     name = "Show profile pic",
                     context = "Show/hide the profile picture and customize."
                 )
+                previewAttrs = previewAttrs.copy(showprofilepic = profilePicState.value)
                 if (profilePicState.value) {
                     Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
                         Spacer(
@@ -167,24 +178,25 @@ fun HeaderStyleScreen() {
                                 .background(MaterialTheme.colorScheme.secondaryContainer)
                         )
                         Column(modifier = Modifier.padding(start = 16.dp)) {
-                            ProgressItem(name = "Icon size")
-                            ProgressItem(name = "Horizontal gap")
-                            EditIcon(name = "Default profile icon")
+                            ProgressItem(name = "Icon size", value = themeStyle.profilepic_size.toFloat(), min = 20f, max = 50f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(profilepic_size = it)
+                                })
+                            ProgressItem(name = "Horizontal gap", value = themeStyle.profilepic_gap_sides.toFloat(), min = 0f, max = 10f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
+                                })
+                            EditIcon(name = "Three dots icon")
                         }
                     }
                 }
-
-                SwitchItem(
-                    state = showNameState,
-                    name = "Show name",
-                    context = "Show/hide the name as shown in the preview."
-                )
 
                 SwitchItem(
                     state = showStatusState,
                     name = "Show status/username",
                     context = "Show/hide the status as shown in the preview."
                 )
+                previewAttrs = previewAttrs.copy(showstatus = showStatusState.value)
 
                 SwitchItem(
                     enabled = false,
@@ -197,8 +209,6 @@ fun HeaderStyleScreen() {
                             .background(MaterialTheme.colorScheme.secondaryContainer)
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ProgressItem(name = "Icon size")
-                        ProgressItem(name = "Horizontal gap")
                         EditIcon(name = "Default profile icon")
                     }
                 }
@@ -217,6 +227,14 @@ fun HeaderStyleScreen() {
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         ActionIcons()
+                        ProgressItem(name = "Icon size", value = themeStyle.actionicons_size.toFloat(), min = 15f, max = 35f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(actionicons_size = it)
+                            })
+                        ProgressItem(name = "Horizontal gap", value = themeStyle.actionicons_gap.toFloat(), min = 0f, max = 15f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(actionicons_gap = it)
+                            })
                     }
                 }
             }
@@ -240,3 +258,13 @@ private val headerColorNames = listOf(
     "Name Text Color",
     "Status Text Color"
 )
+
+@Preview
+@Composable
+fun MyScreenPreview() {
+    val theme = ThemeEntity()
+
+    CompositionLocalProvider(LocalThemeEntity provides theme) {
+        HeaderStyleScreen()
+    }
+}

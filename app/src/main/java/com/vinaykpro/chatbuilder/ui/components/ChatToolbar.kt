@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,7 @@ import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 
 //@Preview
+@SuppressLint("SuspiciousIndentation")
 @Composable
 fun ChatToolbar(
     name: String = "Vinaykpro",
@@ -46,29 +48,36 @@ fun ChatToolbar(
     icon3: Painter? = null,
     icon4: Painter = painterResource(R.drawable.ic_more),
     preview: Boolean = false,
-    previewColors: ParsedHeaderStyle = ParsedHeaderStyle()
+    previewColors: ParsedHeaderStyle = ParsedHeaderStyle(),
+    previewAttrs: HeaderStyle = HeaderStyle()
 ) {
     val themeColors = if(preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
     }
+    val style = if(preview) previewAttrs else style
     Row(modifier = Modifier.fillMaxWidth()
         .background(themeColors.navBar)
         .padding(top = if(preview) 6.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
         .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        IconButton( onClick = {} ) {
-            Icon( modifier = Modifier.size(24.dp),
+
+        if(style.showbackbtn)
+        IconButton( onClick = {}, modifier = Modifier.padding(start = style.backbtn_gap.dp) ) {
+            Icon(modifier = Modifier.size(style.backbtn_size.dp),
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "back",
                 tint = themeColors.navIcons )
         }
-        Spacer(modifier = Modifier.width(2.dp))
+
+        if(style.showprofilepic)
         Image(
             painter = painterResource(R.drawable.user),
             contentDescription = null,
-            modifier = Modifier.clip(shape = CircleShape).size(40.dp)
+            modifier = Modifier.padding(horizontal = style.profilepic_gap_sides.dp).clip(shape = CircleShape).size(style.profilepic_size.dp)
         )
+
         Spacer(modifier = Modifier.width(8.dp))
+
         Column {
             Text(
                 text = name,
@@ -77,6 +86,7 @@ fun ChatToolbar(
                 lineHeight = 20.sp,
                 color = themeColors.textPrimary
             )
+            if(style.showstatus)
             Text(
                 text = status,
                 fontSize = 14.sp,
@@ -85,11 +95,11 @@ fun ChatToolbar(
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(style.actionicons_gap.dp)) {
             if (icon1 != null) {
                 IconButton( onClick = {} ) {
                     Icon(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon1,
                         contentDescription = null,
                         tint = themeColors.navIcons
@@ -99,7 +109,7 @@ fun ChatToolbar(
             if (icon2 != null) {
                 IconButton( onClick = {} ) {
                     Icon(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon2,
                         contentDescription = null,
                         tint = themeColors.navIcons
@@ -109,7 +119,7 @@ fun ChatToolbar(
             if (icon3 != null) {
                 IconButton( onClick = {} ) {
                     Icon(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon3,
                         contentDescription = null,
                         tint = themeColors.navIcons
@@ -118,7 +128,7 @@ fun ChatToolbar(
             }
             IconButton( onClick = {} ) {
                 Icon(
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(style.actionicons_size.dp),
                     painter = icon4,
                     contentDescription = null,
                     tint = themeColors.navIcons
