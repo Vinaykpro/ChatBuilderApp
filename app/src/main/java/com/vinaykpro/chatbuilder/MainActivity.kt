@@ -11,6 +11,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
@@ -36,6 +37,7 @@ class MainActivity : ComponentActivity() {
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
             val isSystemDark = isSystemInDarkTheme()
             val isDarkTheme = remember { mutableStateOf(false) }
+            window.setBackgroundDrawable((if(isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
             if(theme != null) {
                 ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
                     val navController = rememberNavController()
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             } else {
-                SplashScreen(isDarkTheme = isSystemDark)
+                SplashScreen(isDarkTheme = isDarkTheme.value)
             }
         }
     }

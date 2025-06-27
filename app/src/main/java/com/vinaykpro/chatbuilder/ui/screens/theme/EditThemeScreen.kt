@@ -1,8 +1,13 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,92 +20,166 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
+import com.vinaykpro.chatbuilder.ui.components.ColorPicker
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.Input
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 
-@Preview
+
 @Composable
-fun EditThemeScreen(themename : String = "Default theme", navController: NavController = rememberNavController()) {
-    val themeColors = LocalThemeEntity.current
-    val appColor = remember(themeColors.appcolor) {
-        Color(themeColors.appcolor.toColorInt())
-    }
-    val appColorDark = remember(themeColors.appcolordark) {
-        Color(themeColors.appcolordark.toColorInt())
-    }
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)) {
-        BasicToolbar(name = themename, color = appColor)
-        Column(modifier = Modifier
-            .weight(1f)
-            .padding(start = 18.dp)) {
-            Text(
-                text = "Theme properties",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 18.dp)
-            )
-            Row(modifier = Modifier.padding(start = 6.dp)) {
-                EditIcon(size = 80)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Input()
-                    Input(name = "Made by:", value = "Vinaykpro")
+fun EditThemeScreen(themename : String = "Default theme",
+                    navController: NavController = rememberNavController(),
+                    themeViewModel: ThemeViewModel,
+                    isDark: Boolean = false
+) {
+    var theme = LocalThemeEntity.current
+    var appColor by remember(theme.appcolor) { mutableStateOf(Color(theme.appcolor.toColorInt())) }
+    var appColorDark by remember(theme.appcolordark) { mutableStateOf(Color(theme.appcolordark.toColorInt())) }
+
+    var loadPicker by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
+    var selectedColor by remember { mutableStateOf(appColor) }
+    var isPickingColorDark by remember { mutableStateOf(false) }
+    Box {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            BasicToolbar(name = theme.name, color = MaterialTheme.colorScheme.primary)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 18.dp)
+            ) {
+                Text(
+                    text = "Theme properties",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 18.dp)
+                )
+                Row(modifier = Modifier.padding(start = 6.dp)) {
+                    EditIcon(size = 80, color = appColor)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Input(value = theme.name, onUpdate = {
+                            if(theme.name != it) {
+                                themeViewModel.updateTheme(theme.copy(name = it))
+                            }
+                        })
+                        Input(name = "Made by:", value = theme.author, onUpdate = {
+                            if(theme.author != it) {
+                                themeViewModel.updateTheme(theme.copy(name = it))
+                            }
+                        })
+                    }
+                }
+                Text(
+                    text = "App Style",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 10.dp)
+                )
+                ColorSelectionItem(name = "App Primary Color", color = appColor,
+                    onClick = {
+                        selectedColor = appColor
+                        isPickingColorDark = false
+                        loadPicker = true
+                        showColorPicker = true
+                    })
+                ColorSelectionItem(name = "App Primary Color (Dark)", color = appColorDark,
+                    onClick = {
+                        selectedColor = appColorDark
+                        isPickingColorDark = true
+                        loadPicker = true
+                        showColorPicker = true
+                    })
+                Text(
+                    text = "Chat Screen Styles",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 15.dp)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 18.dp)
+                        .clip(shape = RoundedCornerShape(15.dp))
+                        .background(Color(0x0F7B7B7B))
+                        .padding(vertical = 10.dp)
+                ) {
+                    StyleItem(onClick = { navController.navigate("headerstyle") })
+                    StyleItem(
+                        icon = painterResource(R.drawable.ic_body),
+                        name = "Body",
+                        context = "Chat bubbles, background, widgets, etc.,",
+                        onClick = {
+                            navController.navigate("bodystyle")
+                        })
+                    StyleItem(
+                        icon = painterResource(R.drawable.ic_msgbar),
+                        name = "Message Bar",
+                        context = "Chat input, buttons, actions, etc.,",
+                        onClick = {
+                            navController.navigate("barstyle")
+                        })
                 }
             }
-            Text(
-                text = "App Style",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 10.dp)
-            )
-            ColorSelectionItem(name = "Primary Color", color = appColor)
-            ColorSelectionItem(name = "Primary Color (Dark)", color = appColorDark)
-            Text(
-                text = "Chat Screen Styles",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 15.dp)
-            )
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 18.dp)
-                .clip(shape = RoundedCornerShape(15.dp))
-                .background(Color(0x0F7B7B7B))
-                .padding(vertical = 10.dp)
-            ) {
-                StyleItem(onClick = { navController.navigate("headerstyle") })
-                StyleItem(icon = painterResource(R.drawable.ic_body), name = "Body", context = "Chat bubbles, background, widgets, etc.,",
-                    onClick = { navController.navigate("bodystyle")
-                })
-                StyleItem(icon = painterResource(R.drawable.ic_msgbar), name = "Message Bar", context = "Chat input, buttons, actions, etc.,",
-                    onClick = { navController.navigate("barstyle")
-                })
+        }
+
+        if(loadPicker)
+            AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+                ColorPicker(
+                    initialColor = selectedColor,
+                    onColorPicked = {
+                        if(isPickingColorDark)
+                            appColorDark = it
+                        else
+                            appColor = it
+                    },
+                    onClose = {
+                        showColorPicker = false
+                        themeViewModel.updateTheme(
+                            theme.copy(appcolor = String.format("#%08X", appColor.toArgb()),
+                            appcolordark = String.format("#%08X", appColorDark.toArgb())))
+                    }
+                )
             }
+    }
+
+    BackHandler {
+        if(showColorPicker) {
+            showColorPicker = false
+            themeViewModel.updateTheme(
+                theme.copy(appcolor = String.format("#%08X", appColor.toArgb()),
+                appcolordark = String.format("#%08X", appColorDark.toArgb())))
+        } else {
+            navController.popBackStack()
         }
     }
 }

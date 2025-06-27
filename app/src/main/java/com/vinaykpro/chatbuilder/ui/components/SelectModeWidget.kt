@@ -30,9 +30,10 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 @Preview
 @Composable
 fun SelectModeWidget(
+    isDark: Boolean = false,
     onUpdate: (Boolean) -> Unit = {}
 ) {
-    var isDark by remember { mutableStateOf(false) }
+    var isDark by remember { mutableStateOf(isDark) }
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Select mode:",

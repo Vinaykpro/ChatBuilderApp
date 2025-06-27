@@ -8,6 +8,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.vinaykpro.chatbuilder.R
@@ -19,9 +20,9 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 fun SplashScreen(navController: NavController? = null, isDarkTheme: Boolean = false) {
     val colors = if(isDarkTheme) DarkColorScheme else LightColorScheme
     Box(modifier = Modifier.fillMaxSize().background(colors.background), contentAlignment = Alignment.Center) {
-        Icon(painter = painterResource(R.drawable.logo), contentDescription = null, tint = colors.onPrimaryContainer)
+        Icon(painter = painterResource(R.drawable.logo), contentDescription = null, tint = Color.Unspecified)
 //        val composition by rememberLottieComposition(
-//            LottieCompositionSpec.Asset("introt1.json")
+//            LottieCompositionSpec.Asset("intro.json")
 //        )
 //        val animatable = rememberLottieAnimatable()
 //

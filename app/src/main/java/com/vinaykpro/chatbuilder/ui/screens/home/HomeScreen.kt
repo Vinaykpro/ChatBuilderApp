@@ -65,7 +65,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -79,7 +78,6 @@ import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
 import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
-import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,10 +98,6 @@ fun HomeScreen(
     val uiState = viewModel.state.value
     val colors = MaterialTheme.colorScheme
     val themeColors = LocalThemeEntity.current
-    val appColor = remember(themeColors.appcolor, themeColors.appcolordark, isDarkTheme.value) {
-        val colorHex = if (isDarkTheme.value) themeColors.appcolordark else themeColors.appcolor
-        Color(colorHex.toColorInt())
-    }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -126,7 +120,7 @@ fun HomeScreen(
         // real screen
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(modifier = Modifier
-                .background(color = appColor)
+                .background(color = MaterialTheme.colorScheme.primary)
                 .fillMaxWidth()
                 .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()))
             CollapsingToolbarScaffold(modifier = Modifier.weight(1f),
@@ -140,7 +134,7 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(175.dp)
                             .pin()
-                            .background(color = appColor)
+                            .background(color = MaterialTheme.colorScheme.primary)
                     )
                     Row(
                         modifier = Modifier
@@ -152,7 +146,7 @@ fun HomeScreen(
                                 whenExpanded = Alignment.BottomCenter
                             )
                             .background(
-                                color = appColor,
+                                color = MaterialTheme.colorScheme.primary,
                                 shape = RoundedCornerShape(bottomStart = 15.dp, bottomEnd = 15.dp)
                             ),
                         horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically
@@ -290,7 +284,7 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .height(60.dp)
                 .background(
-                    color = appColor,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                 )
             ) {
@@ -337,7 +331,7 @@ fun HomeScreen(
             }
             Spacer(modifier = Modifier
                 .fillMaxWidth()
-                .background(appColor)
+                .background(MaterialTheme.colorScheme.primary)
                 .padding(
                     bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 ))
@@ -345,11 +339,11 @@ fun HomeScreen(
     }
 
     // Real FAMB Button
-    FloatingMenu(color = appColor)
+    FloatingMenu(color = MaterialTheme.colorScheme.primary)
 
     // fake screen for light/dark mode switch
     if(switchThemeAnim) {
-        val isDark = remember  { mutableStateOf(isDarkTheme.value) }
+        val isDark = remember { mutableStateOf(isDarkTheme.value) }
         CircularRevealWrapper(
             modifier = Modifier.fillMaxSize(),
             centerX = iconCenter.x.toInt(),
@@ -387,7 +381,7 @@ fun HomeScreen(
                                     .fillMaxWidth()
                                     .height(200.dp)
                                     .pin()
-                                    .background(color = Color(0xFF323232))
+                                    .background(color = DarkColorScheme.primary)
                             )
                             Row(
                                 modifier = Modifier
@@ -399,7 +393,7 @@ fun HomeScreen(
                                         whenExpanded = Alignment.BottomCenter
                                     )
                                     .background(
-                                        color = Color(0xFF323232),
+                                        color = DarkColorScheme.primary,
                                         shape = RoundedCornerShape(
                                             bottomStart = 15.dp,
                                             bottomEnd = 15.dp
@@ -522,7 +516,7 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .height(65.dp)
                             .background(
-                                color = Color(0xFF323232),
+                                color = DarkColorScheme.primary,
                                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                             )
                     ) {
@@ -563,7 +557,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 90.dp, end = 24.dp),
-                    containerColor = Color(0xFF323232),
+                    containerColor = DarkColorScheme.primary,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(100.dp),
                     onClick = {}

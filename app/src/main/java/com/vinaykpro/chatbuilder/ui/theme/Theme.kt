@@ -6,10 +6,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.core.graphics.toColorInt
 import com.vinaykpro.chatbuilder.data.local.ThemeEntity
 
-val DarkColorScheme = darkColorScheme(
+var DarkColorScheme = darkColorScheme(
     primary = headerDark,
     secondary = PurpleGrey80,
     tertiary = Pink80,
@@ -24,7 +26,7 @@ val DarkColorScheme = darkColorScheme(
     onTertiaryContainer = White
 )
 
-val LightColorScheme = lightColorScheme(
+var LightColorScheme = lightColorScheme(
     primary = headerLight,
     secondary = PurpleGrey40,
     tertiary = Pink40,
@@ -58,6 +60,12 @@ fun ChatBuilderTheme(
     CompositionLocalProvider(
         LocalThemeEntity provides theme
     ) {
+        LightColorScheme = remember(theme.appcolor) {
+            LightColorScheme.copy(primary = Color(theme.appcolor.toColorInt()))
+        }
+        DarkColorScheme = remember(theme.appcolordark) {
+            DarkColorScheme.copy(primary = Color(theme.appcolordark.toColorInt()))
+        }
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
             typography = Typography,

@@ -3,8 +3,6 @@ package com.vinaykpro.chatbuilder.ui.components
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,7 +39,7 @@ fun Input(
     name: String = "Name: ",
     value: String = "Default",
     placeholder: String = "Enter here",
-    onUpdate: () -> Unit = {}
+    onUpdate: (String) -> Unit = {}
 ) {
     var input by remember { mutableStateOf(value) }
     var enabled by remember { mutableStateOf(false) }
@@ -65,12 +62,12 @@ fun Input(
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    onUpdate()
+                    onUpdate(input)
                 }
             ),
             trailingIcon = {
                 IconButton( onClick = {
-                    if(enabled) onUpdate()
+                    if(enabled) onUpdate(input)
                     enabled = !enabled
                 }) {
                     Icon(

@@ -36,7 +36,6 @@ import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
-import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 
 
 @Composable
@@ -49,11 +48,12 @@ fun ThemeScreen(themeViewModel: ThemeViewModel, navController: NavController = r
             .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
         ) {
             BasicToolbar(name = "Chat theme",
-                color = Color(LocalThemeEntity.current.appcolor.toColorInt()),
+                color = MaterialTheme.colorScheme.primary,
                 icon1 = painterResource(R.drawable.ic_info))
             LazyColumn(modifier = Modifier.weight(1f).padding(bottom = 10.dp)) {
                 items(themes) { i ->
-                    ThemeItem(selected = i.id == selectedTheme, name = i.name, author = i.author, onClick = { themeViewModel.changeTheme(i.id) }, onNextClick = { navController.navigate("theme/${i.name}") })
+                    ThemeItem(selected = i.id == selectedTheme, name = i.name, author = i.author, iconColor = Color(i.appcolor.toColorInt()),
+                        onClick = { themeViewModel.changeTheme(i.id) }, onNextClick = { navController.navigate("theme/${i.name}") })
                 }
             }
         }
@@ -61,7 +61,7 @@ fun ThemeScreen(themeViewModel: ThemeViewModel, navController: NavController = r
             onClick = { /* TO-DO Add new theme */ },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 40.dp, end = 16.dp),
-            containerColor = Color(LocalThemeEntity.current.appcolor.toColorInt()),
+            containerColor = MaterialTheme.colorScheme.primary,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),

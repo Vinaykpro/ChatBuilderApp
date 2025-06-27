@@ -42,7 +42,7 @@ fun ChatScreen(isDarkTheme: Boolean = false) {
     val headerStyle = remember(theme.headerstyle) {
         try {
             Json.decodeFromString<HeaderStyle>(theme.headerstyle)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             HeaderStyle()
         }
     }
@@ -121,7 +121,7 @@ fun BodyStyle.toParsed(isDarkTheme: Boolean): ParsedBodyStyle {
         chatBackground = parse(if(isDarkTheme) color_chatbackground_dark else color_chatbackground),
         senderBubble = parse(if(isDarkTheme) color_senderbubble_dark else color_senderbubble),
         receiverBubble = parse(if(isDarkTheme) color_receiverbubble_dark else color_receiverbubble),
-        dateText = parse(if(isDarkTheme) color_datetext_dark else color_datetext),
+        dateBubble = parse(if(isDarkTheme) color_datebubble_dark else color_datebubble),
         textPrimary = parse(if(isDarkTheme) color_text_primary_dark else color_text_primary),
         textSecondary = parse(if(isDarkTheme) color_text_secondary_dark else color_text_secondary)
     )
@@ -131,7 +131,7 @@ data class ParsedBodyStyle(
     val chatBackground: Color,
     val senderBubble: Color,
     val receiverBubble: Color,
-    val dateText: Color,
+    val dateBubble: Color,
     val textPrimary: Color,
     val textSecondary: Color,
 )

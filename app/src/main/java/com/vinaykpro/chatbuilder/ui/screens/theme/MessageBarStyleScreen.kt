@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -32,7 +33,6 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
-import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
 import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
@@ -41,8 +41,10 @@ import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 @Preview
 @Composable
 fun MessageBarStyleScreen(
-    navController: NavController = rememberNavController()
+    navController: NavController = rememberNavController(),
+    isDarkTheme: Boolean = false
 ) {
+    val isDark by remember { mutableStateOf(isDarkTheme) }
     Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize()) {
         BasicToolbar(name = "Message Bar Style")
 
@@ -55,7 +57,7 @@ fun MessageBarStyleScreen(
         }
 
         Column(Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())) {
-            SelectModeWidget()
+            SelectModeWidget(isDark = isDark, )
 
 
             Text(text = "Colors:",fontSize = 17.sp,fontWeight = FontWeight(500),color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))

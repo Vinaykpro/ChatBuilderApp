@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -108,7 +109,7 @@ fun ActionIconItem(
             Icon(
                 painter = painterResource(R.drawable.ic_eye),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondaryContainer,
+                tint = LightColorScheme.primary,
                 modifier = Modifier
                     .size(18.dp)
             )

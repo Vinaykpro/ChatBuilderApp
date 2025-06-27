@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,18 +28,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
+import com.vinaykpro.chatbuilder.ui.theme.White
 
 @Preview
 @Composable
 fun EditIcon(
     name: String? = null,
-    icon: Painter = painterResource(R.drawable.iconalpha),
+    icon: Painter = painterResource(R.drawable.logo),
     size: Int = 75,
+    color: Color = LightColorScheme.primary,
     onClick: () -> Unit = {}
 ) {
     if(name != null) Text(text = "$name:", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight(500), fontSize = 14.sp, lineHeight = 14.sp, modifier = Modifier.padding(start = 5.dp, top = 5.dp, bottom = 10.dp))
     Column(modifier = Modifier.padding(start = 8.dp).width(size.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Image(painter = icon, contentDescription = null, modifier = Modifier.size(size.dp).clip(shape = RoundedCornerShape(10.dp)).background(Color(0xFF31ABBB)))
+        Image(painter = icon, contentDescription = null, modifier = Modifier.size(size.dp).clip(shape = RoundedCornerShape(10.dp)).background(color),
+            colorFilter = ColorFilter.tint(White))
         Box(modifier = Modifier.fillMaxWidth().clip(shape = RoundedCornerShape(10.dp)).border(0.5.dp, color = MaterialTheme.colorScheme.onSecondaryContainer, shape = RoundedCornerShape(10.dp)).clickable {  }.padding(8.dp)) {
             Icon(
                 painter = painterResource(R.drawable.ic_edit),

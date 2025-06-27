@@ -36,6 +36,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.ThemeEntity
 import com.vinaykpro.chatbuilder.ui.components.ActionIcons
@@ -52,15 +54,15 @@ import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.json.Json
 
 @Composable
-fun HeaderStyleScreen() {
-    var isDark by remember { mutableStateOf(false) }
+fun HeaderStyleScreen(
+    navController: NavController = rememberNavController(),
+    isDarkTheme: Boolean = false
+) {
+    var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     val themeStyle = remember(theme.headerstyle) {
         try { Json.decodeFromString<HeaderStyle>(theme.headerstyle) }
             catch(_: Exception) { HeaderStyle() }
-    }
-    val appColor = remember(theme.appcolor) {
-        Color(theme.appcolor.toColorInt())
     }
 
     val colors = remember(themeStyle) {
@@ -99,7 +101,7 @@ fun HeaderStyleScreen() {
 
     Box {
         Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            BasicToolbar(name = "Header Style", color = appColor)
+            BasicToolbar(name = "Header Style", color = MaterialTheme.colorScheme.primary)
             Column(
                 modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp)
                     .clip(shape = RoundedCornerShape(12.dp))
@@ -111,7 +113,7 @@ fun HeaderStyleScreen() {
             Column(
                 Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())
             ) {
-                SelectModeWidget(onUpdate = { isDark = it })
+                SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
 
                 Text(
                     text = "Colors:",

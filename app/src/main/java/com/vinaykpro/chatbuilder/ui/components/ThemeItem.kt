@@ -5,12 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,14 +20,18 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.vinaykpro.chatbuilder.R
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
@@ -38,6 +39,7 @@ fun ThemeItem(
     selected: Boolean = false,
     name: String = "Default theme",
     author: String = "Vinaykpro",
+    iconColor: Color = LightColorScheme.primary,
     onClick: () -> Unit = {},
     onNextClick: () -> Unit = {}
 ) {
@@ -56,10 +58,11 @@ fun ThemeItem(
             Icon(
                 modifier = Modifier
                     .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                painter = painterResource(R.drawable.icon),
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconColor),
+                painter = painterResource(R.drawable.logo),
                 contentDescription = null,
-                tint = Color.Unspecified
+                tint = Color.White
             )
             Spacer(modifier = Modifier.width(15.dp))
             Column {
@@ -81,7 +84,7 @@ fun ThemeItem(
         Box(modifier = Modifier
             .height(74.dp)
             .width(60.dp)
-            .clickable { onNextClick() }) {
+            .clickable { onClick(); onNextClick() }) {
             Spacer(Modifier
                 .padding(top = 17.dp)
                 .height(40.dp)
