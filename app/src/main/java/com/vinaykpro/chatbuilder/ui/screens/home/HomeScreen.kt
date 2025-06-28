@@ -1,10 +1,10 @@
 package com.vinaykpro.chatbuilder.ui.screens.home
 
 import android.annotation.SuppressLint
+import android.content.SharedPreferences
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -58,13 +58,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -78,7 +77,6 @@ import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
 import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
-import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.onebone.toolbar.CollapsingToolbarScaffold
@@ -87,28 +85,30 @@ import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-@Preview
 @Composable
 fun HomeScreen(
     navController: NavController = rememberNavController(),
     isDarkTheme: MutableState<Boolean> = mutableStateOf(false),
     viewModel: HomeViewModel = viewModel(
-    factory = HomeViewModelFactory(ChatsList()))
+        factory = HomeViewModelFactory(ChatsList())
+    ),
+    prefs: SharedPreferences
 ) {
     val uiState = viewModel.state.value
     val colors = MaterialTheme.colorScheme
-    val themeColors = LocalThemeEntity.current
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+
+    val topPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     val toolbarState = rememberCollapsingToolbarScaffoldState()
 
     val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })
-    val selectedTabIndex = remember { derivedStateOf { pagerState.currentPage } }
+    val selectedTabIndex = remember(pagerState.currentPage) { derivedStateOf { pagerState.currentPage } }
 
     // dark/light mode toggle
-    var iconCenter by remember { mutableStateOf(Offset.Zero) }
+    var iconCenter by remember(Offset.Zero) { mutableStateOf(Offset.Zero) }
     var switchThemeAnim by remember { mutableStateOf(false) }
     var triggerAnimation by remember { mutableStateOf(false) }
 
@@ -122,8 +122,9 @@ fun HomeScreen(
             Spacer(modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.primary)
                 .fillMaxWidth()
-                .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()))
-            CollapsingToolbarScaffold(modifier = Modifier.weight(1f),
+                .padding(top = topPadding))
+            CollapsingToolbarScaffold(
+                modifier = Modifier.weight(1f),
                 state = toolbarState,
                 scrollStrategy = ScrollStrategy.ExitUntilCollapsed,
                 toolbar = {
@@ -233,19 +234,20 @@ fun HomeScreen(
                                 color = Color.White,
                                 fontSize = textSize,
                                 fontWeight = FontWeight(500)
-                            ),
+                            )
                         )
                     }
                 }
             ) {
-                HorizontalPager(state = pagerState,
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
                 ) { page -> when(page) {
                         0 -> Box(modifier = Modifier
-                            .weight(1f)
-                            .background(colors.background), contentAlignment = Alignment.Center) {
+                            .weight(1f),
+                            contentAlignment = Alignment.Center) {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
                                 items(uiState.chatsList) { chat ->
                                     ChatListItem(
@@ -253,7 +255,7 @@ fun HomeScreen(
                                         name = chat.name,
                                         lastMessage = chat.lastMessage,
                                         lastSeen = chat.lastSeen,
-                                        navController = navController
+                                        onClick = { navController.navigate("chat") }
                                     )
                                 }
                             }
@@ -338,7 +340,7 @@ fun HomeScreen(
         }
     }
 
-    // Real FAMB Button
+    // Real FAB Button
     FloatingMenu(color = MaterialTheme.colorScheme.primary)
 
     // fake screen for light/dark mode switch
@@ -357,6 +359,7 @@ fun HomeScreen(
                 triggerAnimation = false
                 switchThemeAnim = false
                 blockTouches = false
+                prefs.edit { putBoolean("isDarkEnabled", !isDark.value) }
             }
         ) {
             Box(
@@ -366,20 +369,23 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFF000000))
                 ) {
                     // header
+                    Spacer(modifier = Modifier
+                        .background(color = DarkColorScheme.primary)
+                        .fillMaxWidth()
+                        .padding(top = topPadding))
                     CollapsingToolbarScaffold(
                         modifier = Modifier.weight(1f),
                         state = toolbarState,
                         scrollStrategy = ScrollStrategy.ExitUntilCollapsed,
                         toolbar = {
                             val textSize = (20 + 18 * toolbarState.toolbarState.progress).sp
-                            val iconSize = (32 + 18 * toolbarState.toolbarState.progress).dp
+                            val iconSize = (42 + 20 * toolbarState.toolbarState.progress).dp
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp)
+                                    .height(175.dp)
                                     .pin()
                                     .background(color = DarkColorScheme.primary)
                             )
@@ -387,7 +393,7 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(60.dp)
-                                    .background(color = Color(0xFF000000))
+                                    .background(color = Color.Black)
                                     .road(
                                         whenCollapsed = Alignment.BottomCenter,
                                         whenExpanded = Alignment.BottomCenter
@@ -416,7 +422,7 @@ fun HomeScreen(
 
                                 val composition by rememberLottieComposition(
                                     LottieCompositionSpec.Asset(
-                                        "sunmoonanim.json"
+                                        "sun_moon_anim.json"
                                     )
                                 )
                                 val progress =
@@ -466,17 +472,19 @@ fun HomeScreen(
                             }
                             Row(
                                 modifier = Modifier
-                                    .padding(16.dp)
+                                    .height(60.dp)
+                                    .padding(start = 10.dp)
                                     .road(
                                         whenCollapsed = Alignment.TopStart,
                                         whenExpanded = Alignment.Center
                                     ),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.iconalpha),
+                                Icon(
+                                    painter = painterResource(id = R.drawable.logo),
                                     contentDescription = "brand",
-                                    modifier = Modifier.size(iconSize)
+                                    modifier = Modifier.size(iconSize),
+                                    tint = Color.White
                                 )
                                 Text(
                                     "ChatBuilder",
@@ -484,8 +492,7 @@ fun HomeScreen(
                                         color = Color.White,
                                         fontSize = textSize,
                                         fontWeight = FontWeight(500)
-                                    ),
-                                    modifier = Modifier
+                                    )
                                 )
                             }
                         }
@@ -493,19 +500,34 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color(0xFF000000)),
+                                .background(Color.Black),
                             contentAlignment = Alignment.Center
                         ) {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(uiState.chatsList) { chat ->
-                                    ChatListItem(
-                                        icon = R.drawable.iconalpha,
-                                        name = chat.name,
-                                        lastMessage = chat.lastMessage,
-                                        lastSeen = chat.lastSeen,
-                                        navController = navController,
-                                        isForceFake = true
-                                    )
+                            when(pagerState.currentPage) {
+                                0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(uiState.chatsList) { chat ->
+                                        ChatListItem(
+                                            icon = R.drawable.iconalpha,
+                                            name = chat.name,
+                                            lastMessage = chat.lastMessage,
+                                            lastSeen = chat.lastSeen,
+                                            isForceFake = true
+                                        )
+                                    }
+                                }
+                                1 -> Column(modifier = Modifier.fillMaxSize()) {
+                                    SettingsItem(icon = painterResource(R.drawable.ic_theme),
+                                        name = "Chat theme",
+                                        context = "Create, import or customize the current chat theme", isForceDark = true)
+                                    SettingsItem(icon = painterResource(R.drawable.ic_animate),
+                                        name = "Animate a chat",
+                                        context = "Play any chat realtime", isForceDark = true)
+                                    SettingsItem(icon = painterResource(R.drawable.ic_lockedchats),
+                                        name = "Locked chats",
+                                        context = "View hidden chats", isForceDark = true)
+                                    SettingsItem(icon = painterResource(R.drawable.ic_starredmessages),
+                                        name = "Starred messages",
+                                        context = "See all the starred messages", isForceDark = true)
                                 }
                             }
                         }
@@ -514,7 +536,8 @@ fun HomeScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(65.dp)
+                            .height(60.dp)
+                            .background(Color.Black)
                             .background(
                                 color = DarkColorScheme.primary,
                                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
@@ -551,12 +574,17 @@ fun HomeScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = DarkColorScheme.primary)
+                        .padding(bottom = bottomPadding))
                 }
 
                 FloatingActionButton(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(bottom = 90.dp, end = 24.dp),
+                        .padding(bottom = bottomPadding + 90.dp, end = 24.dp),
                     containerColor = DarkColorScheme.primary,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(100.dp),

@@ -150,8 +150,8 @@ fun HeaderStyle.toParsed(isDarkTheme: Boolean): ParsedHeaderStyle {
 }
 
 data class ParsedHeaderStyle(
-    val navBar: Color = Color(0x00000000),
-    val navIcons: Color = Color(0x00000000),
-    val textPrimary: Color = Color(0x00000000),
-    val textSecondary: Color = Color(0x00000000)
+    val navBar: Color = Color.Transparent,
+    val navIcons: Color = Color.Transparent,
+    val textPrimary: Color = Color.Transparent,
+    val textSecondary: Color = Color.Transparent,
 )

@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.navigation
 
+import android.content.SharedPreferences
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -35,7 +36,12 @@ object Routes {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AppNavHost(themeViewModel: ThemeViewModel, navController: NavHostController, isDarkTheme: MutableState<Boolean>) {
+fun AppNavHost(
+    themeViewModel: ThemeViewModel,
+    navController: NavHostController,
+    isDarkTheme: MutableState<Boolean>,
+    prefs: SharedPreferences
+) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
     NavHost(
@@ -46,7 +52,7 @@ fun AppNavHost(themeViewModel: ThemeViewModel, navController: NavHostController,
             SplashScreen(navController, isDarkTheme.value)
         }
         composable(route = Routes.Home,) {
-            HomeScreen(navController = navController, isDarkTheme = isDarkTheme)
+            HomeScreen(navController = navController, isDarkTheme = isDarkTheme, prefs = prefs)
         }
         composable(route = Routes.Chat,
             enterTransition = {

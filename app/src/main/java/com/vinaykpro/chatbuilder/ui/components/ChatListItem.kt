@@ -22,8 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 
 @Preview
@@ -33,15 +31,16 @@ fun ChatListItem(
     name: String = "Vinay",
     lastMessage: String = "Somemsg",
     lastSeen: String = "12:15",
-    navController: NavController = rememberNavController(),
+    onClick: () -> Unit = {},
     isForceFake: Boolean = false
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(indication = rememberRipple(),
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = { navController.navigate("chat") })
+            .clickable(
+            onClick = { onClick() },
+            indication = rememberRipple(color = MaterialTheme.colorScheme.onPrimaryContainer),
+            interactionSource = remember { MutableInteractionSource() })
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

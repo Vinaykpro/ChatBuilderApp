@@ -111,38 +111,34 @@ fun BodyStyleScreen(
         }
     }
 
-    var previewAttrs by remember {
-        mutableStateOf(themeStyle)
-    }
-
 
     var loadPicker by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
-    Box {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize()) {
             BasicToolbar(name = "Body Style", color = MaterialTheme.colorScheme.primary)
 
-            var selectedBubbleStyle by remember { mutableIntStateOf(previewAttrs.bubble_style) }
-            var bubbleRadius = remember { mutableFloatStateOf(previewAttrs.bubble_radius) }
-            var bubbleTipRadius = remember { mutableFloatStateOf(previewAttrs.bubble_tip_radius) }
+            var selectedBubbleStyle by remember { mutableIntStateOf(themeStyle.bubble_style) }
+            var bubbleRadius = remember { mutableFloatStateOf(themeStyle.bubble_radius) }
+            var bubbleTipRadius = remember { mutableFloatStateOf(themeStyle.bubble_tip_radius) }
 
-            val showTime = remember { mutableStateOf(previewAttrs.show_time) }
-            val use12HrFormat = remember { mutableStateOf(previewAttrs.use12hr) }
-            val showTicks = remember { mutableStateOf(previewAttrs.showticks) }
-            val showReceiverPic = remember { mutableStateOf(previewAttrs.showreceiverpic) }
+            val showTime = remember { mutableStateOf(themeStyle.show_time) }
+            val use12HrFormat = remember { mutableStateOf(themeStyle.use12hr) }
+            val showTicks = remember { mutableStateOf(themeStyle.showticks) }
+            val showReceiverPic = remember { mutableStateOf(themeStyle.showreceiverpic) }
 
-            previewAttrs = previewAttrs.copy(
-                bubble_style = selectedBubbleStyle,
-                bubble_radius = bubbleRadius.floatValue,
-                bubble_tip_radius = bubbleTipRadius.floatValue,
-                show_time = showTime.value,
-                use12hr = use12HrFormat.value,
-                showticks = showTicks.value,
-                showreceiverpic = showReceiverPic.value
-            )
+
+            if(!(themeStyle.bubble_style == selectedBubbleStyle &&
+                themeStyle.bubble_radius == bubbleRadius.floatValue &&
+                themeStyle.bubble_tip_radius == bubbleTipRadius.floatValue &&
+                themeStyle.show_time == showTime.value &&
+                themeStyle.use12hr == use12HrFormat.value &&
+                themeStyle.showticks == showTicks.value &&
+                themeStyle.showreceiverpic == showReceiverPic.value)) {
+                TODO()
+            }
 
             Column(
                 modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp)
@@ -320,7 +316,6 @@ fun BodyStyleScreen(
                     onClose = { showColorPicker = false }
                 )
             }
-    }
 }
 
 

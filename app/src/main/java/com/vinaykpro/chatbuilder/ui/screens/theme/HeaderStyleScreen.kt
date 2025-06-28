@@ -99,7 +99,7 @@ fun HeaderStyleScreen(
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
-    Box {
+
         Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             BasicToolbar(name = "Header Style", color = MaterialTheme.colorScheme.primary)
             Column(
@@ -241,17 +241,18 @@ fun HeaderStyleScreen(
                 }
             }
         }
-        if(loadPicker)
-        AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
-            ColorPicker(
-                initialColor = selectedColor,
-                onColorPicked = {
-                    colors[pickedColorIndex] = it
-                },
-                onClose = { showColorPicker = false }
-            )
+        if(loadPicker) {
+            AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+                ColorPicker(
+                    initialColor = selectedColor,
+                    onColorPicked = {
+                        colors[pickedColorIndex] = it
+                    },
+                    onClose = { showColorPicker = false }
+                )
+            }
         }
-    }
+
 }
 
 private val headerColorNames = listOf(

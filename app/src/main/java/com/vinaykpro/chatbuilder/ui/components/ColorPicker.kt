@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,11 +82,13 @@ fun ColorPicker(
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0x77000000))
+        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onClose() })
         .padding(bottom =  WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
         Column(
             modifier = Modifier.clip(RoundedCornerShape(20.dp, 20.dp))
                 .background(MaterialTheme.colorScheme.background)
                 .align(Alignment.BottomCenter)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
                 .padding(bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

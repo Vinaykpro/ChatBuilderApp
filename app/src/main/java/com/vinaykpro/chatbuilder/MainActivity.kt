@@ -7,10 +7,10 @@ import android.view.View
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
@@ -34,9 +34,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(window)
 
         setContent {
+            val context = LocalContext.current
+            val prefs = remember { context.getSharedPreferences("my_prefs", MODE_PRIVATE) }
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
-            val isSystemDark = isSystemInDarkTheme()
-            val isDarkTheme = remember { mutableStateOf(false) }
+            val isDarkTheme = remember { mutableStateOf(prefs.getBoolean("isDarkEnabled", false)) }
             window.setBackgroundDrawable((if(isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
             if(theme != null) {
                 ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
@@ -44,7 +45,8 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(
                         themeViewModel = themeViewModel,
                         navController = navController,
-                        isDarkTheme = isDarkTheme
+                        isDarkTheme = isDarkTheme,
+                        prefs = prefs
                     )
                 }
             } else {
