@@ -26,10 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -50,7 +47,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.BodyStyle
-import com.vinaykpro.chatbuilder.data.local.ThemeEntity
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
@@ -64,24 +61,26 @@ import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 import com.vinaykpro.chatbuilder.ui.screens.chat.ParsedBodyStyle
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Composable
 fun BodyStyleScreen(
     navController: NavController = rememberNavController(),
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    themeViewModel: ThemeViewModel
 ) {
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     var themeStyle = remember(theme.bodystyle) {
-        try { Json.decodeFromString<BodyStyle>(theme.bodystyle) }
-        catch(_: Exception) { BodyStyle() }
-    }
-    val appColor = remember(theme.appcolor) {
-        Color(theme.appcolor.toColorInt())
+        try {
+            Json.decodeFromString<BodyStyle>(theme.bodystyle)
+        } catch (_: Exception) {
+            BodyStyle()
+        }
     }
 
-    val colors = remember(themeStyle) {
+    val originalColors = remember(themeStyle) {
         mutableStateListOf(
             Color(themeStyle.color_chatbackground.toColorInt()),
             Color(themeStyle.color_senderbubble.toColorInt()),
@@ -98,18 +97,31 @@ fun BodyStyleScreen(
         )
     }
 
+    var colors = remember(themeStyle) {
+        mutableStateListOf(*originalColors.toTypedArray())
+    }
+
     val previewColors by remember {
         derivedStateOf {
             ParsedBodyStyle(
-                chatBackground = colors[if(!isDark) 0 else 6],
-                senderBubble = colors[if(!isDark) 1 else 7],
-                receiverBubble = colors[if(!isDark) 2 else 8],
-                dateBubble = colors[if(!isDark) 3 else 9],
-                textPrimary = colors[if(!isDark) 4 else 10],
-                textSecondary = colors[if(!isDark) 5 else 11]
+                chatBackground = colors[if (!isDark) 0 else 6],
+                senderBubble = colors[if (!isDark) 1 else 7],
+                receiverBubble = colors[if (!isDark) 2 else 8],
+                dateBubble = colors[if (!isDark) 3 else 9],
+                textPrimary = colors[if (!isDark) 4 else 10],
+                textSecondary = colors[if (!isDark) 5 else 11]
             )
         }
     }
+
+    var previewAttrs by remember {
+        mutableStateOf(themeStyle)
+    }
+
+    val isAttrsChanged by remember(themeStyle, previewAttrs) {
+        derivedStateOf { !themeStyle.isSameAttrAs(previewAttrs) }
+    }
+    var isColorsChanged by remember { mutableStateOf(false) }
 
 
     var loadPicker by remember { mutableStateOf(false) }
@@ -117,205 +129,247 @@ fun BodyStyleScreen(
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
-        Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize()) {
-            BasicToolbar(name = "Body Style", color = MaterialTheme.colorScheme.primary)
-
-            var selectedBubbleStyle by remember { mutableIntStateOf(themeStyle.bubble_style) }
-            var bubbleRadius = remember { mutableFloatStateOf(themeStyle.bubble_radius) }
-            var bubbleTipRadius = remember { mutableFloatStateOf(themeStyle.bubble_tip_radius) }
-
-            val showTime = remember { mutableStateOf(themeStyle.show_time) }
-            val use12HrFormat = remember { mutableStateOf(themeStyle.use12hr) }
-            val showTicks = remember { mutableStateOf(themeStyle.showticks) }
-            val showReceiverPic = remember { mutableStateOf(themeStyle.showreceiverpic) }
-
-
-            if(!(themeStyle.bubble_style == selectedBubbleStyle &&
-                themeStyle.bubble_radius == bubbleRadius.floatValue &&
-                themeStyle.bubble_tip_radius == bubbleTipRadius.floatValue &&
-                themeStyle.show_time == showTime.value &&
-                themeStyle.use12hr == use12HrFormat.value &&
-                themeStyle.showticks == showTicks.value &&
-                themeStyle.showreceiverpic == showReceiverPic.value)) {
-                TODO()
-            }
-
-            Column(
-                modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp)
-                    .clip(shape = RoundedCornerShape(12.dp))
-                    .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
-                    .background(previewColors.chatBackground).padding(vertical = 5.dp, horizontal = 5.dp)
-            ) {
-                ChatNote("19 June 2025", color = previewColors.dateBubble, textColor = previewColors.textSecondary)
-                SenderMessage(
-                    text = "Hii",
-                    bubbleStyle = selectedBubbleStyle,
-                    bubbleRadius = bubbleRadius.floatValue,
-                    bubbleTipRadius = bubbleTipRadius.floatValue,
-                    color = previewColors.senderBubble,
-                    textColor = previewColors.textPrimary,
-                    hintTextColor = previewColors.textSecondary,
-                    isFirst = true
-                )
-                SenderMessage(
-                    text = "Hope you love using our app. Please leave a rating",
-                    bubbleStyle = selectedBubbleStyle,
-                    bubbleRadius = bubbleRadius.floatValue,
-                    bubbleTipRadius = bubbleTipRadius.floatValue,
-                    color = previewColors.senderBubble,
-                    textColor = previewColors.textPrimary,
-                    hintTextColor = previewColors.textSecondary,
-                    isLast = true
-                )
-                Spacer(modifier = Modifier.size(4.dp))
-                Message(
-                    text = "Yep!",
-                    bubbleStyle = selectedBubbleStyle,
-                    bubbleRadius = bubbleRadius.floatValue,
-                    bubbleTipRadius = bubbleTipRadius.floatValue,
-                    color = previewColors.receiverBubble,
-                    textColor = previewColors.textPrimary,
-                    hintTextColor = previewColors.textSecondary,
-                    isFirst = true
-                )
-                Message(
-                    text = "Definitely :-)",
-                    bubbleStyle = selectedBubbleStyle,
-                    bubbleRadius = bubbleRadius.floatValue,
-                    bubbleTipRadius = bubbleTipRadius.floatValue,
-                    color = previewColors.receiverBubble,
-                    textColor = previewColors.textPrimary,
-                    hintTextColor = previewColors.textSecondary,
-                    isLast = true
-                )
-            }
-            Column(
-                Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())
-            ) {
-                SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
-
-                Text(
-                    text = "Chat bubble style:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 14.dp)
-                )
-                Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                    BubbleItem(
-                        selected = selectedBubbleStyle == 0,
-                        onClick = { selectedBubbleStyle = 0 },
-                        selectedColor = appColor)
-                    BubbleItem(
-                        painterResource(R.drawable.ic_topbubble),
-                        "Start bubble",
-                        selected = selectedBubbleStyle == 1,
-                        onClick = { selectedBubbleStyle = 1 },
-                        selectedColor = appColor)
-                    BubbleItem(
-                        painterResource(R.drawable.ic_groupbubble),
-                        "Group bubble",
-                        selected = selectedBubbleStyle == 2,
-                        onClick = { selectedBubbleStyle = 2 },
-                        selectedColor = appColor)
-                    BubbleItem(
-                        painterResource(R.drawable.ic_endbubble),
-                        "End bubble",
-                        selected = selectedBubbleStyle == 3,
-                        onClick = { selectedBubbleStyle = 3 },
-                        selectedColor = appColor)
+    Column(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize()
+    ) {
+        BasicToolbar(
+            name = "Body Style", color = MaterialTheme.colorScheme.primary,
+            icon1 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_close) else null,
+            onIcon1Click = {
+                // Discard changes
+                isColorsChanged = false
+                previewAttrs = themeStyle
+                originalColors.forEachIndexed { i, orig ->
+                    colors[i] = orig
                 }
-
-                ProgressItem(name = "Bubble radius", max = 30f, progress = bubbleRadius)
-                if (selectedBubbleStyle == 1) ProgressItem(
-                    name = "Bubble tip radius",
-                    max = 20f,
-                    progress = bubbleTipRadius
+            },
+            icon2 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_tick) else null,
+            onIcon2Click = {
+                // Save changes
+                isColorsChanged = false
+                themeViewModel.updateTheme(
+                    theme.copy(
+                        bodystyle = Json.encodeToString(
+                            previewAttrs.copy(
+                                color_chatbackground = colorToHex(colors[0]),
+                                color_senderbubble = colorToHex(colors[1]),
+                                color_receiverbubble = colorToHex(colors[2]),
+                                color_datebubble = colorToHex(colors[3]),
+                                color_text_primary = colorToHex(colors[4]),
+                                color_text_secondary = colorToHex(colors[5]),
+                                color_chatbackground_dark = colorToHex(colors[6]),
+                                color_senderbubble_dark = colorToHex(colors[7]),
+                                color_receiverbubble_dark = colorToHex(colors[8]),
+                                color_datebubble_dark = colorToHex(colors[9]),
+                                color_text_primary_dark = colorToHex(colors[10]),
+                                color_text_secondary_dark = colorToHex(colors[11]),
+                            )
+                        )
+                    )
                 )
+            })
 
-                Text(
-                    text = "Colors:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-                )
-                bodyColorNames.forEachIndexed { i, name ->
-                    ColorSelectionItem(name = name, color = colors[if(isDark) 6+i else i],
-                        onClick = {
-                            selectedColor = colors[if(isDark) 6+i else i]
-                            loadPicker = true
-                            showColorPicker = true
-                            pickedColorIndex = if(isDark) 6+i else i
-                        }
+        Column(
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .padding(horizontal = 10.dp)
+                .clip(shape = RoundedCornerShape(12.dp))
+                .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
+                .background(previewColors.chatBackground)
+                .padding(vertical = 5.dp, horizontal = 5.dp)
+        ) {
+            ChatNote(
+                "19 June 2025",
+                color = previewColors.dateBubble,
+                textColor = previewColors.textSecondary
+            )
+            SenderMessage(
+                text = "Hii",
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                color = previewColors.senderBubble,
+                textColor = previewColors.textPrimary,
+                hintTextColor = previewColors.textSecondary,
+                isFirst = true,
+                showTime = previewAttrs.show_time,
+                showTicks = previewAttrs.showticks
+            )
+            SenderMessage(
+                text = "Hope you love using our app. Please leave a rating",
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                color = previewColors.senderBubble,
+                textColor = previewColors.textPrimary,
+                hintTextColor = previewColors.textSecondary,
+                isLast = true,
+                showTime = previewAttrs.show_time,
+                showTicks = previewAttrs.showticks
+            )
+            Spacer(modifier = Modifier.size(4.dp))
+            Message(
+                text = "Yep!",
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                color = previewColors.receiverBubble,
+                textColor = previewColors.textPrimary,
+                hintTextColor = previewColors.textSecondary,
+                isFirst = true,
+                showTime = previewAttrs.show_time
+            )
+            Message(
+                text = "Definitely :-)",
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                color = previewColors.receiverBubble,
+                textColor = previewColors.textPrimary,
+                hintTextColor = previewColors.textSecondary,
+                isLast = true,
+                showTime = previewAttrs.show_time
+            )
+        }
+        Column(
+            Modifier
+                .padding(start = 18.dp, end = 10.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
+
+            Text(
+                text = "Chat bubble style:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 14.dp)
+            )
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                bubbleStyles.forEachIndexed { i, (name, icon) ->
+                    BubbleItem(
+                        icon = painterResource(icon),
+                        name = name,
+                        selected = previewAttrs.bubble_style == i,
+                        onClick = { previewAttrs = previewAttrs.copy(bubble_style = i) },
+                        selectedColor = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
 
-                ColorSelectionItem(name = "Chat backgrund", color = MaterialTheme.colorScheme.primary)
-                ColorSelectionItem(name = "Sender bubble color", color = Color.White)
-                ColorSelectionItem(name = "Reciever bubble color", color = Color.Gray)
-                ColorSelectionItem(name = "Date bubble color", color = Color.Gray)
-                ColorSelectionItem(name = "Primary text color", color = Color.Gray)
-                ColorSelectionItem(name = "Secondary text color", color = Color.Gray)
-
-
-                Text(
-                    text = "Widgets:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            ProgressItem(
+                name = "Bubble radius", max = 30f, value = previewAttrs.bubble_radius,
+                onChange = { previewAttrs = previewAttrs.copy(bubble_radius = it.toFloat()) })
+            if (previewAttrs.bubble_style == 1)
+                ProgressItem(
+                    name = "Bubble tip radius",
+                    max = 20f,
+                    value = previewAttrs.bubble_tip_radius,
+                    onChange = {
+                        previewAttrs = previewAttrs.copy(bubble_tip_radius = it.toFloat())
+                    }
                 )
 
-                SwitchItem(
-                    state = showTime,
-                    name = "Show time inside message",
-                    context = "Show/hide time inside message bubble"
+
+            Text(
+                text = "Colors:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+            bodyColorNames.forEachIndexed { i, name ->
+                ColorSelectionItem(
+                    name = name, color = colors[if (isDark) 6 + i else i],
+                    onClick = {
+                        selectedColor = colors[if (isDark) 6 + i else i]
+                        loadPicker = true
+                        showColorPicker = true
+                        pickedColorIndex = if (isDark) 6 + i else i
+                    }
                 )
-                SwitchItem(
-                    state = use12HrFormat,
-                    name = "Use 12hr format",
-                    context = "Will show time in 12hr throughout the messages"
-                )
-                SwitchItem(
-                    state = showTicks,
-                    name = "Show ticks inside message",
-                    context = "Show/hide ticks inside message bubble"
-                )
-                if (showTicks.value) {
-                    Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                        Spacer(
-                            modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.secondaryContainer
-                                )
-                        )
-                        Column(modifier = Modifier.padding(start = 16.dp)) {
-                            EditIcon(
-                                name = "Seen ticks icon",
-                                icon = painterResource(R.drawable.doubleticks)
+            }
+
+
+            Text(
+                text = "Widgets:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+
+            SwitchItem(
+                name = "Show time inside message",
+                context = "Show/hide time inside message bubble",
+                checked = previewAttrs.show_time,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(show_time = it)
+                }
+            )
+            SwitchItem(
+                name = "Use 12hr format",
+                context = "Will show time in 12hr throughout the messages",
+                checked = previewAttrs.use12hr,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(use12hr = it)
+                }
+            )
+            SwitchItem(
+                name = "Show ticks inside message",
+                context = "Show/hide ticks inside message bubble",
+                checked = previewAttrs.showticks,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(showticks = it)
+                }
+            )
+            if (previewAttrs.showticks) {
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .height(IntrinsicSize.Min)
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                            .width(1.dp)
+                            .background(
+                                MaterialTheme.colorScheme.secondaryContainer
                             )
-                        }
+                    )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        EditIcon(
+                            name = "Seen ticks icon",
+                            icon = painterResource(R.drawable.doubleticks)
+                        )
                     }
                 }
-                SwitchItem(
-                    state = showReceiverPic,
-                    name = "Show receiver pic",
-                    context = "Show/hide user picture"
-                )
             }
-
+            SwitchItem(
+                name = "Show receiver pic",
+                context = "Show/hide user picture",
+                checked = previewAttrs.showreceiverpic,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(showreceiverpic = it)
+                }
+            )
         }
-        if(loadPicker)
-            AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
-                ColorPicker(
-                    initialColor = selectedColor,
-                    onColorPicked = {
-                        colors[pickedColorIndex] = it
-                    },
-                    onClose = { showColorPicker = false }
-                )
-            }
+
+    }
+    if (loadPicker)
+        AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+            ColorPicker(
+                initialColor = selectedColor,
+                onColorPicked = {
+                    colors[pickedColorIndex] = it
+                    isColorsChanged = true
+                },
+                onClose = { showColorPicker = false }
+            )
+        }
 }
 
 
@@ -328,10 +382,15 @@ fun BubbleItem(
     onClick: () -> Unit = {}
 ) {
     Column(
-        modifier = Modifier.padding(end = 6.dp)
+        modifier = Modifier
+            .padding(end = 6.dp)
             .clip(shape = RoundedCornerShape(14.dp))
             .clickable { onClick() }
-            .border(if(selected) 2.dp else 1.dp, color = if(selected) selectedColor else MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(14.dp))
+            .border(
+                if (selected) 2.dp else 1.dp,
+                color = if (selected) selectedColor else MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(14.dp)
+            )
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -339,10 +398,18 @@ fun BubbleItem(
         Icon(
             painter = icon,
             contentDescription = null,
-            tint = if(selected) selectedColor else MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.padding(bottom = 5.dp).width(70.dp)
+            tint = if (selected) selectedColor else MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier
+                .padding(bottom = 5.dp)
+                .width(70.dp)
         )
-        Text(text = name, color = if(selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer, fontWeight = FontWeight(if(selected) 500 else 400), fontSize = 13.sp, lineHeight = 14.sp)
+        Text(
+            text = name,
+            color = if (selected) LightColorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+            fontWeight = FontWeight(if (selected) 500 else 400),
+            fontSize = 13.sp,
+            lineHeight = 14.sp
+        )
     }
 }
 
@@ -355,13 +422,20 @@ private val bodyColorNames = listOf(
     "Secondary text color"
 )
 
-
-@Preview
-@Composable
-fun BodyScreenPreview() {
-    val theme = ThemeEntity()
-
-    CompositionLocalProvider(LocalThemeEntity provides theme) {
-        BodyStyleScreen()
-    }
+fun BodyStyle.isSameAttrAs(other: BodyStyle): Boolean {
+    return this.bubble_style == other.bubble_style &&
+            this.bubble_radius == other.bubble_radius &&
+            this.bubble_tip_radius == other.bubble_tip_radius &&
+            this.show_time == other.show_time &&
+            this.use12hr == other.use12hr &&
+            this.showticks == other.showticks &&
+            this.ticks_icon == other.ticks_icon &&
+            this.showreceiverpic == other.showreceiverpic
 }
+
+private val bubbleStyles = listOf(
+    "No bubble" to R.drawable.ic_nobubble,
+    "Start bubble" to R.drawable.ic_topbubble,
+    "Group bubble" to R.drawable.ic_groupbubble,
+    "End bubble" to R.drawable.ic_endbubble,
+)

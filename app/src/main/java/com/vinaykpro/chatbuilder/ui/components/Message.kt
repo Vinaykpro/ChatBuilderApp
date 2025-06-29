@@ -1,13 +1,10 @@
 package com.vinaykpro.chatbuilder.ui.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,14 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.vinaykpro.chatbuilder.R
 
 @Preview
 @Composable
@@ -35,7 +27,9 @@ fun Message(text: String = "Hii man",
             bubbleRadius: Float = 10f,
             bubbleTipRadius: Float = 8f,
             isFirst: Boolean = false,
-            isLast: Boolean = false) {
+            isLast: Boolean = false,
+            showTime: Boolean = true) {
+    val space = if(showTime) " ⠀ ⠀    " else ""
     val bubbleModifier: Modifier = when(bubbleStyle) {
         0 -> {
             Modifier
@@ -74,15 +68,14 @@ fun Message(text: String = "Hii man",
         Box(
             modifier = bubbleModifier.align( if(bubbleStyle != 3) Alignment.TopStart else Alignment.BottomStart)
         ) {
-            // Message text
             Text(
-                text = "$text ⠀ ⠀    ", // Extra spaces for spacing
+                text = "$text $space", // Extra spaces for spacing
                 color = textColor,
                 fontSize = 16.sp,
                 lineHeight = 20.sp
             )
 
-            // Sent time
+            if(showTime)
             Text(
                 text = sentTime,
                 color = hintTextColor,

@@ -69,7 +69,7 @@ fun EditThemeScreen(themename : String = "Default theme",
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            BasicToolbar(name = theme.name, color = MaterialTheme.colorScheme.primary)
+            BasicToolbar(name = theme.name, color = if(isDark) appColorDark else appColor)
             Column(
                 modifier = Modifier
                     .weight(1f)

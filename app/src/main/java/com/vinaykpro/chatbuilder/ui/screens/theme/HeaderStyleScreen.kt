@@ -20,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -31,15 +30,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
-import com.vinaykpro.chatbuilder.data.local.ThemeEntity
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
@@ -51,21 +52,26 @@ import com.vinaykpro.chatbuilder.ui.components.ProgressItem
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Composable
 fun HeaderStyleScreen(
     navController: NavController = rememberNavController(),
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    themeViewModel: ThemeViewModel
 ) {
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
-    val themeStyle = remember(theme.headerstyle) {
-        try { Json.decodeFromString<HeaderStyle>(theme.headerstyle) }
-            catch(_: Exception) { HeaderStyle() }
+    var themeStyle = remember(theme.headerstyle) {
+        try {
+            Json.decodeFromString<HeaderStyle>(theme.headerstyle)
+        } catch (_: Exception) {
+            HeaderStyle()
+        }
     }
 
-    val colors = remember(themeStyle) {
+    val originalColors = remember(themeStyle) {
         mutableStateListOf(
             Color(themeStyle.color_navbar.toColorInt()),
             Color(themeStyle.color_navicons.toColorInt()),
@@ -76,6 +82,10 @@ fun HeaderStyleScreen(
             Color(themeStyle.color_text_primary_dark.toColorInt()),
             Color(themeStyle.color_text_secondary_dark.toColorInt())
         )
+    }
+
+    var colors = remember(themeStyle) {
+        mutableStateListOf(*originalColors.toTypedArray())
     }
 
     val previewColors by remember {
@@ -93,165 +103,264 @@ fun HeaderStyleScreen(
         mutableStateOf(themeStyle)
     }
 
+    val isAttrsChanged by remember(themeStyle, previewAttrs) {
+        derivedStateOf { !themeStyle.isSameAttrAs(previewAttrs) }
+    }
+    var isColorsChanged by remember { mutableStateOf(false) }
 
     var loadPicker by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
-
-        Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            BasicToolbar(name = "Header Style", color = MaterialTheme.colorScheme.primary)
-            Column(
-                modifier = Modifier.padding(top = 12.dp).padding(horizontal = 10.dp)
-                    .clip(shape = RoundedCornerShape(12.dp))
-                    .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
-            ) {
-                ChatToolbar(preview = true, previewColors = previewColors, previewAttrs = previewAttrs)
-                Spacer(modifier = Modifier.height(60.dp))
-            }
-            Column(
-                Modifier.padding(start = 18.dp, end = 10.dp).verticalScroll(rememberScrollState())
-            ) {
-                SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
-
-                Text(
-                    text = "Colors:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-                )
-                headerColorNames.forEachIndexed { i, name ->
-                    ColorSelectionItem(name = name, color = colors[if(isDark) 4+i else i],
-                        onClick = {
-                            selectedColor = colors[if(isDark) 4+i else i]
-                            loadPicker = true
-                            showColorPicker = true
-                            pickedColorIndex = if(isDark) 4+i else i
-                        }
-                    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        BasicToolbar(
+            name = "Header Style", color = MaterialTheme.colorScheme.primary,
+            icon1 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_close) else null,
+            onIcon1Click = {
+                // Discard changes
+                isColorsChanged = false
+                previewAttrs = themeStyle
+                originalColors.forEachIndexed { i, orig ->
+                    colors[i] = orig
                 }
-
-
-                Text(
-                    text = "Widgets:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-                )
-                val backBtnState = remember { mutableStateOf(true) }
-                val profilePicState = remember { mutableStateOf(true) }
-                val showStatusState = remember { mutableStateOf(true) }
-
-                SwitchItem(state = backBtnState)
-                previewAttrs = previewAttrs.copy(showbackbtn = backBtnState.value)
-                if (backBtnState.value) {
-                    Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                        Spacer(
-                            modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
+            },
+            icon2 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_tick) else null,
+            onIcon2Click = {
+                // Save changes
+                isColorsChanged = false
+                themeViewModel.updateTheme(
+                    theme.copy(
+                        headerstyle = Json.encodeToString(
+                            previewAttrs.copy(
+                                color_navbar = colorToHex(colors[0]),
+                                color_navicons = colorToHex(colors[1]),
+                                color_text_primary = colorToHex(colors[2]),
+                                color_text_secondary = colorToHex(colors[3]),
+                                color_navbar_dark = colorToHex(colors[4]),
+                                color_navicons_dark = colorToHex(colors[5]),
+                                color_text_primary_dark = colorToHex(colors[6]),
+                                color_text_secondary_dark = colorToHex(colors[7])
+                            )
                         )
-                        Column(modifier = Modifier.padding(start = 16.dp)) {
-                            ProgressItem(name = "Icon size", value = themeStyle.backbtn_size.toFloat(), min = 10f, max = 40f,
-                                onChange = {
+                    )
+                )
+            })
+        Column(
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .padding(horizontal = 10.dp)
+                .clip(shape = RoundedCornerShape(12.dp))
+                .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
+        ) {
+            ChatToolbar(preview = true, previewColors = previewColors, previewAttrs = previewAttrs)
+            Spacer(modifier = Modifier.height(60.dp))
+        }
+        Column(
+            Modifier
+                .padding(start = 18.dp, end = 10.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
+
+            Text(
+                text = "Colors:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+            headerColorNames.forEachIndexed { i, name ->
+                ColorSelectionItem(
+                    name = name, color = colors[if (isDark) 4 + i else i],
+                    onClick = {
+                        selectedColor = colors[if (isDark) 4 + i else i]
+                        loadPicker = true
+                        showColorPicker = true
+                        pickedColorIndex = if (isDark) 4 + i else i
+                    }
+                )
+            }
+
+            Text(
+                text = "Widgets:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+
+            SwitchItem(checked = previewAttrs.showbackbtn, onCheckChange = {
+                previewAttrs = previewAttrs.copy(showbackbtn = it)
+            })
+            if (previewAttrs.showbackbtn) {
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .height(IntrinsicSize.Min)
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        ProgressItem(
+                            name = "Icon size",
+                            value = previewAttrs.backbtn_size.toFloat(),
+                            min = 10f,
+                            max = 40f,
+                            onChange = {
                                 previewAttrs = previewAttrs.copy(backbtn_size = it)
                             })
-                            ProgressItem(name = "Left gap", value = themeStyle.backbtn_gap.toFloat(), min = 0f, max = 15f,
-                                onChange = {
+                        ProgressItem(
+                            name = "Left gap",
+                            value = previewAttrs.backbtn_gap.toFloat(),
+                            min = 0f,
+                            max = 15f,
+                            onChange = {
                                 previewAttrs = previewAttrs.copy(backbtn_gap = it)
                             })
-                            EditIcon(name = "Back button icon")
-                        }
-                    }
-                }
-
-                SwitchItem(
-                    state = profilePicState,
-                    name = "Show profile pic",
-                    context = "Show/hide the profile picture and customize."
-                )
-                previewAttrs = previewAttrs.copy(showprofilepic = profilePicState.value)
-                if (profilePicState.value) {
-                    Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                        Spacer(
-                            modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                        )
-                        Column(modifier = Modifier.padding(start = 16.dp)) {
-                            ProgressItem(name = "Icon size", value = themeStyle.profilepic_size.toFloat(), min = 20f, max = 50f,
-                                onChange = {
-                                    previewAttrs = previewAttrs.copy(profilepic_size = it)
-                                })
-                            ProgressItem(name = "Horizontal gap", value = themeStyle.profilepic_gap_sides.toFloat(), min = 0f, max = 10f,
-                                onChange = {
-                                    previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
-                                })
-                            EditIcon(name = "Three dots icon")
-                        }
-                    }
-                }
-
-                SwitchItem(
-                    state = showStatusState,
-                    name = "Show status/username",
-                    context = "Show/hide the status as shown in the preview."
-                )
-                previewAttrs = previewAttrs.copy(showstatus = showStatusState.value)
-
-                SwitchItem(
-                    enabled = false,
-                    name = "Show three dots",
-                    context = "You can only customize the icon."
-                )
-                Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                    Spacer(
-                        modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        EditIcon(name = "Default profile icon")
-                    }
-                }
-
-                Text(
-                    text = "Action icons:",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-                )
-                Box(modifier = Modifier.padding(bottom = 12.dp).height(IntrinsicSize.Min)) {
-                    Spacer(
-                        modifier = Modifier.fillMaxHeight().padding(start = 8.dp).width(1.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ActionIcons()
-                        ProgressItem(name = "Icon size", value = themeStyle.actionicons_size.toFloat(), min = 15f, max = 35f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(actionicons_size = it)
-                            })
-                        ProgressItem(name = "Horizontal gap", value = themeStyle.actionicons_gap.toFloat(), min = 0f, max = 15f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(actionicons_gap = it)
-                            })
+                        EditIcon(name = "Back button icon")
                     }
                 }
             }
-        }
-        if(loadPicker) {
-            AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
-                ColorPicker(
-                    initialColor = selectedColor,
-                    onColorPicked = {
-                        colors[pickedColorIndex] = it
-                    },
-                    onClose = { showColorPicker = false }
+
+            SwitchItem(
+                name = "Show profile pic",
+                context = "Show/hide the profile picture and customize.",
+                checked = previewAttrs.showprofilepic,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(showprofilepic = it)
+                }
+            )
+            if (previewAttrs.showprofilepic) {
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .height(IntrinsicSize.Min)
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        ProgressItem(
+                            name = "Icon size",
+                            value = previewAttrs.profilepic_size.toFloat(),
+                            min = 20f,
+                            max = 50f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(profilepic_size = it)
+                            })
+                        ProgressItem(
+                            name = "Horizontal gap",
+                            value = previewAttrs.profilepic_gap_sides.toFloat(),
+                            min = 0f,
+                            max = 10f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
+                            })
+                        EditIcon(name = "Three dots icon")
+                    }
+                }
+            }
+
+            SwitchItem(
+                name = "Show status/username",
+                context = "Show/hide the status as shown in the preview.",
+                checked = previewAttrs.showstatus,
+                onCheckChange = {
+                    previewAttrs = previewAttrs.copy(showstatus = it)
+                }
+            )
+
+            SwitchItem(
+                enabled = false,
+                name = "Show three dots",
+                context = "You can only customize the icon."
+            )
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .height(IntrinsicSize.Min)
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    EditIcon(name = "Default profile icon")
+                }
+            }
+
+            Text(
+                text = "Action icons:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .height(IntrinsicSize.Min)
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    ActionIcons()
+                    ProgressItem(
+                        name = "Icon size",
+                        value = previewAttrs.actionicons_size.toFloat(),
+                        min = 15f,
+                        max = 35f,
+                        onChange = {
+                            previewAttrs = previewAttrs.copy(actionicons_size = it)
+                        })
+                    ProgressItem(
+                        name = "Horizontal gap",
+                        value = previewAttrs.actionicons_gap.toFloat(),
+                        min = 0f,
+                        max = 15f,
+                        onChange = {
+                            previewAttrs = previewAttrs.copy(actionicons_gap = it)
+                        })
+                }
             }
         }
+    }
+    if (loadPicker) {
+        AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+            ColorPicker(
+                initialColor = selectedColor,
+                onColorPicked = {
+                    colors[pickedColorIndex] = it
+                    isColorsChanged = true
+                },
+                onClose = {
+                    showColorPicker = false
+                }
+            )
+        }
+    }
 
 }
 
@@ -262,12 +371,29 @@ private val headerColorNames = listOf(
     "Status Text Color"
 )
 
-@Preview
-@Composable
-fun MyScreenPreview() {
-    val theme = ThemeEntity()
-
-    CompositionLocalProvider(LocalThemeEntity provides theme) {
-        HeaderStyleScreen()
-    }
+fun HeaderStyle.isSameAttrAs(other: HeaderStyle): Boolean {
+    return this.showbackbtn == other.showbackbtn &&
+            this.backbtn_size == other.backbtn_size &&
+            this.backbtn_gap == other.backbtn_gap &&
+            this.backbtn_icon == other.backbtn_icon &&
+            this.showprofilepic == other.showprofilepic &&
+            this.profilepic_size == other.profilepic_size &&
+            this.profilepic_gap_sides == other.profilepic_gap_sides &&
+            this.profilepic_icon == other.profilepic_icon &&
+            this.showstatus == other.showstatus &&
+            this.threedots_icon == other.threedots_icon &&
+            this.actionicons_gap == other.actionicons_gap &&
+            this.actionicons_size == other.actionicons_size &&
+            this.actionicons_order == other.actionicons_order &&
+            this.is_icon1_visible == other.is_icon1_visible &&
+            this.is_icon2_visible == other.is_icon2_visible &&
+            this.is_icon3_visible == other.is_icon3_visible &&
+            this.icon1 == other.icon1 &&
+            this.icon2 == other.icon2 &&
+            this.icon3 == other.icon3
 }
+
+fun colorToHex(color: Color): String {
+    return String.format("#%08X", color.toArgb())
+}
+

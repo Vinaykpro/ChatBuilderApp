@@ -33,8 +33,10 @@ fun SenderMessage(text: String = "Hii man",
                   bubbleRadius: Float = 10f,
                   bubbleTipRadius: Float = 8f,
                   isFirst: Boolean = false,
-                  isLast: Boolean = false) {
-
+                  isLast: Boolean = false,
+                  showTime: Boolean = true,
+                  showTicks: Boolean = true) {
+    val space = if(showTime) " ⠀ ⠀     ⠀" else ""
     var bubbleModifier: Modifier = when(bubbleStyle) {
         0 -> {
             Modifier
@@ -75,7 +77,7 @@ fun SenderMessage(text: String = "Hii man",
         ) {
             // Message text
             Text(
-                text = "$text ⠀ ⠀     ⠀", // Extra spaces for spacing
+                text = "$text  $space", // Extra spaces for spacing
                 color = textColor,
                 fontSize = 16.sp,
                 lineHeight = 20.sp
@@ -83,18 +85,22 @@ fun SenderMessage(text: String = "Hii man",
 
             // Sent time
             Row(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = sentTime,
-                    color = hintTextColor,
-                    fontSize = 11.sp,
-                    lineHeight = 11.sp
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.doubleticks),
-                    contentDescription = "Custom SVG Image",
-                    modifier = Modifier.padding(start = 2.dp).size(13.dp),
-                    colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
-                )
+                if(showTime) {
+                    Text(
+                        text = sentTime,
+                        color = hintTextColor,
+                        fontSize = 11.sp,
+                        lineHeight = 11.sp
+                    )
+                }
+                if(showTicks) {
+                    Image(
+                        painter = painterResource(id = R.drawable.doubleticks),
+                        contentDescription = "Double ticks",
+                        modifier = Modifier.padding(start = 2.dp).size(13.dp),
+                        colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
+                    )
+                }
             }
         }
     }

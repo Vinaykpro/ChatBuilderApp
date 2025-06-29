@@ -14,7 +14,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,22 +26,49 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 @Preview
 @Composable
 fun SwitchItem(
-    state: MutableState<Boolean>? = null,
     name: String = "Show back button",
     context: String = "Show/hide that allows users to exit.",
     enabled: Boolean = true,
-    onClick: () -> Unit = {},
+    checked: Boolean = false,
+    onCheckChange: (Boolean) -> Unit = {}
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val switchColors = SwitchDefaults.colors(checkedTrackColor = LightColorScheme.primary, checkedThumbColor = MaterialTheme.colorScheme.background)
+    val switchColors = SwitchDefaults.colors(
+        checkedTrackColor = LightColorScheme.primary,
+        checkedThumbColor = MaterialTheme.colorScheme.background
+    )
 
-    Row(modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 2.dp, end = 6.dp).clickable(indication = null, interactionSource =interactionSource ) { if(state!=null) state.value = !state.value }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp)
+            .padding(top = 2.dp, end = 6.dp)
+            .clickable(indication = null, interactionSource = interactionSource) {
+                onCheckChange(!checked)
+            }
+            .padding(6.dp), verticalAlignment = Alignment.CenterVertically
+    ) {
         Column(verticalArrangement = Arrangement.Top) {
-            Text(text = name, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight(500), fontSize = 16.sp, lineHeight = 20.sp)
-            Text(text = context, color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 12.sp, lineHeight = 20.sp)
+            Text(
+                text = name,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight(500),
+                fontSize = 16.sp,
+                lineHeight = 20.sp
+            )
+            Text(
+                text = context,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontSize = 12.sp,
+                lineHeight = 20.sp
+            )
         }
         Spacer(modifier = Modifier.weight(1f))
-        if(enabled && state != null) Switch(checked = state.value, onCheckedChange = { state.value = it }, colors = switchColors)
+        if (enabled) Switch(
+            checked = checked,
+            onCheckedChange = onCheckChange,
+            colors = switchColors
+        )
         else Switch(checked = true, onCheckedChange = null, enabled = false, colors = switchColors)
     }
 }

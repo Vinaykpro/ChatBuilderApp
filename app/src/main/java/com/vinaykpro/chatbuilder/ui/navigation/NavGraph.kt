@@ -51,63 +51,86 @@ fun AppNavHost(
         composable(Routes.Splash) {
             SplashScreen(navController, isDarkTheme.value)
         }
-        composable(route = Routes.Home,) {
+        composable(route = Routes.Home) {
             HomeScreen(navController = navController, isDarkTheme = isDarkTheme, prefs = prefs)
         }
-        composable(route = Routes.Chat,
+        composable(
+            route = Routes.Chat,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
             ChatScreen(isDarkTheme.value)
         }
-        composable(Routes.Themes,
+        composable(
+            Routes.Themes,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
             ThemeScreen(themeViewModel = themeViewModel, navController = navController)
         }
-        composable(Routes.EditTheme,
+        composable(
+            Routes.EditTheme,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) { backStackEntry ->
-            EditThemeScreen(themename = (backStackEntry.arguments?.getString("name")
-                ?: "Default"), navController = navController, themeViewModel = themeViewModel, isDark = isDarkTheme.value)
+            EditThemeScreen(
+                themename = (backStackEntry.arguments?.getString("name")
+                    ?: "Default"),
+                navController = navController,
+                themeViewModel = themeViewModel,
+                isDark = isDarkTheme.value
+            )
         }
-        composable(Routes.HeaderStyle,
+        composable(
+            Routes.HeaderStyle,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            HeaderStyleScreen(navController = navController, isDarkTheme = isDarkTheme.value)
+            HeaderStyleScreen(
+                navController = navController,
+                themeViewModel = themeViewModel,
+                isDarkTheme = isDarkTheme.value
+            )
         }
-        composable(Routes.BodyStyle,
+        composable(
+            Routes.BodyStyle,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            BodyStyleScreen(navController = navController, isDarkTheme = isDarkTheme.value)
+            BodyStyleScreen(
+                navController = navController,
+                themeViewModel = themeViewModel,
+                isDarkTheme = isDarkTheme.value
+            )
         }
-        composable(Routes.MessagebarStyle,
+        composable(
+            Routes.MessagebarStyle,
             enterTransition = {
-                slideInHorizontally ( initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
+                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(700))
             },
             exitTransition = {
                 slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(700))
             }) {
-            MessageBarStyleScreen(navController = navController, isDarkTheme = isDarkTheme.value)
+            MessageBarStyleScreen(
+                navController = navController,
+                themeViewModel = themeViewModel,
+                isDarkTheme = isDarkTheme.value
+            )
         }
     }
 }

@@ -32,7 +32,9 @@ fun BasicToolbar(
     name: String = "Chat theme",
     color: Color = MaterialTheme.colorScheme.primary,
     icon1: Painter? = null,
-    icon2: Painter? = null
+    icon2: Painter? = null,
+    onIcon1Click: () -> Unit = {},
+    onIcon2Click: () -> Unit = {},
 ) {
     Row(modifier = Modifier.fillMaxWidth()
         .background(color)
@@ -54,21 +56,24 @@ fun BasicToolbar(
         )
         Spacer(modifier = Modifier.weight(1f))
         if (icon1 != null) {
-            Icon(
-                modifier = Modifier.size(24.dp),
-                painter = icon1,
-                contentDescription = "back",
-                tint = Color.White
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+            IconButton(onClick = onIcon1Click) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    painter = icon1,
+                    contentDescription = "back",
+                    tint = Color.White
+                )
+            }
         }
         if (icon2 != null) {
-            Icon(
-                modifier = Modifier.size(24.dp),
-                painter = icon2,
-                contentDescription = "back",
-                tint = Color.White
-            )
+            IconButton(onClick = onIcon2Click) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    painter = icon2,
+                    contentDescription = "back",
+                    tint = Color.White
+                )
+            }
         }
     }
 }
