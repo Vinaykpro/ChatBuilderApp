@@ -24,56 +24,99 @@ import com.vinaykpro.chatbuilder.R
 
 @Preview
 @Composable
-fun SenderMessage(text: String = "Hii man",
-                  sentTime: String = "11:25 pm",
-                  color: Color = Color(0xFFBEFFEA),
-                  textColor: Color = Color(0xFF000000),
-                  hintTextColor: Color = Color(0xFF414141),
-                  bubbleStyle: Int = 0,
-                  bubbleRadius: Float = 10f,
-                  bubbleTipRadius: Float = 8f,
-                  isFirst: Boolean = false,
-                  isLast: Boolean = false,
-                  showTime: Boolean = true,
-                  showTicks: Boolean = true) {
-    val space = if(showTime) " ⠀ ⠀     ⠀" else ""
-    var bubbleModifier: Modifier = when(bubbleStyle) {
+fun SenderMessage(
+    text: String = "Hii man",
+    sentTime: String = "11:25 pm",
+    color: Color = Color(0xFFBEFFEA),
+    textColor: Color = Color(0xFF000000),
+    hintTextColor: Color = Color(0xFF414141),
+    bubbleStyle: Int = 0,
+    bubbleRadius: Float = 10f,
+    bubbleTipRadius: Float = 8f,
+    isFirst: Boolean = false,
+    isLast: Boolean = false,
+    showTime: Boolean = true,
+    showTicks: Boolean = true
+) {
+    val space = if (showTime) " ⠀ ⠀     ⠀" else if (showTicks) "   " else ""
+    var bubbleModifier: Modifier = when (bubbleStyle) {
         0 -> {
             Modifier
                 .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp))
                 .padding(vertical = 4.dp)
                 .padding(start = 10.dp, end = 5.dp)
         }
+
         1 -> {
             Modifier
                 .padding(end = 10.dp)
-                .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp, if(isFirst) 0.dp else bubbleRadius.dp, bubbleRadius.dp, bubbleRadius.dp))
+                .background(
+                    color = color,
+                    shape = RoundedCornerShape(
+                        bubbleRadius.dp,
+                        if (isFirst) 0.dp else bubbleRadius.dp,
+                        bubbleRadius.dp,
+                        bubbleRadius.dp
+                    )
+                )
                 .padding(vertical = 4.dp)
                 .padding(start = 10.dp, end = 5.dp)
         }
+
         2 -> {
             Modifier
-                .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp, if(isFirst) bubbleRadius.dp else 2.dp, if(isLast) bubbleRadius.dp else 2.dp, bubbleRadius.dp))
+                .background(
+                    color = color,
+                    shape = RoundedCornerShape(
+                        bubbleRadius.dp,
+                        if (isFirst) bubbleRadius.dp else 2.dp,
+                        if (isLast) bubbleRadius.dp else 2.dp,
+                        bubbleRadius.dp
+                    )
+                )
                 .padding(vertical = 4.dp)
                 .padding(start = 10.dp, end = 5.dp)
         }
+
         3 -> {
             Modifier
                 .padding(end = 10.dp)
-                .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp, if(isFirst) bubbleRadius.dp else 2.dp, if(isLast) 0.dp else 2.dp, bubbleRadius.dp))
+                .background(
+                    color = color,
+                    shape = RoundedCornerShape(
+                        bubbleRadius.dp,
+                        if (isFirst) bubbleRadius.dp else 2.dp,
+                        if (isLast) 0.dp else 2.dp,
+                        bubbleRadius.dp
+                    )
+                )
                 .padding(vertical = 4.dp)
                 .padding(start = 10.dp, end = 5.dp)
         }
+
         else -> {
             Modifier
         }
     }
-    Box(modifier = Modifier.fillMaxWidth().padding(1.dp).padding(top = if(isFirst) 2.dp else 0.dp).padding(start = 40.dp), contentAlignment = Alignment.Center) {
-        if(bubbleStyle == 1 && isFirst) SentArrow(modifier = Modifier.align(Alignment.TopEnd), bubbleRadius = bubbleTipRadius, color)
-        else if(bubbleStyle == 3 && isLast) SentArrowBottom(modifier = Modifier.align(Alignment.BottomEnd), color)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(1.dp)
+            .padding(top = if (isFirst) 2.dp else 0.dp)
+            .padding(start = 40.dp), contentAlignment = Alignment.Center
+    ) {
+        if (bubbleStyle == 1 && isFirst) SentArrow(
+            modifier = Modifier.align(Alignment.TopEnd),
+            bubbleRadius = bubbleTipRadius,
+            color
+        )
+        else if (bubbleStyle == 3 && isLast) SentArrowBottom(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            color
+        )
         Box(
             modifier = bubbleModifier
-                .align(if(bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
+                .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
         ) {
             // Message text
             Text(
@@ -84,8 +127,13 @@ fun SenderMessage(text: String = "Hii man",
             )
 
             // Sent time
-            Row(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                if(showTime) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showTime) {
                     Text(
                         text = sentTime,
                         color = hintTextColor,
@@ -93,11 +141,13 @@ fun SenderMessage(text: String = "Hii man",
                         lineHeight = 11.sp
                     )
                 }
-                if(showTicks) {
+                if (showTicks) {
                     Image(
                         painter = painterResource(id = R.drawable.doubleticks),
                         contentDescription = "Double ticks",
-                        modifier = Modifier.padding(start = 2.dp).size(13.dp),
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(13.dp),
                         colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
                     )
                 }
@@ -116,6 +166,7 @@ fun SentArrow(modifier: Modifier = Modifier, bubbleRadius: Float = 11f, color: C
             .background(color = color, shape = BubbleShape(bubbleRadius = bubbleRadius))
     )
 }
+
 @Composable
 fun SentArrowBottom(modifier: Modifier = Modifier, color: Color) {
     Box(

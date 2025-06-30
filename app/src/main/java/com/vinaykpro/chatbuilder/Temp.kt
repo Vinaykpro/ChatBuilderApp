@@ -4,7 +4,11 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -27,12 +32,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import kotlinx.coroutines.Dispatchers
@@ -60,14 +67,58 @@ var months = arrayOf(
     "December"
 )
 
-fun openFile(uri: Uri?, context : Context){
+@Preview
+@Composable
+fun TestMessages() {
+    val context = LocalContext.current
+
+    var messages = remember { mutableStateListOf<String>() }
+
+    val pickFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            openFile(it, context, messages)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .padding(vertical = 30.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (messages.isEmpty()) {
+            CircularProgressIndicator(color = Color.White)
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(messages) { m ->
+                    Text(
+                        text = m,
+                        modifier = Modifier.padding(vertical = 5.dp),
+                        color = Color.White
+                    )
+                }
+            }
+        }
+        FloatingActionButton(
+            onClick = { pickFileLauncher.launch(arrayOf("application/zip", "text/plain")) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 50.dp, end = 20.dp)
+        ) {}
+    }
+}
+
+
+fun openFile(uri: Uri?, context: Context, messages: SnapshotStateList<String>) {
     if (uri == null) {
         Toast.makeText(context, "File not found.", Toast.LENGTH_SHORT).show()
         return
     }
 
     try {
-        // Open the file stream from the URI
         val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
         if (inputStream != null) {
             // Check if it's a ZIP file
@@ -80,33 +131,27 @@ fun openFile(uri: Uri?, context : Context){
                 val fileName = zipEntry.name
                 val fileSize = zipEntry.size
 
-                // Add file details to the list
                 fileList.add("Name: $fileName, Size: ${if (fileSize != -1L) "$fileSize bytes" else "Unknown"}")
 
-
-                //f = new File(uri.toString());
-                val messageList = ArrayList<String>();
-//                datesList.clear()
-//                ss = ""
-//                temp = ""
-//                temp0 = ""
-
                 if (fileName.endsWith(".txt", ignoreCase = true)) {
-                    val fileContents = StringBuilder()
-
+                    Toast.makeText(context, "Started reading lines", Toast.LENGTH_LONG).show()
                     // Read the .txt file line by line
+                    val regex = Regex("""(\d{1,2}/\d{1,2}/\d{2,4}), (\d{1,2}:\d{1,2}\s*[APap][Mm]) - ([^:]+): (.*)""")
                     val reader = BufferedReader(InputStreamReader(zipInputStream))
                     var line: String? = reader.readLine()
                     while (line != null) {
-                        fileContents.append(line).append("\n")
+                        val match = regex.find(line)
+                        if (match != null) {
+                            val (date, time, name, message) = match.destructured
+                            messages.add(" Date: $date, Time: $time, Name: $name, Message: $message")
+                        } else {
+                            messages.add("FAILED NULL - $line")
+                        }
+
                         line = reader.readLine()
                     }
-
-                    // Display the contents of the .txt file
-                    Toast.makeText(context, "Contents of $fileName:\n$fileContents", Toast.LENGTH_LONG).show()
                 }
 
-                // Move to the next entry
                 zipEntry = zipInputStream.nextEntry
             }
 
