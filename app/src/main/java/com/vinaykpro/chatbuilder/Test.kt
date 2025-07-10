@@ -4,153 +4,278 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarDefaults.exitUntilCollapsedScrollBehavior
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.vinaykpro.chatbuilder.data.local.ZipItem
+import com.vinaykpro.chatbuilder.data.local.formatFileSize
+import com.vinaykpro.chatbuilder.ui.components.ZipListItem
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 class Test : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-                Home2()
+            ImportChatUI(onMediaSave = {})
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
-@Composable
-fun Home2(modifier: Modifier = Modifier) {
 
-    val bottomNavsList = listOf(
-        NavItem("Home", Icons.Default.Home),
-        NavItem("Settings", Icons.Default.Settings)
+@Preview
+@Composable
+fun ImportChatUI(
+    step: Int = 2,
+    onClose: () -> Unit = {},
+    files: List<ZipItem> = emptyList(),
+    onUpdate: (List<ZipItem>) -> Unit = {},
+    onMediaSave: (Boolean) -> Unit = {},
+    isDark: Boolean = true,
+) {
+    val index = step
+    val checkboxColors = CheckboxDefaults.colors(
+        checkedColor = LightColorScheme.primary,
+        checkmarkColor = MaterialTheme.colorScheme.background,
+        uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
     )
-    var selectedIndex by remember { mutableIntStateOf(0)  }
-    val scrollBehavior = exitUntilCollapsedScrollBehavior()
-    Scaffold (
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            LargeTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
-                modifier = modifier.background(
-                    color = Color.Gray,
-                    shape = RoundedCornerShape(bottomStart = 15.dp, bottomEnd = 15.dp)
-                ),
-                title = {
-                    Text(
-                        "ChatBuilder",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Localized description"
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(if (isDark) Color(0x1EFFFFFF) else Color(0x77000000))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onClose() })
+            .padding(
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {})
+                .clip(shape = RoundedCornerShape(14.dp, 14.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .align(Alignment.BottomCenter)
+                .heightIn(max = 600.dp),
+        ) {
+            IconButton(
+                onClick = { onClose() }, modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(7.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_close),
+                    contentDescription = "Close",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .padding(vertical = if (index == 2) 0.dp else 25.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when (index) {
+                    1, 3, 4 -> {
+                        val (currentAsset, text, iterations) = when (index) {
+                            1 -> Triple(
+                                "file_scan.json",
+                                "Analyzing file contents",
+                                LottieConstants.IterateForever
+                            )
+
+                            3 -> Triple("file_error.json", "Unsupported file format", 1)
+                            4 -> Triple("file_success.json", "Successfully imported", 1)
+                            else -> Triple("file_scan.json", "", 1)
+                        }
+
+                        val composition by rememberLottieComposition(
+                            LottieCompositionSpec.Asset(currentAsset)
+                        )
+
+                        LottieAnimation(
+                            composition,
+                            iterations = iterations,
+                            modifier = Modifier.size(250.dp)
+                        )
+
+                        Text(
+                            text = text,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(top = 25.dp, bottom = 25.dp)
                         )
                     }
-                },
-                actions = {
-                    listOf(IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Localized description"
-                        )
-                    },
-                        IconButton(onClick = { /* do something */ }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Localized description"
+
+                    2 -> {
+                        var toggleSelectAll by remember { mutableStateOf(true) }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 24.dp, bottom = 18.dp, start = 20.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Media Found (${files.count { it.isSelected }}/${files.size})",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight(500),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
-                        })
-                },
-                scrollBehavior = scrollBehavior
-            )
-        },
-        bottomBar = {
-            NavigationBar() {
-                bottomNavsList.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
-                        icon = {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label
+                            Text(
+                                text = formatFileSize(files.sumOf { if (it.isSelected) it.byteCount else 0L }),
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontSize = 16.sp
                             )
-                        },
-                        label = {
-                            Text(text = item.label)
                         }
-                    )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "S.no",
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(0.2f)
+                            )
+                            Text(
+                                text = "Media files details",
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontSize = 16.sp,
+                                modifier = Modifier.weight(0.6f)
+                            )
+                            Box(
+                                modifier = Modifier.weight(0.2f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Checkbox(checked = toggleSelectAll, onCheckedChange = {
+                                    val new = files.toMutableList()
+                                    files.forEachIndexed { i, item ->
+                                        new[i] = item.copy(isSelected = it)
+                                    }
+                                    onUpdate(new)
+                                    toggleSelectAll = it
+                                }, colors = checkboxColors)
+                            }
+                        }
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            itemsIndexed(files) { i, file ->
+                                ZipListItem(
+                                    index = i,
+                                    item = file,
+                                    isSelected = file.isSelected,
+                                    onCheckChange = {
+                                        val new = files.toMutableList(); new[i] =
+                                        files[i].copy(isSelected = it); onUpdate(new)
+                                    },
+                                    checkboxColors = checkboxColors
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(elevation = 1.dp)
+                                .padding(3.dp)
+                                .padding(top = 3.dp)
+                        ) {
+                            Text(
+                                text = "Cancel",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight(500),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0x4B777777))
+                                    .clickable { onMediaSave(false) }
+                                    .padding(12.dp)
+                            )
+                            Text(
+                                text = "Keep",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight(500),
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(LightColorScheme.primary)
+                                    .clickable { onMediaSave(true) }
+                                    .padding(12.dp)
+                            )
+                        }
+                    }
+
+                    4 -> {
+
+                    }
                 }
             }
         }
-    )  {
-            innerPadding -> LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection), // Attach scroll behavior
-        contentPadding = innerPadding // Handle inner padding from Scaffold
-    ) {
-        items(50) { index ->
-            Text(
-                text = "Item $index",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            )
-        }
-    }
     }
 }
 
-data class NavItem(
-    val label : String,
-    val icon : ImageVector
-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

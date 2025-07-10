@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.vinaykpro.chatbuilder.data.local.dao.ChatDao
+import com.vinaykpro.chatbuilder.data.local.dao.FileDao
 import com.vinaykpro.chatbuilder.data.local.dao.MessageDao
 import com.vinaykpro.chatbuilder.data.local.dao.ThemeDao
 import kotlinx.coroutines.CoroutineScope
@@ -14,11 +15,15 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@Database(entities = [ThemeEntity::class, ChatEntity::class, MessageEntity::class], version = 1)
+@Database(
+    entities = [ThemeEntity::class, ChatEntity::class, MessageEntity::class, FileEntity::class],
+    version = 1
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun themeDao(): ThemeDao
     abstract fun chatDao(): ChatDao
     abstract fun messageDao(): MessageDao
+    abstract fun fileDao(): FileDao
 
     companion object {
         @Volatile

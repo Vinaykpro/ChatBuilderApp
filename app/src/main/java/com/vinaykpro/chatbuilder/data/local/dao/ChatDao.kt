@@ -10,11 +10,15 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ChatDao {
     @Query("SELECT * FROM chats WHERE chatid = :id")
-    fun getChatById(id: Int): Flow<ChatEntity>
+    fun getChatById(id: Int): Flow<ChatEntity?>
 
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
-    suspend fun addChat(chat: ChatEntity): Long
+    suspend fun addOrUpdateChat(chat: ChatEntity): Long
 
     @Query("SELECT * FROM chats")
-    suspend fun getAllChats(): List<ChatEntity>
+    fun getAllChats(): Flow<List<ChatEntity>>
+
+    @Query("DELETE FROM chats WHERE chatid = :id")
+    suspend fun deleteChatById(id: Int)
+
 }

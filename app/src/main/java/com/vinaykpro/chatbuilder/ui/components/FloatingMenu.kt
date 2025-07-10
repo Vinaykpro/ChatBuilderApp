@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,8 +43,12 @@ import androidx.compose.ui.unit.sp
 
 @Preview
 @Composable
-fun FloatingMenu(modifier: Modifier = Modifier,
-                 color: Color = MaterialTheme.colorScheme.primary) {
+fun FloatingMenu(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    onClick1: () -> Unit = {},
+    onClick2: () -> Unit = {},
+) {
     var expanded by remember { mutableStateOf(false) }
 
     // Rotation animation for the main FAB icon
@@ -62,8 +67,7 @@ fun FloatingMenu(modifier: Modifier = Modifier,
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0x88383838))
-                    .clickable { expanded = false }
+                    .background(Color(0x88383838)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { expanded = false })
             )
         }
 
@@ -81,7 +85,7 @@ fun FloatingMenu(modifier: Modifier = Modifier,
                 exit = scaleOut() + fadeOut()
             ) {
                 FloatingActionButton(
-                    onClick = { /* Action 1 */ },
+                    onClick = { onClick1(); expanded = false },
                     shape = RoundedCornerShape(30.dp)
                 ) {
                     Row(
@@ -101,7 +105,7 @@ fun FloatingMenu(modifier: Modifier = Modifier,
                 exit = scaleOut() + fadeOut()
             ) {
                 FloatingActionButton(
-                    onClick = { /* Action 2 */ },
+                    onClick = { onClick2(); expanded = false },
                     shape = RoundedCornerShape(30.dp)
                 ) {
                     Row(

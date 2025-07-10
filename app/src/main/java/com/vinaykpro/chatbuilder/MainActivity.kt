@@ -14,7 +14,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.ui.navigation.AppNavHost
+import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
+import com.vinaykpro.chatbuilder.ui.theme.ChatBuilderTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var themeViewModel: ThemeViewModel
@@ -35,20 +39,20 @@ class MainActivity : ComponentActivity() {
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
             val isDarkTheme = remember { mutableStateOf(prefs.getBoolean("isDarkEnabled", false)) }
             window.setBackgroundDrawable((if (isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
-            TestMessages()
-//            if(theme != null) {
-//                ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
-//                    val navController = rememberNavController()
-//                    AppNavHost(
-//                        themeViewModel = themeViewModel,
-//                        navController = navController,
-//                        isDarkTheme = isDarkTheme,
-//                        prefs = prefs
-//                    )
-//                }
-//            } else {
-//                SplashScreen(isDarkTheme = isDarkTheme.value)
-//            }
+            //TestMessages()
+            if (theme != null) {
+                ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
+                    val navController = rememberNavController()
+                    AppNavHost(
+                        themeViewModel = themeViewModel,
+                        navController = navController,
+                        isDarkTheme = isDarkTheme,
+                        prefs = prefs
+                    )
+                }
+            } else {
+                SplashScreen(isDarkTheme = isDarkTheme.value)
+            }
         }
     }
 

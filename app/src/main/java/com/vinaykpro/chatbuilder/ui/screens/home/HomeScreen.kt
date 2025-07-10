@@ -1,7 +1,11 @@
 package com.vinaykpro.chatbuilder.ui.screens.home
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.SharedPreferences
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -45,8 +49,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,20 +64,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.vinaykpro.chatbuilder.ImportChatUI
 import com.vinaykpro.chatbuilder.R
-import com.vinaykpro.chatbuilder.data.utils.ChatsList
+import com.vinaykpro.chatbuilder.data.local.IMPORTSTATE
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
@@ -87,14 +95,16 @@ import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    navController: NavController = rememberNavController(),
+    navController: NavController,
     isDarkTheme: MutableState<Boolean> = mutableStateOf(false),
-    viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModelFactory(ChatsList())
-    ),
     prefs: SharedPreferences
 ) {
-    val uiState = viewModel.state.value
+    val context = LocalContext.current
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
+    )
+    val chats by homeViewModel.chatsList.collectAsState()
+
     val colors = MaterialTheme.colorScheme
 
     val scope = rememberCoroutineScope()
@@ -105,7 +115,8 @@ fun HomeScreen(
     val toolbarState = rememberCollapsingToolbarScaffoldState()
 
     val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })
-    val selectedTabIndex = remember(pagerState.currentPage) { derivedStateOf { pagerState.currentPage } }
+    val selectedTabIndex =
+        remember(pagerState.currentPage) { derivedStateOf { pagerState.currentPage } }
 
     // dark/light mode toggle
     var iconCenter by remember(Offset.Zero) { mutableStateOf(Offset.Zero) }
@@ -114,15 +125,27 @@ fun HomeScreen(
 
     var blockTouches by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(colors.background)) {
+    val pickFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            homeViewModel.importChatFromFile(uri)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.background)
+    ) {
         // real screen
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.primary)
-                .fillMaxWidth()
-                .padding(top = topPadding))
+            Spacer(
+                modifier = Modifier
+                    .background(color = MaterialTheme.colorScheme.primary)
+                    .fillMaxWidth()
+                    .padding(top = topPadding)
+            )
             CollapsingToolbarScaffold(
                 modifier = Modifier.weight(1f),
                 state = toolbarState,
@@ -150,7 +173,8 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.primary,
                                 shape = RoundedCornerShape(bottomStart = 15.dp, bottomEnd = 15.dp)
                             ),
-                        horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         val scope = rememberCoroutineScope()
 
@@ -167,7 +191,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Icon(
-                            painter = painterResource(if(isDarkTheme.value) R.drawable.ic_lightmode else R.drawable.ic_darkmode),
+                            painter = painterResource(if (isDarkTheme.value) R.drawable.ic_lightmode else R.drawable.ic_darkmode),
                             contentDescription = "Search",
                             tint = Color.White,
                             modifier = Modifier
@@ -244,112 +268,155 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                ) { page -> when(page) {
-                        0 -> Box(modifier = Modifier
-                            .weight(1f),
-                            contentAlignment = Alignment.Center) {
+                ) { page ->
+                    when (page) {
+                        0 -> Box(
+                            modifier = Modifier
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(uiState.chatsList) { chat ->
+                                items(chats, key = { chat -> chat.chatid }) { chat ->
                                     ChatListItem(
                                         icon = R.drawable.iconalpha,
                                         name = chat.name,
-                                        lastMessage = chat.lastMessage,
-                                        lastSeen = chat.lastSeen,
-                                        onClick = { navController.navigate("chat") }
+                                        lastMessage = chat.lastmsg,
+                                        lastSeen = chat.lastmsgtime,
+                                        onClick = { navController.navigate("chat/${chat.chatid}") }
                                     )
                                 }
                             }
                         }
-                        1 -> Column(modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())) {
-                            SettingsItem(icon = painterResource(R.drawable.ic_theme),
+
+                        1 -> Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            SettingsItem(
+                                icon = painterResource(R.drawable.ic_theme),
                                 name = "Chat theme",
                                 context = "Create, import or customize the current chat theme",
                                 onClick = { navController.navigate("themes") }
                             )
-                            SettingsItem(icon = painterResource(R.drawable.ic_animate),
+                            SettingsItem(
+                                icon = painterResource(R.drawable.ic_animate),
                                 name = "Animate a chat",
-                                context = "Play any chat realtime")
-                            SettingsItem(icon = painterResource(R.drawable.ic_lockedchats),
+                                context = "Play any chat realtime",
+                                onClick = { navController.navigate("temp") }
+                            )
+                            SettingsItem(
+                                icon = painterResource(R.drawable.ic_lockedchats),
                                 name = "Locked chats",
-                                context = "View hidden chats")
-                            SettingsItem(icon = painterResource(R.drawable.ic_starredmessages),
+                                context = "View hidden chats"
+                            )
+                            SettingsItem(
+                                icon = painterResource(R.drawable.ic_starredmessages),
                                 name = "Starred messages",
-                                context = "See all the starred messages")
+                                context = "See all the starred messages"
+                            )
                         }
                     }
                 }
             }
 
-            Row (modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                    )
             ) {
-                Box(modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        indication = rememberRipple(
-                            bounded = true,
-                            color = Color(0xFF056175),
-                            radius = 80.dp
-                        ),
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
-                    )) {
-                    Text(text = "Chats", style = TextStyle(
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight(500)
-                    ), modifier = Modifier
-                        .align(Alignment.Center)
-                        .alpha(if (selectedTabIndex.value == 0) 1f else 0.7f))
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            indication = rememberRipple(
+                                bounded = true,
+                                color = Color(0xFF056175),
+                                radius = 80.dp
+                            ),
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
+                        )) {
+                    Text(
+                        text = "Chats", style = TextStyle(
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight(500)
+                        ), modifier = Modifier
+                            .align(Alignment.Center)
+                            .alpha(if (selectedTabIndex.value == 0) 1f else 0.7f)
+                    )
                 }
-                Box(modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        indication = rememberRipple(
-                            bounded = true,
-                            color = Color(0xFF056175),
-                            radius = 80.dp
-                        ),
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
-                    )) {
-                    Text(text = "Settings", style = TextStyle(
-                        color = Color(0xFFFFFFFF),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight(500)
-                    ), modifier = Modifier
-                        .align(Alignment.Center)
-                        .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f))
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            indication = rememberRipple(
+                                bounded = true,
+                                color = Color(0xFF056175),
+                                radius = 80.dp
+                            ),
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
+                        )) {
+                    Text(
+                        text = "Settings", style = TextStyle(
+                            color = Color(0xFFFFFFFF),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight(500)
+                        ), modifier = Modifier
+                            .align(Alignment.Center)
+                            .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f)
+                    )
                 }
             }
-            Spacer(modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(
-                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                ))
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding()
+                    )
+            )
         }
     }
 
     // Real FAB Button
-    FloatingMenu(color = MaterialTheme.colorScheme.primary)
+    FloatingMenu(color = MaterialTheme.colorScheme.primary, onClick2 = {
+        pickFileLauncher.launch(arrayOf("application/zip", "text/plain"))
+    })
+
+    if (homeViewModel.importState != IMPORTSTATE.NONE) {
+        ImportChatUI(
+            step = homeViewModel.importState,
+            files = homeViewModel.importedFileList,
+            onUpdate = { homeViewModel.importedFileList = it },
+            onMediaSave = {
+                if (homeViewModel.importState == IMPORTSTATE.MEDIASELECTION) {
+                    homeViewModel.keepOrSkipFiles(it)
+                }
+            },
+            onClose = { homeViewModel.closeImport() },
+            isDark = isDarkTheme.value
+        )
+    }
 
     // fake screen for light/dark mode switch
-    if(switchThemeAnim) {
+    if (switchThemeAnim) {
         val isDark = remember { mutableStateOf(isDarkTheme.value) }
+        val centerX by remember { mutableIntStateOf(iconCenter.x.toInt()) }
+        val centerY by remember { mutableIntStateOf(iconCenter.y.toInt()) }
         CircularRevealWrapper(
             modifier = Modifier.fillMaxSize(),
-            centerX = iconCenter.x.toInt(),
-            centerY = iconCenter.y.toInt(),
+            centerX = centerX,
+            centerY = centerY,
             triggerAnimation = triggerAnimation,
             isDark = isDark.value,
             onAnimationStart = {
@@ -371,10 +438,12 @@ fun HomeScreen(
                         .fillMaxSize()
                 ) {
                     // header
-                    Spacer(modifier = Modifier
-                        .background(color = DarkColorScheme.primary)
-                        .fillMaxWidth()
-                        .padding(top = topPadding))
+                    Spacer(
+                        modifier = Modifier
+                            .background(color = DarkColorScheme.primary)
+                            .fillMaxWidth()
+                            .padding(top = topPadding)
+                    )
                     CollapsingToolbarScaffold(
                         modifier = Modifier.weight(1f),
                         state = toolbarState,
@@ -503,31 +572,41 @@ fun HomeScreen(
                                 .background(Color.Black),
                             contentAlignment = Alignment.Center
                         ) {
-                            when(pagerState.currentPage) {
+                            when (pagerState.currentPage) {
                                 0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                    items(uiState.chatsList) { chat ->
+                                    items(chats) { chat ->
                                         ChatListItem(
                                             icon = R.drawable.iconalpha,
                                             name = chat.name,
-                                            lastMessage = chat.lastMessage,
-                                            lastSeen = chat.lastSeen,
+                                            lastMessage = chat.lastmsg,
+                                            lastSeen = chat.lastmsgtime,
                                             isForceFake = true
                                         )
                                     }
                                 }
+
                                 1 -> Column(modifier = Modifier.fillMaxSize()) {
-                                    SettingsItem(icon = painterResource(R.drawable.ic_theme),
+                                    SettingsItem(
+                                        icon = painterResource(R.drawable.ic_theme),
                                         name = "Chat theme",
-                                        context = "Create, import or customize the current chat theme", isForceDark = true)
-                                    SettingsItem(icon = painterResource(R.drawable.ic_animate),
+                                        context = "Create, import or customize the current chat theme",
+                                        isForceDark = true
+                                    )
+                                    SettingsItem(
+                                        icon = painterResource(R.drawable.ic_animate),
                                         name = "Animate a chat",
-                                        context = "Play any chat realtime", isForceDark = true)
-                                    SettingsItem(icon = painterResource(R.drawable.ic_lockedchats),
+                                        context = "Play any chat realtime", isForceDark = true
+                                    )
+                                    SettingsItem(
+                                        icon = painterResource(R.drawable.ic_lockedchats),
                                         name = "Locked chats",
-                                        context = "View hidden chats", isForceDark = true)
-                                    SettingsItem(icon = painterResource(R.drawable.ic_starredmessages),
+                                        context = "View hidden chats", isForceDark = true
+                                    )
+                                    SettingsItem(
+                                        icon = painterResource(R.drawable.ic_starredmessages),
                                         name = "Starred messages",
-                                        context = "See all the starred messages", isForceDark = true)
+                                        context = "See all the starred messages", isForceDark = true
+                                    )
                                 }
                             }
                         }
@@ -575,10 +654,12 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier
-                        .fillMaxWidth()
-                        .background(color = DarkColorScheme.primary)
-                        .padding(bottom = bottomPadding))
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(color = DarkColorScheme.primary)
+                            .padding(bottom = bottomPadding)
+                    )
                 }
 
                 FloatingActionButton(
@@ -600,19 +681,21 @@ fun HomeScreen(
     }
 
     // block touches on screen
-    if(blockTouches) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
-                onClick = {}))
+    if (blockTouches) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = {})
+        )
     }
 }
 
-enum class HomeTabs (
-    val text : String
+enum class HomeTabs(
+    val text: String
 ) {
     Chats(
         text = "Chats"

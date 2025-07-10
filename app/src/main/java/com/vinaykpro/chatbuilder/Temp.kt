@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,12 +31,12 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +46,22 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vinaykpro.chatbuilder.data.local.AppDatabase
+import com.vinaykpro.chatbuilder.data.local.MESSAGESTATUS
+import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
+import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import com.vinaykpro.chatbuilder.ui.components.ChatNote
+import com.vinaykpro.chatbuilder.ui.components.Message
+import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStream
@@ -51,6 +70,22 @@ import java.security.SecureRandom
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
+class MessageViewModel(application: Application) : AndroidViewModel(application) {
+    private val dao = AppDatabase.getInstance(application).messageDao()
+
+    val messages: StateFlow<List<MessageEntity>> = dao.getAllMessages(0)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun insertMessages(messages: List<MessageEntity>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.insertMessages(messages)
+        }
+    }
+}
+
+
+private val userMap = mutableMapOf<String, Int>()
+private var nextUserId = 1
 
 var months = arrayOf(
     "January",
@@ -70,15 +105,22 @@ var months = arrayOf(
 @Preview
 @Composable
 fun TestMessages() {
-    val context = LocalContext.current
+    val listState = rememberLazyListState()
 
-    var messages = remember { mutableStateListOf<String>() }
+    val context = LocalContext.current
+    val messageViewModel: MessageViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
+    )
+
+    val messages by messageViewModel.messages.collectAsState()
 
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            openFile(it, context, messages)
+            messageViewModel.viewModelScope.launch {
+                messageViewModel.insertMessages(openFile(it, context))
+            }
         }
     }
 
@@ -89,19 +131,32 @@ fun TestMessages() {
             .padding(vertical = 30.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (messages.isEmpty()) {
-            CircularProgressIndicator(color = Color.White)
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(messages) { m ->
-                    Text(
-                        text = m,
-                        modifier = Modifier.padding(vertical = 5.dp),
-                        color = Color.White
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
+                when {
+                    m.messageType == MESSAGETYPE.NOTE -> ChatNote(m.message!!)
+                    m.userid == 1 -> SenderMessage(
+                        text = m.message!!,
+                        sentTime = m.time!!,
+                        bubbleStyle = 1,
+                        isFirst = i == 0 || messages[i - 1].userid != m.userid
+                    )
+
+                    else -> Message(
+                        text = m.message!!,
+                        sentTime = m.time!!,
+                        bubbleStyle = 1,
+                        isFirst = i == 0 || messages[i - 1].userid != m.userid
                     )
                 }
             }
         }
+
         FloatingActionButton(
             onClick = { pickFileLauncher.launch(arrayOf("application/zip", "text/plain")) },
             modifier = Modifier
@@ -112,10 +167,10 @@ fun TestMessages() {
 }
 
 
-fun openFile(uri: Uri?, context: Context, messages: SnapshotStateList<String>) {
+suspend fun openFile(uri: Uri?, context: Context): List<MessageEntity> {
     if (uri == null) {
-        Toast.makeText(context, "File not found.", Toast.LENGTH_SHORT).show()
-        return
+        //Toast.makeText(context, "File not found.", Toast.LENGTH_SHORT).show()
+        return emptyList()
     }
 
     try {
@@ -127,29 +182,76 @@ fun openFile(uri: Uri?, context: Context, messages: SnapshotStateList<String>) {
 
             // Read the entries in the ZIP file
             var zipEntry: ZipEntry? = zipInputStream.nextEntry
+            var foundTxt = false;
             while (zipEntry != null) {
                 val fileName = zipEntry.name
                 val fileSize = zipEntry.size
 
                 fileList.add("Name: $fileName, Size: ${if (fileSize != -1L) "$fileSize bytes" else "Unknown"}")
+                if (!foundTxt && fileName.endsWith(".txt", ignoreCase = true)) {
+                    val messageList: MutableList<MessageEntity> = mutableListOf()
 
-                if (fileName.endsWith(".txt", ignoreCase = true)) {
-                    Toast.makeText(context, "Started reading lines", Toast.LENGTH_LONG).show()
-                    // Read the .txt file line by line
-                    val regex = Regex("""(\d{1,2}/\d{1,2}/\d{2,4}), (\d{1,2}:\d{1,2}\s*[APap][Mm]) - ([^:]+): (.*)""")
-                    val reader = BufferedReader(InputStreamReader(zipInputStream))
-                    var line: String? = reader.readLine()
-                    while (line != null) {
-                        val match = regex.find(line)
-                        if (match != null) {
-                            val (date, time, name, message) = match.destructured
-                            messages.add(" Date: $date, Time: $time, Name: $name, Message: $message")
-                        } else {
-                            messages.add("FAILED NULL - $line")
+                    withContext(Dispatchers.IO) {
+                        foundTxt = true; userMap.clear(); nextUserId = 1
+                        //Toast.makeText(context, "Started reading lines", Toast.LENGTH_LONG).show()
+
+                        val messagePattern = Regex(
+                            """^(\d{1,4})[./-](\d{1,4})[./-](\d{1,4}),\s*(\d{1,2})[:.](\d{2})\s*(.*?)\s*[-–]\s*(.+?):\s*(.*)$"""
+                        )
+                        val systemMessagePattern = Regex(
+                            """^(\d{1,4})[./-](\d{1,4})[./-](\d{1,4}),\s*(\d{1,2})[:.](\d{2})\s*(.*?)\s*[-–]\s*(.*)$"""
+                        )
+
+                        val reader = BufferedReader(InputStreamReader(zipInputStream))
+                        var line: String? = reader.readLine()
+                        while (line != null) {
+                            val isMessage = messagePattern.find(line)
+                            val isNote =
+                                if (isMessage == null) systemMessagePattern.find(line) else null
+                            if (isMessage != null) {
+                                val (d1, d2, d3, h, m, meridian, name, msg) = isMessage.destructured
+                                val userId = getUserId(name)
+                                val message = MessageEntity(
+                                    chatid = 0,
+                                    messageType = MESSAGETYPE.MESSAGE,
+                                    userid = userId,
+                                    username = name,
+                                    message = msg,
+                                    date = "$d1/$d2/$d3",
+                                    time = "$h:$m $meridian",
+                                    timestamp = null,
+                                    fileId = null,
+                                    messageStatus = MESSAGESTATUS.SEEN,
+                                    replyMessageId = null
+                                )
+                                messageList.add(message)
+                            } else if (isNote != null) {
+                                val (d1, d2, d3, h, m, meridian, msg) = isNote.destructured
+                                val message = MessageEntity(
+                                    chatid = 0,
+                                    messageType = MESSAGETYPE.NOTE,
+                                    message = msg,
+                                    date = "$d1/$d2/$d3",
+                                    time = "$h:$m $meridian",
+                                    timestamp = null,
+                                    userid = null,
+                                    username = null,
+                                    fileId = null,
+                                    messageStatus = null,
+                                    isStarred = false,
+                                    isForwarded = false,
+                                    replyMessageId = null,
+                                )
+                                messageList.add(message)
+                            }/* else {
+
+                            }*/
+
+                            line = reader.readLine()
                         }
 
-                        line = reader.readLine()
                     }
+                    return messageList
                 }
 
                 zipEntry = zipInputStream.nextEntry
@@ -159,16 +261,17 @@ fun openFile(uri: Uri?, context: Context, messages: SnapshotStateList<String>) {
 
             // Display the file list
             if (fileList.isNotEmpty()) {
-                Toast.makeText(context, fileList.joinToString("\n"), Toast.LENGTH_LONG).show()
+                //Toast.makeText(context, fileList.joinToString("\n"), Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(context, "No files found in the ZIP.", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(context, "No files found in the ZIP.", Toast.LENGTH_SHORT).show()
             }
         } else {
             Toast.makeText(context, "Unable to open the file.", Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        Toast.makeText(context, "Error processing the file.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Error processing the file. " + e.toString(), Toast.LENGTH_SHORT)
+            .show()
     }
 
     /*val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -182,6 +285,15 @@ fun openFile(uri: Uri?, context: Context, messages: SnapshotStateList<String>) {
     } else {
         Toast.makeText(context, "No application found to open this file.", Toast.LENGTH_SHORT).show()
     }*/
+    return emptyList()
+}
+
+fun getUserId(username: String): Int {
+    return userMap.getOrPut(username) {
+        val id = nextUserId
+        nextUserId++
+        id
+    }
 }
 
 @Composable
@@ -379,7 +491,7 @@ fun generateRandomTableName(len: Int): String? {
     // ASCII range – alphanumeric (0-9, a-z, A-Z)
     val chars = "abcdefghijklmnopqrstuvwxyz"
     val random = SecureRandom()
-    val sb = java.lang.StringBuilder()
+    val sb = StringBuilder()
 
     // each iteration of the loop randomly chooses a character from the given
     // ASCII range and appends it to the `StringBuilder` instance

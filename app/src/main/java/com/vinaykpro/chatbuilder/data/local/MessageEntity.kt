@@ -1,11 +1,14 @@
 package com.vinaykpro.chatbuilder.data.local
 
+import androidx.compose.runtime.Stable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Stable
 @Entity(tableName = "messages")
 data class MessageEntity(
     @PrimaryKey(autoGenerate = true) val messageId: Int = 0,
+    val chatid: Int,
     val messageType: Int = MESSAGETYPE.NOTE,
     val userid: Int?,
     val username: String?,
@@ -13,8 +16,7 @@ data class MessageEntity(
     val date: String?,
     val time: String?,
     val timestamp: Long?,
-    val mediaType: Int = MEDIATYPE.NONE,
-    val mediaUri: String?,
+    val fileId: Int?,
     val messageStatus: Int?,
     val isStarred: Boolean = false,
     val isForwarded: Boolean = false,
@@ -24,13 +26,6 @@ data class MessageEntity(
 object MESSAGETYPE {
     const val MESSAGE = 0
     const val NOTE = 1
-}
-
-object MEDIATYPE {
-    const val NONE = 0
-    const val IMAGE = 1
-    const val VIDEO = 2
-    const val FILE = 3
 }
 
 object MESSAGESTATUS {
