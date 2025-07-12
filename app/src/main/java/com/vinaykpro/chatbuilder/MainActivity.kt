@@ -1,8 +1,11 @@
 package com.vinaykpro.chatbuilder
 
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.Window
 import androidx.activity.ComponentActivity
@@ -39,6 +42,8 @@ class MainActivity : ComponentActivity() {
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
             val isDarkTheme = remember { mutableStateOf(prefs.getBoolean("isDarkEnabled", false)) }
             window.setBackgroundDrawable((if (isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
+
+            val sharedFileUri = extractSharedFile(intent)
             //TestMessages()
             if (theme != null) {
                 ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
@@ -47,13 +52,26 @@ class MainActivity : ComponentActivity() {
                         themeViewModel = themeViewModel,
                         navController = navController,
                         isDarkTheme = isDarkTheme,
-                        prefs = prefs
+                        prefs = prefs,
+                        sharedFileUri = sharedFileUri
                     )
                 }
             } else {
                 SplashScreen(isDarkTheme = isDarkTheme.value)
             }
         }
+    }
+
+    private fun extractSharedFile(intent: Intent?): Uri? {
+        val action = intent?.action
+        val data = intent?.data
+        val stream = intent?.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+
+        Log.d("vkrpo", "Action: $action")
+        Log.d("vkpro", "Data: $data")
+        Log.d("vkpro", "Stream: $stream")
+
+        return stream ?: data
     }
 
     @Suppress("DEPRECATION")
@@ -68,5 +86,13 @@ class MainActivity : ComponentActivity() {
                         View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                         View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(
+            "vkpro",
+            "Intent action: ${intent?.action}, data: ${intent?.data}, extras: ${intent?.extras}"
+        )
     }
 }

@@ -1,6 +1,8 @@
 package com.vinaykpro.chatbuilder.data.utils
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -288,18 +290,31 @@ class FileIOHelper {
                                         outputStream.write(buffer, 0, count)
                                     }
                                 }
+                                var thumbHeight: Int? = null
+                                var thumbWidth: Int? = null
+                                if (currFile.type == FILETYPE.IMAGE) {
+                                    val res = getImageDimensions(outputFile)
+                                    thumbWidth = res.first
+                                    thumbHeight = res.second
+                                } else if (currFile.type == FILETYPE.VIDEO) {
+                                    val res = getVideoDimensions(outputFile)
+                                    thumbWidth = res.first
+                                    thumbHeight = res.second
+                                }
                                 savedFilesData.add(
                                     FileEntity(
                                         chatid = chatId,
                                         displayname = currFile.name,
                                         filename = filename,
                                         type = currFile.type,
+                                        thumbWidth = thumbWidth,
+                                        thumbHeight = thumbHeight,
                                         size = currFile.size,
                                         lastModified = System.currentTimeMillis()
                                     )
                                 )
                             } catch (e: Exception) {
-                                Log.i("vkpro", "Errorrr ${e.toString()}")
+                                Log.i("vkpro", "Errorrr saving file ${e.toString()}")
                             }
 
                             Log.i("vkpro", "saved file ${currFile.name} with $filename")
@@ -388,6 +403,29 @@ class FileIOHelper {
         }
     }
 
+    fun getVideoDimensions(file: File): Pair<Int, Int> {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(file.absolutePath)
+            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                ?.toIntOrNull() ?: 0
+            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                ?.toIntOrNull() ?: 0
+            width to height
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0 to 0
+        } finally {
+            retriever.release()
+        }
+    }
+
+    fun getImageDimensions(file: File): Pair<Int, Int> {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+        return options.outWidth to options.outHeight
+    }
+
     private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
         if (this.size < prefix.size) return false
         for (i in prefix.indices) {
@@ -395,5 +433,6 @@ class FileIOHelper {
         }
         return true
     }
+
 
 }

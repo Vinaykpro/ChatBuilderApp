@@ -10,6 +10,8 @@ data class FileEntity(
     val displayname: String = "Display name.jpg",
     val filename: String = "file_id.jpg",
     val type: Int = FILETYPE.FILE,
+    val thumbHeight: Int? = null,
+    val thumbWidth: Int? = null,
     val size: String,
     val lastModified: Long
 )

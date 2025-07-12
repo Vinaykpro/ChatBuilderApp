@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FileDao {
     @Query("SELECT * FROM files WHERE chatid = :chatid")
-    fun getFilesByChatId(chatid: Int): Flow<FileEntity>
+    fun getFilesByChatId(chatid: Int): Flow<List<FileEntity>>
 
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addFile(file: FileEntity): Long

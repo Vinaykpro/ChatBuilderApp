@@ -1,7 +1,9 @@
 package com.vinaykpro.chatbuilder.ui.screens.home
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Application
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,6 +58,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +74,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -97,7 +101,8 @@ import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 fun HomeScreen(
     navController: NavController,
     isDarkTheme: MutableState<Boolean> = mutableStateOf(false),
-    prefs: SharedPreferences
+    prefs: SharedPreferences,
+    sharedFileUri: Uri?
 ) {
     val context = LocalContext.current
     val homeViewModel: HomeViewModel = viewModel(
@@ -130,6 +135,16 @@ fun HomeScreen(
     ) { uri: Uri? ->
         uri?.let {
             homeViewModel.importChatFromFile(uri)
+        }
+    }
+
+    val localUri = rememberSaveable { mutableStateOf(sharedFileUri?.toString()) }
+    LaunchedEffect(localUri.value) {
+        if (localUri.value != null) {
+            val uri = localUri.value!!.toUri()
+            homeViewModel.importChatFromFile(uri)
+            (context as? Activity)?.intent = Intent()
+            localUri.value = null
         }
     }
 

@@ -24,11 +24,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.ImageLoader
+import coil.decode.VideoFrameDecoder
 import com.vinaykpro.chatbuilder.data.local.BodyStyle
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
@@ -50,6 +53,7 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
     val chatViewModel: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(context.applicationContext as Application, chatId)
     )
+    val screenWidthInDp = LocalConfiguration.current.screenWidthDp
 
     val headerStyle = remember(theme.headerstyle) {
         try {
@@ -78,8 +82,14 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
             MessageBarStyle()
         }
     }
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components { add(VideoFrameDecoder.Factory()) }
+            .build()
+    }
     val listState = rememberLazyListState()
     val chatDetails by chatViewModel.chatDetails.collectAsState()
+    val filesMap by chatViewModel.files.collectAsState()
     val messages by chatViewModel.messages.collectAsState(initial = emptyList())
     LaunchedEffect(chatDetails?.lastOpenedMsgId) {
         chatDetails?.let { chatViewModel.initialLoad(it.lastOpenedMsgId) }
@@ -88,7 +98,7 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
         if (chatViewModel.isInitialScroll) {
             val index = messages.indexOfFirst { it.messageId == chatDetails?.lastOpenedMsgId }
             if (index >= 0) {
-                listState.animateScrollToItem(index)
+                listState.scrollToItem(index)
                 chatViewModel.isInitialScroll = false
             }
         }
@@ -143,17 +153,33 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
                     )
 
                     m.userid == (chatDetails?.senderId ?: 1) -> SenderMessage(
-                        text = m.message.toString(),
+                        text = m.message,
                         sentTime = m.time.toString(),
                         bubbleStyle = 1,
-                        isFirst = i == 0 || messages[i - 1].userid != m.userid
+                        bubbleRadius = bodyStyle.bubble_radius,
+                        bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                        isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                        color = themeBodyColors.senderBubble,
+                        textColor = themeBodyColors.textPrimary,
+                        hintTextColor = themeBodyColors.textSecondary,
+                        file = filesMap[m.fileId],
+                        screenWidth = screenWidthInDp,
+                        imageLoader = imageLoader
                     )
 
                     else -> Message(
-                        text = m.message.toString(),
+                        text = m.message,
                         sentTime = m.time.toString(),
                         bubbleStyle = 1,
-                        isFirst = i == 0 || messages[i - 1].userid != m.userid
+                        bubbleRadius = bodyStyle.bubble_radius,
+                        bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                        isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                        color = themeBodyColors.receiverBubble,
+                        textColor = themeBodyColors.textPrimary,
+                        hintTextColor = themeBodyColors.textSecondary,
+                        file = filesMap[m.fileId],
+                        screenWidth = screenWidthInDp,
+                        imageLoader = imageLoader
                     )
                 }
             }

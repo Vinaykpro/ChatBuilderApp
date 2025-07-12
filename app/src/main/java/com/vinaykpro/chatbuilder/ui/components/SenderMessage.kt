@@ -3,29 +3,42 @@ package com.vinaykpro.chatbuilder.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.ImageLoader
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.data.local.FileEntity
+import java.io.File
 
 @Preview
 @Composable
 fun SenderMessage(
-    text: String = "Hii man",
+    text: String? = "Hii man",
     sentTime: String = "11:25 pm",
     color: Color = Color(0xFFBEFFEA),
     textColor: Color = Color(0xFF000000),
@@ -33,18 +46,36 @@ fun SenderMessage(
     bubbleStyle: Int = 0,
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
+    file: FileEntity? = null,
+    screenWidth: Int = 200,
     isFirst: Boolean = false,
     isLast: Boolean = false,
     showTime: Boolean = true,
-    showTicks: Boolean = true
+    showTicks: Boolean = true,
+    imageLoader: ImageLoader? = null
 ) {
     val space = if (showTime) " ⠀ ⠀     ⠀" else if (showTicks) "   " else ""
-    var bubbleModifier: Modifier = when (bubbleStyle) {
+    val context = LocalContext.current
+
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(File(context.getExternalFilesDir(null), file?.filename ?: ""))
+            .crossfade(true)
+            .build(),
+        imageLoader = imageLoader!!
+    )
+
+    val (imageContainerModifier, containerModifier) = getContainerModifier(
+        file,
+        bubbleRadius,
+        screenWidth
+    )
+
+    val bubbleModifier: Modifier = when (bubbleStyle) {
         0 -> {
             Modifier
                 .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp))
-                .padding(vertical = 4.dp)
-                .padding(start = 10.dp, end = 5.dp)
+                .padding(3.dp)
         }
 
         1 -> {
@@ -59,8 +90,7 @@ fun SenderMessage(
                         bubbleRadius.dp
                     )
                 )
-                .padding(vertical = 4.dp)
-                .padding(start = 10.dp, end = 5.dp)
+                .padding(3.dp)
         }
 
         2 -> {
@@ -74,8 +104,7 @@ fun SenderMessage(
                         bubbleRadius.dp
                     )
                 )
-                .padding(vertical = 4.dp)
-                .padding(start = 10.dp, end = 5.dp)
+                .padding(3.dp)
         }
 
         3 -> {
@@ -90,8 +119,7 @@ fun SenderMessage(
                         bubbleRadius.dp
                     )
                 )
-                .padding(vertical = 4.dp)
-                .padding(start = 10.dp, end = 5.dp)
+                .padding(3.dp)
         }
 
         else -> {
@@ -118,13 +146,28 @@ fun SenderMessage(
             modifier = bubbleModifier
                 .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
         ) {
-            // Message text
-            Text(
-                text = "$text  $space", // Extra spaces for spacing
-                color = textColor,
-                fontSize = 16.sp,
-                lineHeight = 20.sp
-            )
+            Column(modifier = containerModifier) {
+                if (file != null)
+                    Box(
+                        modifier = imageContainerModifier
+                    ) {
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                if (text != null)
+                    Text(
+                        text = "$text  $space", // Extra spaces for spacing
+                        color = textColor,
+                        fontSize = 16.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
+                    )
+            }
 
             // Sent time
             Row(
@@ -209,4 +252,44 @@ val BottomBubbleShape = GenericShape { size, _ ->
         w * 8.82502f / 13.2375f, h * 8.9375f / 11f
     )
     close()
+}
+
+fun getContainerModifier(
+    file: FileEntity?,
+    bubbleRadius: Float,
+    screenWidth: Int
+): Pair<Modifier, Modifier> {
+    var imageWidthDp: Double = -1.0
+    var imageContainerModifier = Modifier
+        .clip(RoundedCornerShape(bubbleRadius.dp))
+        .background(Color.Black)
+    var maxImageWidthDp = screenWidth * 0.65
+    val maxImageHeightDp = 350.0
+    val minImageHeightDp = 60.0
+
+    if (file != null && file.thumbWidth != null && file.thumbHeight != null) {
+        if (file.thumbHeight == file.thumbWidth) {
+            imageWidthDp = maxImageWidthDp
+            imageContainerModifier = imageContainerModifier.size(imageWidthDp.dp)
+        } else {
+            val imageAspectRatio = file.thumbHeight.toFloat() / file.thumbWidth.toFloat()
+            maxImageWidthDp =
+                if (file.thumbWidth > file.thumbHeight) screenWidth * 0.7 else screenWidth * 0.6
+            val widthScaleFactor = maxImageWidthDp / file.thumbWidth
+            val scaledWidthDp = file.thumbWidth * widthScaleFactor
+            val scaledHeightDp = file.thumbHeight * widthScaleFactor
+
+            val finalWidthDp = scaledWidthDp.coerceAtMost(maxImageWidthDp)
+            val finalHeightDp = scaledHeightDp.coerceIn(minImageHeightDp, maxImageHeightDp)
+
+            imageWidthDp = finalWidthDp
+            imageContainerModifier = imageContainerModifier
+                .width(finalWidthDp.dp)
+                .height(finalHeightDp.dp)
+        }
+    }
+
+    return imageContainerModifier to
+            if (imageWidthDp > 0) Modifier.width(imageWidthDp.dp)
+            else Modifier.wrapContentWidth()
 }
