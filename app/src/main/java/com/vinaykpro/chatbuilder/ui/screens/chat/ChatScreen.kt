@@ -1,6 +1,9 @@
 package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,10 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.ImageLoader
 import coil.decode.VideoFrameDecoder
 import com.vinaykpro.chatbuilder.data.local.BodyStyle
@@ -43,17 +47,25 @@ import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.json.Json
+import kotlin.math.min
 
-@Preview(showBackground = true)
+@OptIn(ExperimentalSharedTransitionApi::class)
+//@Preview(showBackground = true)
 @Composable
-fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
+fun SharedTransitionScope.ChatScreen(
+    chatId: Int = 1,
+    isDarkTheme: Boolean = false,
+    navController: NavHostController = rememberNavController(),
+    animatedVisibilityScope: AnimatedVisibilityScope
+) {
     val theme = LocalThemeEntity.current
 
     val context = LocalContext.current
     val chatViewModel: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(context.applicationContext as Application, chatId)
     )
-    val screenWidthInDp = LocalConfiguration.current.screenWidthDp
+    val screenWidthForMedia =
+        min(LocalConfiguration.current.screenWidthDp, LocalConfiguration.current.screenHeightDp)
 
     val headerStyle = remember(theme.headerstyle) {
         try {
@@ -161,10 +173,22 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
                         isFirst = i == 0 || messages[i - 1].userid != m.userid,
                         color = themeBodyColors.senderBubble,
                         textColor = themeBodyColors.textPrimary,
-                        hintTextColor = themeBodyColors.textSecondary,
+                        textColorSecondary = themeBodyColors.textSecondary,
                         file = filesMap[m.fileId],
-                        screenWidth = screenWidthInDp,
-                        imageLoader = imageLoader
+                        screenWidth = screenWidthForMedia,
+                        imageLoader = imageLoader,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        onMediaClick = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "mediaMetaMap",
+                                filesMap
+                            )
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "mediaMessages",
+                                chatViewModel.mediaMessages
+                            )
+                            navController.navigate("mediapreview/$it")
+                        }
                     )
 
                     else -> Message(
@@ -176,10 +200,22 @@ fun ChatScreen(chatId: Int = 1, isDarkTheme: Boolean = false) {
                         isFirst = i == 0 || messages[i - 1].userid != m.userid,
                         color = themeBodyColors.receiverBubble,
                         textColor = themeBodyColors.textPrimary,
-                        hintTextColor = themeBodyColors.textSecondary,
+                        textColorSecondary = themeBodyColors.textSecondary,
                         file = filesMap[m.fileId],
-                        screenWidth = screenWidthInDp,
-                        imageLoader = imageLoader
+                        screenWidth = screenWidthForMedia,
+                        imageLoader = imageLoader,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        onMediaClick = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "mediaMetaMap",
+                                filesMap
+                            )
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "mediaMessages",
+                                chatViewModel.mediaMessages
+                            )
+                            navController.navigate("mediapreview/$it")
+                        }
                     )
                 }
             }

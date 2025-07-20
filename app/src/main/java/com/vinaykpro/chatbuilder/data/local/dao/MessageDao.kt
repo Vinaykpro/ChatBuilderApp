@@ -12,6 +12,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages where chatid = :chatID")
     fun getAllMessages(chatID: Int): Flow<List<MessageEntity>>
 
+    @Query("SELECT * FROM messages where chatid = :chatID and fileId not null")
+    suspend fun getAllMediaMessages(chatID: Int): List<MessageEntity>
+
     @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY messageId ASC LIMIT :limit")
     suspend fun getMessagesPaged(chatId: Int, limit: Int): List<MessageEntity>
 

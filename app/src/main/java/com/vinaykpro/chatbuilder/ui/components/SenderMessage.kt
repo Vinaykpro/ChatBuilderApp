@@ -1,7 +1,14 @@
 package com.vinaykpro.chatbuilder.ui.components
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,24 +34,29 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.local.FileEntity
 import java.io.File
 
-@Preview
+@OptIn(ExperimentalSharedTransitionApi::class)
+//@Preview
 @Composable
-fun SenderMessage(
+fun SharedTransitionScope.SenderMessage(
     text: String? = "Hii man",
     sentTime: String = "11:25 pm",
     color: Color = Color(0xFFBEFFEA),
     textColor: Color = Color(0xFF000000),
-    hintTextColor: Color = Color(0xFF414141),
+    textColorSecondary: Color = Color(0xFF414141),
     bubbleStyle: Int = 0,
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
@@ -52,7 +66,9 @@ fun SenderMessage(
     isLast: Boolean = false,
     showTime: Boolean = true,
     showTicks: Boolean = true,
-    imageLoader: ImageLoader? = null
+    imageLoader: ImageLoader? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    onMediaClick: (Int) -> Unit = {}
 ) {
     val space = if (showTime) " ⠀ ⠀     ⠀" else if (showTicks) "   " else ""
     val context = LocalContext.current
@@ -60,10 +76,11 @@ fun SenderMessage(
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
             .data(File(context.getExternalFilesDir(null), file?.filename ?: ""))
-            .crossfade(true)
             .build(),
-        imageLoader = imageLoader!!
+        imageLoader = imageLoader ?: ImageLoader(context)
     )
+
+    val isFile = (file != null && !(file.type == FILETYPE.IMAGE || file.type == FILETYPE.VIDEO))
 
     val (imageContainerModifier, containerModifier) = getContainerModifier(
         file,
@@ -71,7 +88,228 @@ fun SenderMessage(
         screenWidth
     )
 
-    val bubbleModifier: Modifier = when (bubbleStyle) {
+    val bubbleModifier: Modifier =
+        getBubbleModifier(bubbleStyle, bubbleRadius, color, isFirst, isLast)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(1.dp)
+            .padding(top = if (isFirst) 2.dp else 0.dp)
+            .padding(start = 40.dp), contentAlignment = Alignment.Center
+    ) {
+        if (bubbleStyle == 1 && isFirst) SentArrow(
+            modifier = Modifier.align(Alignment.TopEnd),
+            bubbleRadius = bubbleTipRadius,
+            color
+        )
+        else if (bubbleStyle == 3 && isLast) SentArrowBottom(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            color
+        )
+
+        Box(
+            modifier = bubbleModifier
+                .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
+                .clickable {
+                    if (file != null && isFile)
+                        try {
+                            val filePath = File(
+                                context.getExternalFilesDir(null),
+                                file.filename
+                            )
+                            val uri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.provider",
+                                filePath
+                            )
+
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(
+                                    uri,
+                                    context.contentResolver.getType(uri) ?: "*/*"
+                                )
+                                flags =
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                Toast.makeText(
+                                    context,
+                                    "No app found to open this file",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "This file doesn't exist in storage",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                }
+        ) {
+            Column(modifier = containerModifier) {
+                if (file != null) {
+                    Box(
+                        modifier = imageContainerModifier
+                    ) {
+                        if (!isFile) {
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black)
+                                    .sharedElement(
+                                        state = rememberSharedContentState(file.fileid),
+                                        animatedVisibilityScope = animatedVisibilityScope!!
+                                    )
+                                    .clickable {
+                                        onMediaClick(file.fileid)
+                                    }
+                            )
+                            if (file.type == FILETYPE.VIDEO) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_playbtn),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(50.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .background(Color(0x31000000))
+                                        .padding(bottom = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_videocall),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(horizontal = 5.dp)
+                                            .size(16.dp),
+                                        tint = Color.White
+                                    )
+                                    Text(
+                                        text = file.duration,
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(
+                                        when (file.type) {
+                                            FILETYPE.AUDIO -> R.drawable.ic_audiofile
+                                            FILETYPE.ZIP -> R.drawable.ic_zipfile
+                                            else -> R.drawable.ic_anyfile
+                                        }
+                                    ),
+                                    contentDescription = null,
+                                    tint = Color.Unspecified,
+                                    modifier = Modifier
+                                        .padding(horizontal = 7.dp)
+                                        .size(24.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = file.displayname,
+                                        color = textColor,
+                                        fontSize = 16.sp,
+                                        lineHeight = 16.sp,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        softWrap = true,
+                                        style = TextStyle(
+                                            lineBreak = LineBreak.Simple
+                                        )
+                                    )
+                                    Text(
+                                        text = file.size,
+                                        color = textColorSecondary,
+                                        fontSize = 11.sp,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (text != null || isFile)
+                    Text(
+                        text = if (isFile) " " else "$text  $space", // Extra spaces for spacing
+                        color = textColor,
+                        fontSize = 16.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(
+                            top = 1.dp,
+                            bottom = 1.dp,
+                            start = 5.dp,
+                            end = 3.dp
+                        )
+                    )
+            }
+
+            // Sent time
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = if (file != null && !isFile) 2.dp else 0.dp, end = 1.dp)
+                    .background(
+                        if (text == null && file != null && !isFile) MaterialTheme.colorScheme.background.copy(
+                            alpha = 0.3f
+                        ) else Color.Transparent
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showTime) {
+                    Text(
+                        text = sentTime,
+                        color = textColorSecondary,
+                        fontSize = 11.sp,
+                        lineHeight = 11.sp
+                    )
+                }
+                if (showTicks) {
+                    Image(
+                        painter = painterResource(id = R.drawable.doubleticks),
+                        contentDescription = "Double ticks",
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(13.dp),
+                        colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
+                    )
+                }
+            }
+        }
+    }
+
+
+}
+
+fun getBubbleModifier(
+    bubbleStyle: Int,
+    bubbleRadius: Float,
+    color: Color,
+    isFirst: Boolean,
+    isLast: Boolean
+): Modifier {
+    val modifier = when (bubbleStyle) {
         0 -> {
             Modifier
                 .background(color = color, shape = RoundedCornerShape(bubbleRadius.dp))
@@ -126,79 +364,8 @@ fun SenderMessage(
             Modifier
         }
     }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(1.dp)
-            .padding(top = if (isFirst) 2.dp else 0.dp)
-            .padding(start = 40.dp), contentAlignment = Alignment.Center
-    ) {
-        if (bubbleStyle == 1 && isFirst) SentArrow(
-            modifier = Modifier.align(Alignment.TopEnd),
-            bubbleRadius = bubbleTipRadius,
-            color
-        )
-        else if (bubbleStyle == 3 && isLast) SentArrowBottom(
-            modifier = Modifier.align(Alignment.BottomEnd),
-            color
-        )
-        Box(
-            modifier = bubbleModifier
-                .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
-        ) {
-            Column(modifier = containerModifier) {
-                if (file != null)
-                    Box(
-                        modifier = imageContainerModifier
-                    ) {
-                        Image(
-                            painter = painter,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
 
-                if (text != null)
-                    Text(
-                        text = "$text  $space", // Extra spaces for spacing
-                        color = textColor,
-                        fontSize = 16.sp,
-                        lineHeight = 20.sp,
-                        modifier = Modifier.padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
-                    )
-            }
-
-            // Sent time
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 1.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (showTime) {
-                    Text(
-                        text = sentTime,
-                        color = hintTextColor,
-                        fontSize = 11.sp,
-                        lineHeight = 11.sp
-                    )
-                }
-                if (showTicks) {
-                    Image(
-                        painter = painterResource(id = R.drawable.doubleticks),
-                        contentDescription = "Double ticks",
-                        modifier = Modifier
-                            .padding(start = 2.dp)
-                            .size(13.dp),
-                        colorFilter = ColorFilter.tint(Color(0xFF1EA6E4))
-                    )
-                }
-            }
-        }
-    }
-
-
+    return modifier
 }
 
 @Composable
@@ -260,32 +427,37 @@ fun getContainerModifier(
     screenWidth: Int
 ): Pair<Modifier, Modifier> {
     var imageWidthDp: Double = -1.0
-    var imageContainerModifier = Modifier
-        .clip(RoundedCornerShape(bubbleRadius.dp))
-        .background(Color.Black)
+    var imageContainerModifier: Modifier = Modifier
     var maxImageWidthDp = screenWidth * 0.65
     val maxImageHeightDp = 350.0
-    val minImageHeightDp = 60.0
+    val minImageHeightDp = 70.0
+    if (file != null) {
+        imageContainerModifier =
+            Modifier
+                .clip(RoundedCornerShape(bubbleRadius.dp))
+                .background(Color(0x25000000))
+        // val imageAspectRatio = file.thumbHeight.toFloat() / file.thumbWidth.toFloat()
+        if ((file.type == FILETYPE.IMAGE || file.type == FILETYPE.VIDEO) && file.thumbWidth != null && file.thumbHeight != null) {
+            if (file.thumbWidth == file.thumbHeight) {
+                imageWidthDp = maxImageWidthDp
+                imageContainerModifier = imageContainerModifier.size(imageWidthDp.dp)
+            } else {
+                maxImageWidthDp =
+                    if (file.thumbWidth > file.thumbHeight) screenWidth * 0.7 else screenWidth * 0.6
+                val widthScaleFactor = maxImageWidthDp / file.thumbWidth
+                val scaledWidthDp = file.thumbWidth * widthScaleFactor
+                val scaledHeightDp = file.thumbHeight * widthScaleFactor
 
-    if (file != null && file.thumbWidth != null && file.thumbHeight != null) {
-        if (file.thumbHeight == file.thumbWidth) {
-            imageWidthDp = maxImageWidthDp
-            imageContainerModifier = imageContainerModifier.size(imageWidthDp.dp)
+                val finalWidthDp = scaledWidthDp.coerceAtMost(maxImageWidthDp)
+                val finalHeightDp = scaledHeightDp.coerceIn(minImageHeightDp, maxImageHeightDp)
+
+                imageWidthDp = finalWidthDp
+                imageContainerModifier = imageContainerModifier
+                    .width(finalWidthDp.dp)
+                    .height(finalHeightDp.dp)
+            }
         } else {
-            val imageAspectRatio = file.thumbHeight.toFloat() / file.thumbWidth.toFloat()
-            maxImageWidthDp =
-                if (file.thumbWidth > file.thumbHeight) screenWidth * 0.7 else screenWidth * 0.6
-            val widthScaleFactor = maxImageWidthDp / file.thumbWidth
-            val scaledWidthDp = file.thumbWidth * widthScaleFactor
-            val scaledHeightDp = file.thumbHeight * widthScaleFactor
-
-            val finalWidthDp = scaledWidthDp.coerceAtMost(maxImageWidthDp)
-            val finalHeightDp = scaledHeightDp.coerceIn(minImageHeightDp, maxImageHeightDp)
-
-            imageWidthDp = finalWidthDp
-            imageContainerModifier = imageContainerModifier
-                .width(finalWidthDp.dp)
-                .height(finalHeightDp.dp)
+            imageWidthDp = maxImageWidthDp
         }
     }
 

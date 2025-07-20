@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,9 +53,6 @@ import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.MESSAGESTATUS
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
-import com.vinaykpro.chatbuilder.ui.components.ChatNote
-import com.vinaykpro.chatbuilder.ui.components.Message
-import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -137,7 +133,7 @@ fun TestMessages() {
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
+            /*itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
                 when {
                     m.messageType == MESSAGETYPE.NOTE -> ChatNote(m.message!!)
                     m.userid == 1 -> SenderMessage(
@@ -154,7 +150,7 @@ fun TestMessages() {
                         isFirst = i == 0 || messages[i - 1].userid != m.userid
                     )
                 }
-            }
+            }*/
         }
 
         FloatingActionButton(

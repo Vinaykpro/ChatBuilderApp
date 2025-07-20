@@ -292,6 +292,7 @@ class FileIOHelper {
                                 }
                                 var thumbHeight: Int? = null
                                 var thumbWidth: Int? = null
+                                var duration: String = ""
                                 if (currFile.type == FILETYPE.IMAGE) {
                                     val res = getImageDimensions(outputFile)
                                     thumbWidth = res.first
@@ -300,6 +301,7 @@ class FileIOHelper {
                                     val res = getVideoDimensions(outputFile)
                                     thumbWidth = res.first
                                     thumbHeight = res.second
+                                    duration = res.third
                                 }
                                 savedFilesData.add(
                                     FileEntity(
@@ -310,6 +312,7 @@ class FileIOHelper {
                                         thumbWidth = thumbWidth,
                                         thumbHeight = thumbHeight,
                                         size = currFile.size,
+                                        duration = duration,
                                         lastModified = System.currentTimeMillis()
                                     )
                                 )
@@ -403,7 +406,7 @@ class FileIOHelper {
         }
     }
 
-    fun getVideoDimensions(file: File): Pair<Int, Int> {
+    fun getVideoDimensions(file: File): Triple<Int, Int, String> {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(file.absolutePath)
@@ -411,10 +414,13 @@ class FileIOHelper {
                 ?.toIntOrNull() ?: 0
             val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
                 ?.toIntOrNull() ?: 0
-            width to height
+            val durationStr =
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            val durationMs = durationStr?.toLongOrNull() ?: 0L
+            Triple(width, height, formatDuration(durationMs))
         } catch (e: Exception) {
             e.printStackTrace()
-            0 to 0
+            Triple(0, 0, "")
         } finally {
             retriever.release()
         }
@@ -424,6 +430,18 @@ class FileIOHelper {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, options)
         return options.outWidth to options.outHeight
+    }
+
+    fun formatDuration(ms: Long): String {
+        val totalSec = ms / 1000
+        val hours = totalSec / 3600
+        val minutes = (totalSec % 3600) / 60
+        val seconds = totalSec % 60
+
+        return if (hours > 0)
+            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        else
+            String.format("%02d:%02d", minutes, seconds)
     }
 
     private fun ByteArray.startsWith(prefix: ByteArray): Boolean {

@@ -66,7 +66,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.0")
 
     // Media Loading
     implementation("io.coil-kt:coil-compose:2.6.0")

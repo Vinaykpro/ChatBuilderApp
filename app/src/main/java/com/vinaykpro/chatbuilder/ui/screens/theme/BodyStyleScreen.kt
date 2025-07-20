@@ -1,6 +1,8 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -64,8 +66,9 @@ import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun BodyStyleScreen(
+fun SharedTransitionScope.BodyStyleScreen(
     navController: NavController = rememberNavController(),
     isDarkTheme: Boolean = false,
     themeViewModel: ThemeViewModel
@@ -192,7 +195,7 @@ fun BodyStyleScreen(
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.senderBubble,
                 textColor = previewColors.textPrimary,
-                hintTextColor = previewColors.textSecondary,
+                textColorSecondary = previewColors.textSecondary,
                 isFirst = true,
                 showTime = previewAttrs.show_time,
                 showTicks = previewAttrs.showticks
@@ -204,7 +207,7 @@ fun BodyStyleScreen(
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.senderBubble,
                 textColor = previewColors.textPrimary,
-                hintTextColor = previewColors.textSecondary,
+                textColorSecondary = previewColors.textSecondary,
                 isLast = true,
                 showTime = previewAttrs.show_time,
                 showTicks = previewAttrs.showticks
@@ -217,7 +220,7 @@ fun BodyStyleScreen(
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.receiverBubble,
                 textColor = previewColors.textPrimary,
-                hintTextColor = previewColors.textSecondary,
+                textColorSecondary = previewColors.textSecondary,
                 isFirst = true,
                 showTime = previewAttrs.show_time
             )
@@ -228,7 +231,7 @@ fun BodyStyleScreen(
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.receiverBubble,
                 textColor = previewColors.textPrimary,
-                hintTextColor = previewColors.textSecondary,
+                textColorSecondary = previewColors.textSecondary,
                 isLast = true,
                 showTime = previewAttrs.show_time
             )

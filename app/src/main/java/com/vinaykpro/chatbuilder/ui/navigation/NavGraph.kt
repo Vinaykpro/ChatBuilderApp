@@ -3,6 +3,8 @@ package com.vinaykpro.chatbuilder.ui.navigation
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -18,6 +20,7 @@ import com.vinaykpro.chatbuilder.TestMessages
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
+import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.BodyStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.EditThemeScreen
@@ -36,7 +39,7 @@ object Routes {
     const val MessagebarStyle = "barstyle"
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavHost(
     themeViewModel: ThemeViewModel,
@@ -47,104 +50,169 @@ fun AppNavHost(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
-    NavHost(
-        navController = navController,
-        startDestination = Routes.Home
-    ) {
-        composable(Routes.Splash) {
-            SplashScreen(navController, isDarkTheme.value)
-        }
-        composable(route = Routes.Home) {
-            HomeScreen(
-                navController = navController,
-                isDarkTheme = isDarkTheme,
-                prefs = prefs,
-                sharedFileUri = sharedFileUri
-            )
-        }
-        composable(
-            route = Routes.Chat,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) { backStackEntry ->
-            val chatId = backStackEntry.arguments?.getString("chatId")?.toIntOrNull()
-            chatId?.let {
-                ChatScreen(chatId = it, isDarkTheme.value)
+
+    SharedTransitionLayout {
+        NavHost(
+            navController = navController,
+            startDestination = Routes.Home
+        ) {
+            composable(Routes.Splash) {
+                SplashScreen(navController, isDarkTheme.value)
             }
-        }
-        composable(
-            Routes.Themes,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) {
-            ThemeScreen(themeViewModel = themeViewModel, navController = navController)
-        }
-        composable(
-            Routes.EditTheme,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) { backStackEntry ->
-            EditThemeScreen(
-                themename = (backStackEntry.arguments?.getString("name")
-                    ?: "Default"),
-                navController = navController,
-                themeViewModel = themeViewModel,
-                isDark = isDarkTheme.value
-            )
-        }
-        composable(
-            Routes.HeaderStyle,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) {
-            HeaderStyleScreen(
-                navController = navController,
-                themeViewModel = themeViewModel,
-                isDarkTheme = isDarkTheme.value
-            )
-        }
-        composable(
-            Routes.BodyStyle,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) {
-            BodyStyleScreen(
-                navController = navController,
-                themeViewModel = themeViewModel,
-                isDarkTheme = isDarkTheme.value
-            )
-        }
-        composable(
-            Routes.MessagebarStyle,
-            enterTransition = {
-                slideInHorizontally(initialOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            },
-            exitTransition = {
-                slideOutHorizontally(targetOffsetX = { screenWidthPx }, animationSpec = tween(400))
-            }) {
-            MessageBarStyleScreen(
-                navController = navController,
-                themeViewModel = themeViewModel,
-                isDarkTheme = isDarkTheme.value
-            )
-        }
-        composable("temp") {
-            TestMessages()
+            composable(route = Routes.Home) {
+                HomeScreen(
+                    navController = navController,
+                    isDarkTheme = isDarkTheme,
+                    prefs = prefs,
+                    sharedFileUri = sharedFileUri
+                )
+            }
+            composable(
+                route = Routes.Chat,
+                enterTransition = {
+                    if (targetState.destination.route?.startsWith("mediapreview") == true) {
+                        null
+                    } else {
+                        slideInHorizontally(
+                            initialOffsetX = { screenWidthPx },
+                            animationSpec = tween(400)
+                        )
+                    }
+                },
+                exitTransition = {
+                    null
+                },
+                popEnterTransition = null,
+                popExitTransition = {
+                    if (initialState.destination.route?.startsWith("mediapreview") == true) {
+                        null
+                    } else {
+                        slideOutHorizontally(
+                            targetOffsetX = { screenWidthPx },
+                            animationSpec = tween(400)
+                        )
+                    }
+                }
+            ) { backStackEntry ->
+                val chatId = backStackEntry.arguments?.getString("chatId")?.toIntOrNull()
+                chatId?.let {
+                    ChatScreen(chatId = it, isDarkTheme.value, navController, this)
+                }
+            }
+
+            composable(
+                "mediapreview/{fileid}",
+                enterTransition = null,
+                exitTransition = null,
+                popEnterTransition = null,
+                popExitTransition = null
+            ) { backStackEntry ->
+                val fileid = backStackEntry.arguments?.getString("fileid")?.toIntOrNull()
+                MediaPreviewScreen(fileid, navController, this)
+            }
+
+
+            composable(
+                Routes.Themes,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) {
+                ThemeScreen(themeViewModel = themeViewModel, navController = navController)
+            }
+            composable(
+                Routes.EditTheme,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) { backStackEntry ->
+                EditThemeScreen(
+                    themename = (backStackEntry.arguments?.getString("name")
+                        ?: "Default"),
+                    navController = navController,
+                    themeViewModel = themeViewModel,
+                    isDark = isDarkTheme.value
+                )
+            }
+            composable(
+                Routes.HeaderStyle,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) {
+                HeaderStyleScreen(
+                    navController = navController,
+                    themeViewModel = themeViewModel,
+                    isDarkTheme = isDarkTheme.value
+                )
+            }
+            composable(
+                Routes.BodyStyle,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) {
+                BodyStyleScreen(
+                    navController = navController,
+                    themeViewModel = themeViewModel,
+                    isDarkTheme = isDarkTheme.value
+                )
+            }
+            composable(
+                Routes.MessagebarStyle,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) {
+                MessageBarStyleScreen(
+                    navController = navController,
+                    themeViewModel = themeViewModel,
+                    isDarkTheme = isDarkTheme.value
+                )
+            }
+            composable("temp") {
+                TestMessages()
+            }
         }
     }
 }

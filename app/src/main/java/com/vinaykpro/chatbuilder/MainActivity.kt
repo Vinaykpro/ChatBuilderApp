@@ -10,6 +10,7 @@ import android.view.View
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +27,7 @@ import com.vinaykpro.chatbuilder.ui.theme.ChatBuilderTheme
 class MainActivity : ComponentActivity() {
     private lateinit var themeViewModel: ThemeViewModel
 
+    @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -46,8 +48,8 @@ class MainActivity : ComponentActivity() {
             val sharedFileUri = extractSharedFile(intent)
             //TestMessages()
             if (theme != null) {
+                val navController = rememberNavController()
                 ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {
-                    val navController = rememberNavController()
                     AppNavHost(
                         themeViewModel = themeViewModel,
                         navController = navController,

@@ -3,7 +3,9 @@ package com.vinaykpro.chatbuilder.data.local
 import androidx.compose.runtime.Stable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Stable
 @Entity(tableName = "messages")
 data class MessageEntity(

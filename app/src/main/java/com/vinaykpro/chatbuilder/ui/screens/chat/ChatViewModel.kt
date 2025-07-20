@@ -31,6 +31,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
             fileList.associateBy { it.fileid }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    var mediaMessages: List<MessageEntity?> = emptyList()
 
     private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     val messages: StateFlow<List<MessageEntity>> = _messages
@@ -69,6 +70,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                     _messages.update { it + newMessages }
                 }
             }
+            mediaMessages = dao.getAllMediaMessages(chatId)
             isLoadingNext = false
             isLoadingPrev = false
         }
