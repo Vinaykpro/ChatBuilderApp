@@ -1,5 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.navigation
 
+import android.app.Application
+import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -13,10 +15,13 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.vinaykpro.chatbuilder.TestMessages
+import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
@@ -44,12 +49,17 @@ object Routes {
 fun AppNavHost(
     themeViewModel: ThemeViewModel,
     navController: NavHostController,
+    context: Context,
     isDarkTheme: MutableState<Boolean>,
     prefs: SharedPreferences,
     sharedFileUri: Uri?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
+
+    val chatMediaViewModel: ChatMediaViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
+    )
 
     SharedTransitionLayout {
         NavHost(
@@ -63,6 +73,7 @@ fun AppNavHost(
                 HomeScreen(
                     navController = navController,
                     isDarkTheme = isDarkTheme,
+                    themeViewModel = themeViewModel,
                     prefs = prefs,
                     sharedFileUri = sharedFileUri
                 )
@@ -96,7 +107,13 @@ fun AppNavHost(
             ) { backStackEntry ->
                 val chatId = backStackEntry.arguments?.getString("chatId")?.toIntOrNull()
                 chatId?.let {
-                    ChatScreen(chatId = it, isDarkTheme.value, navController, this)
+                    ChatScreen(
+                        chatId = it,
+                        isDarkTheme.value,
+                        navController,
+                        this,
+                        chatMediaViewModel
+                    )
                 }
             }
 
@@ -108,7 +125,7 @@ fun AppNavHost(
                 popExitTransition = null
             ) { backStackEntry ->
                 val fileid = backStackEntry.arguments?.getString("fileid")?.toIntOrNull()
-                MediaPreviewScreen(fileid, navController, this)
+                MediaPreviewScreen(fileid, navController, this, chatMediaViewModel)
             }
 
 

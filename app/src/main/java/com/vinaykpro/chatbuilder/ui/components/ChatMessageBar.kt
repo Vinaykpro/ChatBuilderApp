@@ -18,8 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -47,9 +46,12 @@ import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
 fun ChatMessageBar(
     placeholder: String = "Message",
     value: String = "",
-    icon1: Painter? = painterResource(R.drawable.ic_file),
-    icon2: Painter? = painterResource(R.drawable.ic_camera),
-    icon3: Painter? = null,
+    outerIcon: Painter = painterResource(R.drawable.ic_send),
+    leftInnerIcon: Painter = painterResource(R.drawable.ic_emoji),
+    rightInnerIcon: Painter = painterResource(R.drawable.ic_send),
+    icon1: Painter = painterResource(R.drawable.ic_file),
+    icon2: Painter = painterResource(R.drawable.ic_camera),
+    icon3: Painter = painterResource(R.drawable.ic_animate),
     style: MessageBarStyle = MessageBarStyle(),
     isDarkTheme: Boolean = false,
     preview: Boolean = false,
@@ -57,17 +59,42 @@ fun ChatMessageBar(
     previewAttrs: MessageBarStyle = MessageBarStyle()
 ) {
     var input by remember { mutableStateOf(value) }
-    val themeColors = if(preview) previewColors else remember(style, isDarkTheme) {
+    val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
     }
-    val style = if(preview) previewAttrs else style
-    Row(modifier = Modifier.padding(bottom = if(preview) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
-        .height(52.dp).fillMaxWidth().background(themeColors.widgetBackground)
-        , verticalAlignment = Alignment.CenterVertically) {
-        Row(modifier = Modifier.padding(start = 2.dp).height(46.dp).weight(1f).clip(RoundedCornerShape(40.dp)).background(themeColors.barBackground), verticalAlignment = Alignment.CenterVertically) {
-            if(style.showleftinnerbutton)
-                Icon(painter = painterResource(R.drawable.ic_emoji), contentDescription = null, tint = themeColors.leftInnerButtonIcon,
-                modifier = Modifier.padding(horizontal = 3.dp).size(42.dp).clip(CircleShape).background(themeColors.leftInnerButton).padding(8.dp))
+    val style = if (preview) previewAttrs else style
+    Row(
+        modifier = Modifier
+            .padding(
+                bottom = if (preview) 0.dp else WindowInsets.navigationBars.asPaddingValues()
+                    .calculateBottomPadding()
+            )
+            .height(52.dp)
+            .fillMaxWidth()
+            .background(themeColors.widgetBackground),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .height(46.dp)
+                .weight(1f)
+                .clip(RoundedCornerShape(40.dp))
+                .background(themeColors.barBackground),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (style.showleftinnerbutton)
+                Icon(
+                    painter = leftInnerIcon,
+                    contentDescription = null,
+                    tint = themeColors.leftInnerButtonIcon,
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(themeColors.leftInnerButton)
+                        .padding(8.dp)
+                )
             else Spacer(modifier = Modifier.width(15.dp))
             BasicTextField(
                 value = input,
@@ -101,24 +128,52 @@ fun ChatMessageBar(
             )
 
 
-            if(icon1!=null)
-                Icon(painter = icon1, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier.padding(horizontal = 10.dp).size(22.dp))
-            if(icon2!=null)
-                Icon(painter = icon2, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier.padding(horizontal = 10.dp).size(22.dp))
-            if(icon3!=null)
-                Icon(painter = icon3, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier.padding(horizontal = 10.dp).size(22.dp))
+            if (style.is_icon1_visible)
+                Icon(
+                    painter = icon1, contentDescription = null, tint = themeColors.colorIcons,
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .size(22.dp)
+                )
+            if (style.is_icon2_visible)
+                Icon(
+                    painter = icon2, contentDescription = null, tint = themeColors.colorIcons,
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .size(22.dp)
+                )
+            if (style.is_icon3_visible)
+                Icon(
+                    painter = icon3, contentDescription = null, tint = themeColors.colorIcons,
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .size(22.dp)
+                )
 
-            if(style.showrightinnerbutton)
-                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = themeColors.rightInnerButtonIcon,
-                modifier = Modifier.padding(horizontal = 3.dp).size(42.dp).clip(CircleShape).background(themeColors.rightInnerButton).padding(10.dp))
+            if (style.showrightinnerbutton)
+                Icon(
+                    painter = rightInnerIcon,
+                    contentDescription = null,
+                    tint = themeColors.rightInnerButtonIcon,
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(themeColors.rightInnerButton)
+                        .padding(10.dp)
+                )
             else Spacer(modifier = Modifier.size(10.dp))
         }
-        if(style.showouterbutton)
-            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = themeColors.outerButtonIcon,
-                modifier = Modifier.padding(horizontal = 3.dp).size(46.dp).clip(CircleShape).background(themeColors.outerButton).padding(12.dp))
+        if (style.showouterbutton)
+            Icon(
+                painter = outerIcon, contentDescription = null, tint = themeColors.outerButtonIcon,
+                modifier = Modifier
+                    .padding(horizontal = 3.dp)
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(themeColors.outerButton)
+                    .padding(12.dp)
+            )
     }
 }
 
@@ -127,17 +182,17 @@ fun MessageBarStyle.toParsed(isDarkTheme: Boolean): ParsedMessageBarStyle {
     fun parse(hex: String): Color = Color(hex.toColorInt())
 
     return ParsedMessageBarStyle(
-        widgetBackground = parse(if(isDarkTheme) color_widgetbackground_dark else color_widgetbackground),
-        barBackground = parse(if(isDarkTheme) color_barbackground_dark else color_barbackground),
-        outerButton = parse(if(isDarkTheme) color_outerbutton_dark else color_outerbutton),
-        rightInnerButton = parse(if(isDarkTheme) color_rightinnerbutton_dark else color_rightinnerbutton),
-        leftInnerButton = parse(if(isDarkTheme) color_leftinnerbutton_dark else color_leftinnerbutton),
-        outerButtonIcon = parse(if(isDarkTheme) color_outerbutton_icon_dark else color_outerbutton_icon),
-        rightInnerButtonIcon = parse(if(isDarkTheme) color_rightinnerbutton_icon_dark else color_rightinnerbutton_icon),
-        leftInnerButtonIcon = parse(if(isDarkTheme) color_leftinnerbutton_icon_dark else color_leftinnerbutton_icon),
-        colorIcons = parse(if(isDarkTheme) color_icons_dark else color_icons),
-        inputText = parse(if(isDarkTheme) color_inputtext_dark else color_inputtext),
-        hintText = parse(if(isDarkTheme) color_hinttext_dark else color_hinttext),
+        widgetBackground = parse(if (isDarkTheme) color_widgetbackground_dark else color_widgetbackground),
+        barBackground = parse(if (isDarkTheme) color_barbackground_dark else color_barbackground),
+        outerButton = parse(if (isDarkTheme) color_outerbutton_dark else color_outerbutton),
+        rightInnerButton = parse(if (isDarkTheme) color_rightinnerbutton_dark else color_rightinnerbutton),
+        leftInnerButton = parse(if (isDarkTheme) color_leftinnerbutton_dark else color_leftinnerbutton),
+        outerButtonIcon = parse(if (isDarkTheme) color_outerbutton_icon_dark else color_outerbutton_icon),
+        rightInnerButtonIcon = parse(if (isDarkTheme) color_rightinnerbutton_icon_dark else color_rightinnerbutton_icon),
+        leftInnerButtonIcon = parse(if (isDarkTheme) color_leftinnerbutton_icon_dark else color_leftinnerbutton_icon),
+        colorIcons = parse(if (isDarkTheme) color_icons_dark else color_icons),
+        inputText = parse(if (isDarkTheme) color_inputtext_dark else color_inputtext),
+        hintText = parse(if (isDarkTheme) color_hinttext_dark else color_hinttext),
     )
 }
 
@@ -153,4 +208,10 @@ data class ParsedMessageBarStyle(
     val colorIcons: Color = Color.Transparent,
     val inputText: Color = Color.Transparent,
     val hintText: Color = Color.Transparent,
+)
+
+fun Modifier.goneIf(condition: Boolean): Modifier = this.then(
+    if (condition) Modifier else Modifier.layout { _, _ ->
+        layout(0, 0) {}
+    }
 )

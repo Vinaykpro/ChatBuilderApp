@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -74,6 +75,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -84,10 +86,12 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.vinaykpro.chatbuilder.ImportChatUI
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.IMPORTSTATE
+import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
 import com.vinaykpro.chatbuilder.ui.components.SettingsItem
+import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -101,6 +105,7 @@ import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 fun HomeScreen(
     navController: NavController,
     isDarkTheme: MutableState<Boolean> = mutableStateOf(false),
+    themeViewModel: ThemeViewModel,
     prefs: SharedPreferences,
     sharedFileUri: Uri?
 ) {
@@ -109,6 +114,9 @@ fun HomeScreen(
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
     )
     val chats by homeViewModel.chatsList.collectAsState()
+
+    val themes by themeViewModel.themes.collectAsState()
+    val selectedTheme by themeViewModel.selectedThemeId.collectAsState()
 
     val colors = MaterialTheme.colorScheme
 
@@ -293,7 +301,7 @@ fun HomeScreen(
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
                                 items(chats, key = { chat -> chat.chatid }) { chat ->
                                     ChatListItem(
-                                        icon = R.drawable.iconalpha,
+                                        icon = R.drawable.logo,
                                         name = chat.name,
                                         lastMessage = chat.lastmsg,
                                         lastSeen = chat.lastmsgtime,
@@ -304,6 +312,34 @@ fun HomeScreen(
                         }
 
                         1 -> Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(
+                                    bottom = WindowInsets.systemBars.asPaddingValues()
+                                        .calculateBottomPadding()
+                                )
+                        ) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(bottom = 10.dp)
+                            ) {
+                                items(themes) { i ->
+                                    ThemeItem(
+                                        context = context,
+                                        selected = i.id == selectedTheme,
+                                        id = i.id,
+                                        name = i.name,
+                                        author = i.author,
+                                        iconColor = Color(i.appcolor.toColorInt()),
+                                        onClick = { themeViewModel.changeTheme(i.id) },
+                                        onNextClick = { navController.navigate("theme/${i.name}") })
+                                }
+                            }
+                        }
+
+                        2 -> Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
@@ -338,7 +374,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(68.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
@@ -356,16 +392,22 @@ fun HomeScreen(
                             ),
                             interactionSource = remember { MutableInteractionSource() },
                             onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
-                        )) {
-                    Text(
-                        text = "Chats", style = TextStyle(
+                        ),
+                    contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painter = painterResource(if (selectedTabIndex.value == 0) R.drawable.ic_chats_selected else R.drawable.ic_chats_unselected),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Text(
+                            text = HomeTabs.entries[0].toString(),
                             color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight(500)
-                        ), modifier = Modifier
-                            .align(Alignment.Center)
-                            .alpha(if (selectedTabIndex.value == 0) 1f else 0.7f)
-                    )
+                            fontWeight = FontWeight(if (selectedTabIndex.value == 0) 800 else 400),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
                 Box(
                     modifier = Modifier
@@ -379,16 +421,51 @@ fun HomeScreen(
                             ),
                             interactionSource = remember { MutableInteractionSource() },
                             onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
-                        )) {
-                    Text(
-                        text = "Settings", style = TextStyle(
-                            color = Color(0xFFFFFFFF),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight(500)
-                        ), modifier = Modifier
-                            .align(Alignment.Center)
-                            .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f)
-                    )
+                        ),
+                    contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painter = painterResource(if (selectedTabIndex.value == 1) R.drawable.ic_theme_selected else R.drawable.ic_theme_unselected),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Text(
+                            text = HomeTabs.entries[1].toString(),
+                            color = Color.White,
+                            fontWeight = FontWeight(if (selectedTabIndex.value == 1) 800 else 400),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            indication = rememberRipple(
+                                bounded = true,
+                                color = Color(0xFF056175),
+                                radius = 80.dp
+                            ),
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = { scope.launch { pagerState.animateScrollToPage(2) } }
+                        ),
+                    contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            painter = painterResource(if (selectedTabIndex.value == 2) R.drawable.ic_settings_selected else R.drawable.ic_settings_unselected),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Text(
+                            text = HomeTabs.entries[2].toString(),
+                            color = Color.White,
+                            fontWeight = FontWeight(if (selectedTabIndex.value == 2) 800 else 400),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
             Spacer(
@@ -591,7 +668,7 @@ fun HomeScreen(
                                 0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                                     items(chats) { chat ->
                                         ChatListItem(
-                                            icon = R.drawable.iconalpha,
+                                            icon = R.drawable.logo,
                                             name = chat.name,
                                             lastMessage = chat.lastmsg,
                                             lastSeen = chat.lastmsgtime,
@@ -714,6 +791,9 @@ enum class HomeTabs(
 ) {
     Chats(
         text = "Chats"
+    ),
+    Themes(
+        text = "Themes"
     ),
     Settings(
         text = "Settings"

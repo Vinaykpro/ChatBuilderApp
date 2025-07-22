@@ -53,6 +53,7 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(
                         themeViewModel = themeViewModel,
                         navController = navController,
+                        context = context,
                         isDarkTheme = isDarkTheme,
                         prefs = prefs,
                         sharedFileUri = sharedFileUri

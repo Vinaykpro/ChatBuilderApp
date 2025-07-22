@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -36,15 +37,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.ImageLoader
 import coil.decode.VideoFrameDecoder
+import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.BodyStyle
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
+import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
+import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.json.Json
 import kotlin.math.min
@@ -56,7 +60,8 @@ fun SharedTransitionScope.ChatScreen(
     chatId: Int = 1,
     isDarkTheme: Boolean = false,
     navController: NavHostController = rememberNavController(),
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    chatMediaViewModel: ChatMediaViewModel,
 ) {
     val theme = LocalThemeEntity.current
 
@@ -75,6 +80,8 @@ fun SharedTransitionScope.ChatScreen(
         }
     }
 
+    val headerIcons: HeaderIcons = getHeaderIcons(theme.id)
+
     val bodyStyle = remember(theme.bodystyle) {
         try {
             Json.decodeFromString<BodyStyle>(theme.bodystyle)
@@ -87,6 +94,9 @@ fun SharedTransitionScope.ChatScreen(
         bodyStyle.toParsed(isDarkTheme)
     }
 
+    val blueTicksIcon =
+        rememberCustomIconPainter(theme.id, "ic_ticks_seen.png", 0, R.drawable.doubleticks)
+
     val messageBarStyle = remember(theme.messagebarstyle) {
         try {
             Json.decodeFromString<MessageBarStyle>(theme.messagebarstyle)
@@ -94,6 +104,9 @@ fun SharedTransitionScope.ChatScreen(
             MessageBarStyle()
         }
     }
+
+    val messageBarIcons: MessageBarIcons = getMessageBarIcons(theme.id)
+
     val imageLoader = remember {
         ImageLoader.Builder(context)
             .components { add(VideoFrameDecoder.Factory()) }
@@ -101,10 +114,10 @@ fun SharedTransitionScope.ChatScreen(
     }
     val listState = rememberLazyListState()
     val chatDetails by chatViewModel.chatDetails.collectAsState()
-    val filesMap by chatViewModel.files.collectAsState()
     val messages by chatViewModel.messages.collectAsState(initial = emptyList())
     LaunchedEffect(chatDetails?.lastOpenedMsgId) {
         chatDetails?.let { chatViewModel.initialLoad(it.lastOpenedMsgId) }
+        chatMediaViewModel.load(chatDetails?.chatid ?: -1)
     }
     LaunchedEffect(messages.size, chatDetails?.lastOpenedMsgId) {
         if (chatViewModel.isInitialScroll) {
@@ -145,6 +158,12 @@ fun SharedTransitionScope.ChatScreen(
         ChatToolbar(
             name = chatDetails?.name ?: "Chat $chatId",
             status = chatDetails?.status ?: "Tap to edit",
+            backIcon = headerIcons.backIcon,
+            profileIcon = headerIcons.profileIcon,
+            icon1 = headerIcons.icon1,
+            icon2 = headerIcons.icon2,
+            icon3 = headerIcons.icon3,
+            icon4 = headerIcons.icon4,
             style = headerStyle,
             isDarkTheme = isDarkTheme
         )
@@ -167,6 +186,7 @@ fun SharedTransitionScope.ChatScreen(
                     m.userid == (chatDetails?.senderId ?: 1) -> SenderMessage(
                         text = m.message,
                         sentTime = m.time.toString(),
+                        ticksIcon = blueTicksIcon,
                         bubbleStyle = 1,
                         bubbleRadius = bodyStyle.bubble_radius,
                         bubbleTipRadius = bodyStyle.bubble_tip_radius,
@@ -174,19 +194,11 @@ fun SharedTransitionScope.ChatScreen(
                         color = themeBodyColors.senderBubble,
                         textColor = themeBodyColors.textPrimary,
                         textColorSecondary = themeBodyColors.textSecondary,
-                        file = filesMap[m.fileId],
+                        file = chatMediaViewModel.mediaMap[m.fileId],
                         screenWidth = screenWidthForMedia,
                         imageLoader = imageLoader,
                         animatedVisibilityScope = animatedVisibilityScope,
                         onMediaClick = {
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "mediaMetaMap",
-                                filesMap
-                            )
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "mediaMessages",
-                                chatViewModel.mediaMessages
-                            )
                             navController.navigate("mediapreview/$it")
                         }
                     )
@@ -201,19 +213,11 @@ fun SharedTransitionScope.ChatScreen(
                         color = themeBodyColors.receiverBubble,
                         textColor = themeBodyColors.textPrimary,
                         textColorSecondary = themeBodyColors.textSecondary,
-                        file = filesMap[m.fileId],
+                        file = chatMediaViewModel.mediaMap[m.fileId],
                         screenWidth = screenWidthForMedia,
                         imageLoader = imageLoader,
                         animatedVisibilityScope = animatedVisibilityScope,
                         onMediaClick = {
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "mediaMetaMap",
-                                filesMap
-                            )
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "mediaMessages",
-                                chatViewModel.mediaMessages
-                            )
                             navController.navigate("mediapreview/$it")
                         }
                     )
@@ -222,7 +226,16 @@ fun SharedTransitionScope.ChatScreen(
         }
 
         //input
-        ChatMessageBar(style = messageBarStyle, isDarkTheme = isDarkTheme)
+        ChatMessageBar(
+            style = messageBarStyle,
+            isDarkTheme = isDarkTheme,
+            outerIcon = messageBarIcons.outerIcon,
+            leftInnerIcon = messageBarIcons.leftInnerIcon,
+            rightInnerIcon = messageBarIcons.rightInnerIcon,
+            icon1 = messageBarIcons.icon1,
+            icon2 = messageBarIcons.icon2,
+            icon3 = messageBarIcons.icon3
+        )
     }
     DisposableEffect(Unit) {
         onDispose {
@@ -257,3 +270,68 @@ data class ParsedBodyStyle(
     val textPrimary: Color,
     val textSecondary: Color,
 )
+
+data class HeaderIcons(
+    val backIcon: Painter,
+    val profileIcon: Painter,
+    val icon1: Painter,
+    val icon2: Painter,
+    val icon3: Painter,
+    val icon4: Painter,
+)
+
+data class MessageBarIcons(
+    val outerIcon: Painter,
+    val leftInnerIcon: Painter,
+    val rightInnerIcon: Painter,
+    val icon1: Painter,
+    val icon2: Painter,
+    val icon3: Painter,
+)
+
+@Composable
+fun getHeaderIcons(id: Int): HeaderIcons {
+    return HeaderIcons(
+        backIcon = rememberCustomIconPainter(id, "ic_back.png", 0, R.drawable.ic_back),
+        profileIcon = rememberCustomIconPainter(id, "ic_profile.png", 0, R.drawable.user),
+        icon1 = rememberCustomIconPainter(id, "ic_nav1.png", 0, R.drawable.ic_call),
+        icon2 = rememberCustomIconPainter(id, "ic_nav2.png", 0, R.drawable.ic_videocall),
+        icon3 = rememberCustomIconPainter(id, "ic_nav3.png", 0, R.drawable.ic_animate),
+        icon4 = rememberCustomIconPainter(id, "ic_3dots.png", 0, R.drawable.ic_more)
+    )
+}
+
+@Composable
+fun getMessageBarIcons(id: Int): MessageBarIcons {
+    return MessageBarIcons(
+        outerIcon = rememberCustomIconPainter(id, "ic_outer_icon.png", 0, R.drawable.ic_send),
+        leftInnerIcon = rememberCustomIconPainter(
+            id,
+            "ic_left_inner_icon.png",
+            0,
+            R.drawable.ic_emoji
+        ),
+        rightInnerIcon = rememberCustomIconPainter(
+            id,
+            "ic_right_inner_icon.png",
+            0,
+            R.drawable.ic_send
+        ),
+        icon1 = rememberCustomIconPainter(id, "ic_bottom_nav1.png", 0, R.drawable.ic_file),
+        icon2 = rememberCustomIconPainter(id, "ic_bottom_nav2.png", 0, R.drawable.ic_camera),
+        icon3 = rememberCustomIconPainter(id, "ic_bottom_nav3.png", 0, R.drawable.ic_animate)
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

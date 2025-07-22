@@ -1,5 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,10 +28,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +55,9 @@ import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.ParsedMessageBarStyle
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
+import com.vinaykpro.chatbuilder.ui.components.actionIconItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -60,6 +68,8 @@ fun MessageBarStyleScreen(
     isDarkTheme: Boolean = false,
     themeViewModel: ThemeViewModel
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     val themeStyle = remember(theme.messagebarstyle) {
@@ -134,6 +144,48 @@ fun MessageBarStyleScreen(
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
+    val iconNames = listOf(
+        "ic_outer_icon.png",
+        "ic_left_inner_icon.png",
+        "ic_right_inner_icon.png",
+        "ic_bottom_nav1.png",
+        "ic_bottom_nav2.png",
+        "ic_bottom_nav3.png"
+    )
+    val refreshKeys = remember {
+        mutableStateListOf(*IntArray(iconNames.size) { 0 }.toTypedArray())
+    }
+    var pickedIcon by remember { mutableIntStateOf(0) }
+    val outerIconPainter =
+        rememberCustomIconPainter(theme.id, iconNames[0], refreshKeys[0], R.drawable.ic_send)
+    val leftInnerIconPainter =
+        rememberCustomIconPainter(theme.id, iconNames[1], refreshKeys[1], R.drawable.ic_emoji)
+    val rightInnerIconPainter =
+        rememberCustomIconPainter(theme.id, iconNames[2], refreshKeys[2], R.drawable.ic_send)
+    val navIconPainters = listOf(
+        rememberCustomIconPainter(theme.id, iconNames[3], refreshKeys[3], R.drawable.ic_file),
+        rememberCustomIconPainter(theme.id, iconNames[4], refreshKeys[4], R.drawable.ic_camera),
+        rememberCustomIconPainter(theme.id, iconNames[5], refreshKeys[5], R.drawable.ic_animate)
+    )
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            if (uri != null) {
+                scope.launch {
+                    themeViewModel.saveCustomIcon(
+                        uri,
+                        context,
+                        theme.id,
+                        iconNames[pickedIcon],
+                        onDone = {
+                            refreshKeys[pickedIcon]++
+                        })
+                }
+            }
+        }
+    )
+
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
@@ -199,7 +251,13 @@ fun MessageBarStyleScreen(
             ChatMessageBar(
                 preview = true,
                 previewColors = previewColors,
-                previewAttrs = previewAttrs
+                previewAttrs = previewAttrs,
+                outerIcon = outerIconPainter,
+                leftInnerIcon = leftInnerIconPainter,
+                rightInnerIcon = rightInnerIconPainter,
+                icon1 = navIconPainters[0],
+                icon2 = navIconPainters[1],
+                icon3 = navIconPainters[2]
             )
         }
 
@@ -262,8 +320,13 @@ fun MessageBarStyleScreen(
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         EditIcon(
-                            name = "Seen ticks icon",
-                            icon = painterResource(R.drawable.ic_videocall)
+                            name = "Outer button icon",
+                            icon = outerIconPainter,
+                            iconSize = 24,
+                            onClick = {
+                                pickedIcon = 0
+                                imagePicker.launch("image/*")
+                            }
                         )
                     }
                 }
@@ -292,8 +355,13 @@ fun MessageBarStyleScreen(
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         EditIcon(
-                            name = "Seen ticks icon",
-                            icon = painterResource(R.drawable.ic_call)
+                            name = "Left inner button icon",
+                            icon = leftInnerIconPainter,
+                            iconSize = 24,
+                            onClick = {
+                                pickedIcon = 1
+                                imagePicker.launch("image/*")
+                            }
                         )
                     }
                 }
@@ -322,12 +390,96 @@ fun MessageBarStyleScreen(
                     )
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         EditIcon(
-                            name = "Seen ticks icon",
-                            icon = painterResource(R.drawable.doubleticks)
+                            name = "Right inner button icon",
+                            icon = rightInnerIconPainter,
+                            iconSize = 22,
+                            onClick = {
+                                pickedIcon = 2
+                                imagePicker.launch("image/*")
+                            }
                         )
                     }
                 }
             }
+
+            Text(
+                text = "Action icons:",
+                fontSize = 17.sp,
+                fontWeight = FontWeight(500),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .height(IntrinsicSize.Min)
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp)
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[0],
+                        iconSize = 22,
+                        previewAttrs.is_icon1_visible,
+                        {
+                            pickedIcon = 3
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon1_visible = it)
+                        }
+                    )
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[1],
+                        iconSize = 22,
+                        previewAttrs.is_icon2_visible,
+                        {
+                            pickedIcon = 4
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon2_visible = it)
+                        }
+                    )
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[2],
+                        iconSize = 22,
+                        previewAttrs.is_icon3_visible,
+                        {
+                            pickedIcon = 5
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon3_visible = it)
+                        }
+                    )
+                    /*ProgressItem(
+                        name = "Icon size",
+                        value = previewAttrs.actionicons_size.toFloat(),
+                        min = 15f,
+                        max = 35f,
+                        onChange = {
+                            previewAttrs = previewAttrs.copy(actionicons_size = it)
+                        })
+                    ProgressItem(
+                        name = "Horizontal gap",
+                        value = previewAttrs.actionicons_gap.toFloat(),
+                        min = 0f,
+                        max = 15f,
+                        onChange = {
+                            previewAttrs = previewAttrs.copy(actionicons_gap = it)
+                        })*/
+                }
+            }
+
         }
 
     }
@@ -373,4 +525,11 @@ fun MessageBarStyle.isSameAttrAs(other: MessageBarStyle): Boolean {
             icon1 == other.icon1 &&
             icon2 == other.icon2 &&
             icon3 == other.icon3
+}
+
+fun copyPainter(original: Painter): Painter = object : Painter() {
+    override val intrinsicSize = Size.Unspecified
+    override fun DrawScope.onDraw() {
+        with(original) { draw(size = this@onDraw.size) }
+    }
 }

@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -43,38 +41,51 @@ fun ChatToolbar(
     status: String = "online",
     isDarkTheme: Boolean = false,
     style: HeaderStyle = HeaderStyle(),
-    icon1: Painter? = painterResource(R.drawable.ic_call),
-    icon2: Painter? = painterResource(R.drawable.ic_videocall),
-    icon3: Painter? = null,
+    backIcon: Painter = painterResource(R.drawable.ic_back),
+    profileIcon: Painter = painterResource(R.drawable.user),
+    icon1: Painter = painterResource(R.drawable.ic_call),
+    icon2: Painter = painterResource(R.drawable.ic_videocall),
+    icon3: Painter = painterResource(R.drawable.ic_starredmessages),
     icon4: Painter = painterResource(R.drawable.ic_more),
     preview: Boolean = false,
     previewColors: ParsedHeaderStyle = ParsedHeaderStyle(),
     previewAttrs: HeaderStyle = HeaderStyle()
 ) {
-    val themeColors = if(preview) previewColors else remember(style, isDarkTheme) {
+    val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
     }
-    val style = if(preview) previewAttrs else style
-    Row(modifier = Modifier.fillMaxWidth()
-        .background(themeColors.navBar)
-        .padding(top = if(preview) 6.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
-        .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),
-        verticalAlignment = Alignment.CenterVertically) {
+    val style = if (preview) previewAttrs else style
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(themeColors.navBar)
+            .padding(
+                top = if (preview) 6.dp else WindowInsets.statusBars.asPaddingValues()
+                    .calculateTopPadding()
+            )
+            .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
 
-        if(style.showbackbtn)
-        IconButton( onClick = {}, modifier = Modifier.padding(start = style.backbtn_gap.dp) ) {
-            Icon(modifier = Modifier.size(style.backbtn_size.dp),
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "back",
-                tint = themeColors.navIcons )
-        }
+        if (style.showbackbtn)
+            IconButton(onClick = {}, modifier = Modifier.padding(start = style.backbtn_gap.dp)) {
+                Icon(
+                    modifier = Modifier.size(style.backbtn_size.dp),
+                    painter = backIcon,
+                    contentDescription = "back",
+                    tint = themeColors.navIcons
+                )
+            }
 
-        if(style.showprofilepic)
-        Image(
-            painter = painterResource(R.drawable.user),
-            contentDescription = null,
-            modifier = Modifier.padding(horizontal = style.profilepic_gap_sides.dp).clip(shape = CircleShape).size(style.profilepic_size.dp)
-        )
+        if (style.showprofilepic)
+            Image(
+                painter = profileIcon,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(horizontal = style.profilepic_gap_sides.dp)
+                    .clip(shape = CircleShape)
+                    .size(style.profilepic_size.dp)
+            )
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -86,18 +97,18 @@ fun ChatToolbar(
                 lineHeight = 20.sp,
                 color = themeColors.textPrimary
             )
-            if(style.showstatus)
-            Text(
-                text = status,
-                fontSize = 14.sp,
-                lineHeight = 14.sp,
-                color = themeColors.textSecondary
-            )
+            if (style.showstatus)
+                Text(
+                    text = status,
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp,
+                    color = themeColors.textSecondary
+                )
         }
         Spacer(modifier = Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(style.actionicons_gap.dp)) {
-            if (icon1 != null) {
-                IconButton( onClick = {} ) {
+            if (style.is_icon1_visible) {
+                IconButton(onClick = {}) {
                     Icon(
                         modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon1,
@@ -106,8 +117,8 @@ fun ChatToolbar(
                     )
                 }
             }
-            if (icon2 != null) {
-                IconButton( onClick = {} ) {
+            if (style.is_icon2_visible) {
+                IconButton(onClick = {}) {
                     Icon(
                         modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon2,
@@ -116,8 +127,8 @@ fun ChatToolbar(
                     )
                 }
             }
-            if (icon3 != null) {
-                IconButton( onClick = {} ) {
+            if (style.is_icon3_visible) {
+                IconButton(onClick = {}) {
                     Icon(
                         modifier = Modifier.size(style.actionicons_size.dp),
                         painter = icon3,
@@ -126,7 +137,7 @@ fun ChatToolbar(
                     )
                 }
             }
-            IconButton( onClick = {} ) {
+            IconButton(onClick = {}) {
                 Icon(
                     modifier = Modifier.size(style.actionicons_size.dp),
                     painter = icon4,
@@ -142,10 +153,10 @@ fun HeaderStyle.toParsed(isDarkTheme: Boolean): ParsedHeaderStyle {
     fun parse(hex: String): Color = Color(hex.toColorInt())
 
     return ParsedHeaderStyle(
-        navBar = parse(if(isDarkTheme) color_navbar_dark else color_navbar),
-        navIcons = parse(if(isDarkTheme) color_navicons_dark else color_navicons),
-        textPrimary = parse(if(isDarkTheme) color_text_primary_dark else color_text_primary),
-        textSecondary = parse(if(isDarkTheme) color_text_secondary_dark else color_text_secondary)
+        navBar = parse(if (isDarkTheme) color_navbar_dark else color_navbar),
+        navIcons = parse(if (isDarkTheme) color_navicons_dark else color_navicons),
+        textPrimary = parse(if (isDarkTheme) color_text_primary_dark else color_text_primary),
+        textSecondary = parse(if (isDarkTheme) color_text_secondary_dark else color_text_secondary)
     )
 }
 

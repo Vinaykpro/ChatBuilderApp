@@ -37,19 +37,58 @@ fun EditIcon(
     name: String? = null,
     icon: Painter = painterResource(R.drawable.logo),
     size: Int = 75,
+    iconSize: Int = 28,
     color: Color = LightColorScheme.primary,
+    filter: ColorFilter? = ColorFilter.tint(White),
     onClick: () -> Unit = {}
 ) {
-    if(name != null) Text(text = "$name:", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight(500), fontSize = 14.sp, lineHeight = 14.sp, modifier = Modifier.padding(start = 5.dp, top = 5.dp, bottom = 10.dp))
-    Column(modifier = Modifier.padding(start = 8.dp).width(size.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Image(painter = icon, contentDescription = null, modifier = Modifier.size(size.dp).clip(shape = RoundedCornerShape(10.dp)).background(color),
-            colorFilter = ColorFilter.tint(White))
-        Box(modifier = Modifier.fillMaxWidth().clip(shape = RoundedCornerShape(10.dp)).border(0.5.dp, color = MaterialTheme.colorScheme.onSecondaryContainer, shape = RoundedCornerShape(10.dp)).clickable {  }.padding(8.dp)) {
+    if (name != null) Text(
+        text = "$name:",
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        fontWeight = FontWeight(500),
+        fontSize = 14.sp,
+        lineHeight = 14.sp,
+        modifier = Modifier.padding(start = 5.dp, top = 5.dp, bottom = 10.dp)
+    )
+    Column(
+        modifier = Modifier
+            .padding(start = 8.dp)
+            .width(size.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(size.dp)
+                .clip(shape = RoundedCornerShape(10.dp))
+                .background(color), contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize.dp),
+                colorFilter = filter
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape = RoundedCornerShape(10.dp))
+                .border(
+                    0.5.dp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    shape = RoundedCornerShape(10.dp)
+                )
+                .clickable { onClick() }
+                .padding(8.dp)
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_edit),
                 contentDescription = "Edit",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(20.dp).align(Alignment.Center)
+                tint = Color.Unspecified,
+                modifier = Modifier
+                    .size(20.dp)
+                    .align(Alignment.Center)
             )
         }
     }

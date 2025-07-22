@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,28 +40,49 @@ import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 
 
 @Composable
-fun ThemeScreen(themeViewModel: ThemeViewModel, navController: NavController = rememberNavController()) {
+fun ThemeScreen(
+    themeViewModel: ThemeViewModel,
+    navController: NavController = rememberNavController()
+) {
+    val context = LocalContext.current
     val themes by themeViewModel.themes.collectAsState()
     val selectedTheme by themeViewModel.selectedThemeId.collectAsState()
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(
+                    bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                )
         ) {
-            BasicToolbar(name = "Chat theme",
+            BasicToolbar(
+                name = "Chat theme",
                 color = MaterialTheme.colorScheme.primary,
-                icon1 = painterResource(R.drawable.ic_info))
-            LazyColumn(modifier = Modifier.weight(1f).padding(bottom = 10.dp)) {
+                icon1 = painterResource(R.drawable.ic_info)
+            )
+            LazyColumn(modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 10.dp)) {
                 items(themes) { i ->
-                    ThemeItem(selected = i.id == selectedTheme, name = i.name, author = i.author, iconColor = Color(i.appcolor.toColorInt()),
-                        onClick = { themeViewModel.changeTheme(i.id) }, onNextClick = { navController.navigate("theme/${i.name}") })
+                    ThemeItem(
+                        context = context,
+                        selected = i.id == selectedTheme,
+                        id = i.id,
+                        name = i.name,
+                        author = i.author,
+                        iconColor = Color(i.appcolor.toColorInt()),
+                        onClick = { themeViewModel.changeTheme(i.id) },
+                        onNextClick = { navController.navigate("theme/${i.name}") })
                 }
             }
         }
         FloatingActionButton(
             onClick = { /* TO-DO Add new theme */ },
             shape = RoundedCornerShape(30.dp),
-            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 40.dp, end = 16.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 40.dp, end = 16.dp),
             containerColor = MaterialTheme.colorScheme.primary,
         ) {
             Row(

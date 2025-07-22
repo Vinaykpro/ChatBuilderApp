@@ -1,5 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -34,12 +36,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,6 +67,7 @@ import com.vinaykpro.chatbuilder.ui.components.SwitchItem
 import com.vinaykpro.chatbuilder.ui.screens.chat.ParsedBodyStyle
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -73,6 +78,8 @@ fun SharedTransitionScope.BodyStyleScreen(
     isDarkTheme: Boolean = false,
     themeViewModel: ThemeViewModel
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     var themeStyle = remember(theme.bodystyle) {
@@ -132,6 +139,28 @@ fun SharedTransitionScope.BodyStyleScreen(
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
+    var refreshKey by remember { mutableIntStateOf(0) }
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            if (uri != null) {
+                scope.launch {
+                    themeViewModel.saveCustomIcon(
+                        uri,
+                        context,
+                        theme.id,
+                        "ic_ticks_seen.png",
+                        onDone = {
+                            refreshKey++
+                        })
+                }
+            }
+        }
+    )
+
+    val seenTicksPainter =
+        rememberCustomIconPainter(theme.id, "ic_ticks_seen.png", refreshKey, R.drawable.doubleticks)
+
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
@@ -190,6 +219,7 @@ fun SharedTransitionScope.BodyStyleScreen(
             )
             SenderMessage(
                 text = "Hii",
+                ticksIcon = seenTicksPainter,
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
@@ -202,6 +232,7 @@ fun SharedTransitionScope.BodyStyleScreen(
             )
             SenderMessage(
                 text = "Hope you love using our app. Please leave a rating",
+                ticksIcon = seenTicksPainter,
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
@@ -346,7 +377,11 @@ fun SharedTransitionScope.BodyStyleScreen(
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         EditIcon(
                             name = "Seen ticks icon",
-                            icon = painterResource(R.drawable.doubleticks)
+                            icon = seenTicksPainter,
+                            filter = null,
+                            onClick = {
+                                imagePicker.launch("image/*")
+                            }
                         )
                     }
                 }

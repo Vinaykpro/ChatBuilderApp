@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,6 +58,7 @@ fun SharedTransitionScope.SenderMessage(
     color: Color = Color(0xFFBEFFEA),
     textColor: Color = Color(0xFF000000),
     textColorSecondary: Color = Color(0xFF414141),
+    ticksIcon: Painter = painterResource(R.drawable.doubleticks),
     bubbleStyle: Int = 0,
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
@@ -287,7 +289,7 @@ fun SharedTransitionScope.SenderMessage(
                 }
                 if (showTicks) {
                     Image(
-                        painter = painterResource(id = R.drawable.doubleticks),
+                        painter = ticksIcon,
                         contentDescription = "Double ticks",
                         modifier = Modifier
                             .padding(start = 2.dp)

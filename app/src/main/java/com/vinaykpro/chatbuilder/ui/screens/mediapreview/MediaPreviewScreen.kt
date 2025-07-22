@@ -42,8 +42,7 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.vinaykpro.chatbuilder.data.local.FILETYPE
-import com.vinaykpro.chatbuilder.data.local.FileEntity
-import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.ui.components.VideoPlayer
 import com.vinaykpro.chatbuilder.ui.components.ZoomableImage
 import java.io.File
@@ -53,37 +52,21 @@ import java.io.File
 fun SharedTransitionScope.MediaPreviewScreen(
     fileid: Int?,
     navController: NavHostController,
-    scope: AnimatedContentScope
+    scope: AnimatedContentScope,
+    chatMediaViewModel: ChatMediaViewModel
 ) {
     val context = LocalContext.current
-    val mediaMetaMap: Map<Int, FileEntity>? = remember {
-        navController.previousBackStackEntry
-            ?.savedStateHandle
-            ?.get("mediaMetaMap")
-    }
-    val mediaMessages: List<MessageEntity>? = remember {
-        navController.previousBackStackEntry
-            ?.savedStateHandle
-            ?.get("mediaMessages")
-    }
-    val types = setOf(FILETYPE.IMAGE, FILETYPE.VIDEO)
-    val imageVideoMessages: List<MessageEntity> = remember {
-        mediaMessages
-            ?.filter { msg ->
-                mediaMetaMap?.get(msg.fileId ?: -1)?.type in types
-            }
-            ?: emptyList()
-    }
-    val startIndex = imageVideoMessages.indexOfFirst { it.fileId == fileid }
+
+    val startIndex = chatMediaViewModel.previewMediaMessages.indexOfFirst { it.fileId == fileid }
         .coerceAtLeast(0)
     val pagerState = rememberPagerState(
         initialPage = startIndex,
         initialPageOffsetFraction = 0f,
-        pageCount = { imageVideoMessages.size }
+        pageCount = { chatMediaViewModel.previewMediaMessages.size }
     )
     Log.i(
         "vkpro",
-        "fileId: $fileid, filename: ${mediaMetaMap?.get(startIndex)}, index: $startIndex, size: ${imageVideoMessages?.size}, ${mediaMetaMap?.size}"
+        "fileId: $fileid, filename: ${chatMediaViewModel.mediaMap[startIndex]}, index: $startIndex, size: ${chatMediaViewModel.previewMediaMessages.size}, ${chatMediaViewModel.mediaMap.size}"
     )
 
     var isZoomed by remember { mutableStateOf(false) }
@@ -100,21 +83,24 @@ fun SharedTransitionScope.MediaPreviewScreen(
             modifier = Modifier.fillMaxSize(),
             userScrollEnabled = !isZoomed
         ) { page ->
-            val item = imageVideoMessages[page]
-            val media = mediaMetaMap?.get(item.fileId!!)
+            val item = chatMediaViewModel.previewMediaMessages[page]
+            val media = chatMediaViewModel.mediaMap[item.fileId]
+
+            val sharedModifier = if (item.fileId == fileid) {
+                Modifier.sharedElement(
+                    state = rememberSharedContentState(fileid ?: ""),
+                    animatedVisibilityScope = scope
+                )
+            } else Modifier
+
             if (media!!.type == FILETYPE.VIDEO) {
                 VideoPlayer(
                     file = File(context.getExternalFilesDir(null), media.filename),
                     text = item.message,
+                    sharedModifier = sharedModifier,
                     onVisibilityChange = { detailsVisible = it }
                 )
             } else {
-                val sharedModifier = if (item.fileId == fileid) {
-                    Modifier.sharedElement(
-                        state = rememberSharedContentState(fileid ?: ""),
-                        animatedVisibilityScope = scope
-                    )
-                } else Modifier
                 val painter = rememberAsyncImagePainter(
                     ImageRequest.Builder(context)
                         .data(File(context.getExternalFilesDir(null), media.filename))
@@ -158,13 +144,14 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 }
                 Column {
                     Text(
-                        text = (imageVideoMessages[pagerState.currentPage].username) ?: "You",
+                        text = (chatMediaViewModel.previewMediaMessages[pagerState.currentPage].username)
+                            ?: "You",
                         color = Color.White,
                         fontSize = 16.sp,
                         lineHeight = 16.sp
                     )
                     Text(
-                        text = (imageVideoMessages[pagerState.currentPage].date) + ", " + imageVideoMessages[pagerState.currentPage].time,
+                        text = (chatMediaViewModel.previewMediaMessages[pagerState.currentPage].date) + ", " + chatMediaViewModel.previewMediaMessages[pagerState.currentPage].time,
                         color = Color.White,
                         fontSize = 12.sp,
                         lineHeight = 12.sp

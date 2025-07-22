@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -55,7 +56,8 @@ fun VideoPlayer(
     text: String? = null,
     modifier: Modifier = Modifier,
     loop: Boolean = false,
-    onVisibilityChange: (Boolean) -> Unit = {}
+    onVisibilityChange: (Boolean) -> Unit = {},
+    sharedModifier: Modifier
 ) {
     val context = LocalContext.current
     val videoView = remember { VideoView(context) }
@@ -134,7 +136,9 @@ fun VideoPlayer(
                 if (isPlaying && !it.isPlaying) it.start()
                 else if (!isPlaying && it.isPlaying) it.pause()
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(if (showThumbnail) 0f else 1f)
         )
 
         if (showThumbnail) {
@@ -151,7 +155,9 @@ fun VideoPlayer(
                 painter = painter,
                 contentDescription = "Video thumbnail",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(sharedModifier)
             )
         }
 

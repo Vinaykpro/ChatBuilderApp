@@ -6,12 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
-import com.vinaykpro.chatbuilder.data.local.FileEntity
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,14 +23,6 @@ class ChatViewModel(application: Application, private val chatId: Int) :
 
     val chatDetails: StateFlow<ChatEntity?> = chatDao.getChatById(chatId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-    val files: StateFlow<Map<Int, FileEntity>> = fileDao
-        .getFilesByChatId(chatId)
-        .map { fileList: List<FileEntity> ->
-            fileList.associateBy { it.fileid }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-    var mediaMessages: List<MessageEntity?> = emptyList()
-
     private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     val messages: StateFlow<List<MessageEntity>> = _messages
 
@@ -70,7 +60,6 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                     _messages.update { it + newMessages }
                 }
             }
-            mediaMessages = dao.getAllMediaMessages(chatId)
             isLoadingNext = false
             isLoadingPrev = false
         }

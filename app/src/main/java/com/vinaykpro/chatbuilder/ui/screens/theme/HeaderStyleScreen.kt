@@ -1,5 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,11 +28,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,7 +45,6 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
-import com.vinaykpro.chatbuilder.ui.components.ActionIcons
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
@@ -51,7 +54,9 @@ import com.vinaykpro.chatbuilder.ui.components.ParsedHeaderStyle
 import com.vinaykpro.chatbuilder.ui.components.ProgressItem
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
+import com.vinaykpro.chatbuilder.ui.components.actionIconItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -61,6 +66,8 @@ fun HeaderStyleScreen(
     isDarkTheme: Boolean = false,
     themeViewModel: ThemeViewModel
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     var themeStyle = remember(theme.headerstyle) {
@@ -113,6 +120,48 @@ fun HeaderStyleScreen(
     var selectedColor by remember { mutableStateOf(colors[0]) }
     var pickedColorIndex by remember { mutableIntStateOf(0) }
 
+    val iconNames = listOf(
+        "ic_back.png",
+        "ic_profile.png",
+        "ic_3dots.png",
+        "ic_nav1.png",
+        "ic_nav2.png",
+        "ic_nav3.png"
+    )
+    val refreshKeys = remember {
+        mutableStateListOf(*IntArray(iconNames.size) { 0 }.toTypedArray())
+    }
+    var pickedIcon by remember { mutableIntStateOf(0) }
+    val backIconPainter =
+        rememberCustomIconPainter(theme.id, iconNames[0], refreshKeys[0], R.drawable.ic_back)
+    val profilePicPainter =
+        rememberCustomIconPainter(theme.id, iconNames[1], refreshKeys[1], R.drawable.user)
+    val threeDotsPainter =
+        rememberCustomIconPainter(theme.id, iconNames[2], refreshKeys[2], R.drawable.ic_more)
+    val navIconPainters = listOf(
+        rememberCustomIconPainter(theme.id, iconNames[3], refreshKeys[3], R.drawable.ic_call),
+        rememberCustomIconPainter(theme.id, iconNames[4], refreshKeys[4], R.drawable.ic_videocall),
+        rememberCustomIconPainter(theme.id, iconNames[5], refreshKeys[5], R.drawable.ic_animate)
+    )
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            if (uri != null) {
+                scope.launch {
+                    themeViewModel.saveCustomIcon(
+                        uri,
+                        context,
+                        theme.id,
+                        iconNames[pickedIcon],
+                        onDone = {
+                            refreshKeys[pickedIcon]++
+                        })
+                }
+            }
+        }
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -157,7 +206,17 @@ fun HeaderStyleScreen(
                 .clip(shape = RoundedCornerShape(12.dp))
                 .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
         ) {
-            ChatToolbar(preview = true, previewColors = previewColors, previewAttrs = previewAttrs)
+            ChatToolbar(
+                preview = true,
+                previewColors = previewColors,
+                previewAttrs = previewAttrs,
+                backIcon = backIconPainter,
+                profileIcon = profilePicPainter,
+                icon1 = navIconPainters[0],
+                icon2 = navIconPainters[1],
+                icon3 = navIconPainters[2],
+                icon4 = threeDotsPainter,
+            )
             Spacer(modifier = Modifier.height(60.dp))
         }
         Column(
@@ -227,7 +286,10 @@ fun HeaderStyleScreen(
                             onChange = {
                                 previewAttrs = previewAttrs.copy(backbtn_gap = it)
                             })
-                        EditIcon(name = "Back button icon")
+                        EditIcon(name = "Back button icon", icon = backIconPainter, onClick = {
+                            pickedIcon = 0
+                            imagePicker.launch("image/*")
+                        })
                     }
                 }
             }
@@ -270,7 +332,14 @@ fun HeaderStyleScreen(
                             onChange = {
                                 previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
                             })
-                        EditIcon(name = "Three dots icon")
+                        EditIcon(
+                            name = "Default profile icon",
+                            icon = profilePicPainter,
+                            filter = null,
+                            onClick = {
+                                pickedIcon = 1
+                                imagePicker.launch("image/*")
+                            })
                     }
                 }
             }
@@ -302,7 +371,10 @@ fun HeaderStyleScreen(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
-                    EditIcon(name = "Default profile icon")
+                    EditIcon(name = "Three dots icon", icon = threeDotsPainter, onClick = {
+                        pickedIcon = 2
+                        imagePicker.launch("image/*")
+                    })
                 }
             }
 
@@ -326,7 +398,45 @@ fun HeaderStyleScreen(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
-                    ActionIcons()
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[0],
+                        iconSize = previewAttrs.actionicons_size,
+                        previewAttrs.is_icon1_visible,
+                        {
+                            pickedIcon = 3
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon1_visible = it)
+                        }
+                    )
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[1],
+                        iconSize = previewAttrs.actionicons_size,
+                        previewAttrs.is_icon2_visible,
+                        {
+                            pickedIcon = 4
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon2_visible = it)
+                        }
+                    )
+                    actionIconItem(
+                        "Icon 1",
+                        navIconPainters[2],
+                        iconSize = previewAttrs.actionicons_size,
+                        previewAttrs.is_icon3_visible,
+                        {
+                            pickedIcon = 5
+                            imagePicker.launch("image/*")
+                        },
+                        {
+                            previewAttrs = previewAttrs.copy(is_icon3_visible = it)
+                        }
+                    )
                     ProgressItem(
                         name = "Icon size",
                         value = previewAttrs.actionicons_size.toFloat(),
@@ -361,7 +471,6 @@ fun HeaderStyleScreen(
             )
         }
     }
-
 }
 
 private val headerColorNames = listOf(
