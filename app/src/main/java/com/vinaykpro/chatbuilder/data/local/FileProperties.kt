@@ -56,6 +56,17 @@ object FILETYPE {
     const val ZIP = 5
 }
 
+object MyConstants {
+    val chatMenuList = listOf(
+        "Edit profile",
+        "Search",
+        "Theme",
+        "Swap sender",
+        "Export chat to HTML",
+        "Clear chat"
+    )
+}
+
 fun formatFileSize(bytes: Long): String {
     if (bytes < 0) return "Unknown"
     val kb = 1024.0

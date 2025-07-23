@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -64,15 +66,19 @@ fun SharedTransitionScope.SenderMessage(
     bubbleTipRadius: Float = 8f,
     file: FileEntity? = null,
     screenWidth: Int = 200,
+    screenWidthDp: Dp,
     isFirst: Boolean = false,
     isLast: Boolean = false,
     showTime: Boolean = true,
     showTicks: Boolean = true,
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    onMediaClick: (Int) -> Unit = {}
+    onMediaClick: (Int) -> Unit = {},
 ) {
-    val space = if (showTime) " ⠀ ⠀     ⠀" else if (showTicks) "   " else ""
+    //var space = if (showTime) "  " + "\u2004".repeat(sentTime.length) else ""
+    val spaceCount = (sentTime.length * 0.6f).toInt()
+    var space = if (showTime) "  " + "⠀".repeat(spaceCount) else ""
+    if (showTicks) space += "⠀"
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
@@ -97,8 +103,8 @@ fun SharedTransitionScope.SenderMessage(
         modifier = Modifier
             .fillMaxWidth()
             .padding(1.dp)
-            .padding(top = if (isFirst) 2.dp else 0.dp)
-            .padding(start = 40.dp), contentAlignment = Alignment.Center
+            .padding(top = if (isFirst) 2.dp else 0.dp),
+        contentAlignment = Alignment.Center
     ) {
         if (bubbleStyle == 1 && isFirst) SentArrow(
             modifier = Modifier.align(Alignment.TopEnd),
@@ -112,6 +118,7 @@ fun SharedTransitionScope.SenderMessage(
 
         Box(
             modifier = bubbleModifier
+                .widthIn(max = screenWidthDp * 0.8f)
                 .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
                 .clickable {
                     if (file != null && isFile)
@@ -254,7 +261,7 @@ fun SharedTransitionScope.SenderMessage(
 
                 if (text != null || isFile)
                     Text(
-                        text = if (isFile) " " else "$text  $space", // Extra spaces for spacing
+                        text = if (isFile) " " else "$text$space", // Extra spaces for spacing
                         color = textColor,
                         fontSize = 16.sp,
                         lineHeight = 20.sp,
@@ -309,7 +316,8 @@ fun getBubbleModifier(
     bubbleRadius: Float,
     color: Color,
     isFirst: Boolean,
-    isLast: Boolean
+    isLast: Boolean,
+    isSender: Boolean = true
 ): Modifier {
     val modifier = when (bubbleStyle) {
         0 -> {
@@ -320,12 +328,15 @@ fun getBubbleModifier(
 
         1 -> {
             Modifier
-                .padding(end = 10.dp)
+                .padding(
+                    end = if (isSender) 10.dp else 0.dp,
+                    start = if (!isSender) 10.dp else 0.dp
+                )
                 .background(
                     color = color,
                     shape = RoundedCornerShape(
-                        bubbleRadius.dp,
-                        if (isFirst) 0.dp else bubbleRadius.dp,
+                        if (!isSender && isFirst) 0.dp else bubbleRadius.dp,
+                        if (isSender && isFirst) 0.dp else bubbleRadius.dp,
                         bubbleRadius.dp,
                         bubbleRadius.dp
                     )
@@ -338,10 +349,10 @@ fun getBubbleModifier(
                 .background(
                     color = color,
                     shape = RoundedCornerShape(
-                        bubbleRadius.dp,
-                        if (isFirst) bubbleRadius.dp else 2.dp,
-                        if (isLast) bubbleRadius.dp else 2.dp,
-                        bubbleRadius.dp
+                        if (!isSender && isFirst) bubbleRadius.dp else 2.dp,
+                        if (isSender && isFirst) bubbleRadius.dp else 2.dp,
+                        if (isSender && isLast) bubbleRadius.dp else 2.dp,
+                        if (!isSender && isLast) bubbleRadius.dp else 2.dp
                     )
                 )
                 .padding(3.dp)
@@ -349,14 +360,17 @@ fun getBubbleModifier(
 
         3 -> {
             Modifier
-                .padding(end = 10.dp)
+                .padding(
+                    end = if (isSender) 10.dp else 0.dp,
+                    start = if (!isSender) 10.dp else 0.dp
+                )
                 .background(
                     color = color,
                     shape = RoundedCornerShape(
-                        bubbleRadius.dp,
-                        if (isFirst) bubbleRadius.dp else 2.dp,
-                        if (isLast) 0.dp else 2.dp,
-                        bubbleRadius.dp
+                        if (!isSender && isFirst) bubbleRadius.dp else 2.dp,
+                        if (isSender && isFirst) bubbleRadius.dp else 2.dp,
+                        if (isSender && isLast) 0.dp else 2.dp,
+                        if (!isSender && isLast) 0.dp else 2.dp
                     )
                 )
                 .padding(3.dp)

@@ -171,7 +171,7 @@ class FileIOHelper {
                     username = name,
                     message = msg,
                     date = "$d1/$d2/$d3",
-                    time = "$h:$m $meridian",
+                    time = "$h:$m ${meridian.trim()}",
                     timestamp = null,
                     fileId = null,
                     messageStatus = MESSAGESTATUS.SEEN,
@@ -189,7 +189,7 @@ class FileIOHelper {
                     messageType = MESSAGETYPE.NOTE,
                     message = msg,
                     date = "$d1/$d2/$d3",
-                    time = "$h:$m $meridian",
+                    time = "$h:$m ${meridian.trim()}",
                     timestamp = null,
                     userid = null,
                     username = null,
@@ -292,7 +292,7 @@ class FileIOHelper {
                                 }
                                 var thumbHeight: Int? = null
                                 var thumbWidth: Int? = null
-                                var duration: String = ""
+                                var duration = ""
                                 if (currFile.type == FILETYPE.IMAGE) {
                                     val res = getImageDimensions(outputFile)
                                     thumbWidth = res.first

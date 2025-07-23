@@ -1,16 +1,21 @@
 package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
@@ -18,13 +23,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -47,9 +56,11 @@ import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.Message
+import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlin.math.min
 
@@ -69,6 +80,7 @@ fun SharedTransitionScope.ChatScreen(
     val chatViewModel: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(context.applicationContext as Application, chatId)
     )
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthForMedia =
         min(LocalConfiguration.current.screenWidthDp, LocalConfiguration.current.screenHeightDp)
 
@@ -116,6 +128,7 @@ fun SharedTransitionScope.ChatScreen(
     val chatDetails by chatViewModel.chatDetails.collectAsState()
     val messages by chatViewModel.messages.collectAsState(initial = emptyList())
     LaunchedEffect(chatDetails?.lastOpenedMsgId) {
+        delay(300)
         chatDetails?.let { chatViewModel.initialLoad(it.lastOpenedMsgId) }
         chatMediaViewModel.load(chatDetails?.chatid ?: -1)
     }
@@ -142,6 +155,8 @@ fun SharedTransitionScope.ChatScreen(
             }
     }
 
+    var searchVisible by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -155,72 +170,132 @@ fun SharedTransitionScope.ChatScreen(
                     .calculateBottomPadding()
             )
     ) {
-        ChatToolbar(
-            name = chatDetails?.name ?: "Chat $chatId",
-            status = chatDetails?.status ?: "Tap to edit",
-            backIcon = headerIcons.backIcon,
-            profileIcon = headerIcons.profileIcon,
-            icon1 = headerIcons.icon1,
-            icon2 = headerIcons.icon2,
-            icon3 = headerIcons.icon3,
-            icon4 = headerIcons.icon4,
-            style = headerStyle,
-            isDarkTheme = isDarkTheme
-        )
+        Box {
+            ChatToolbar(
+                name = chatDetails?.name ?: "Chat $chatId",
+                status = chatDetails?.status ?: "Tap to edit",
+                backIcon = headerIcons.backIcon,
+                profileIcon = headerIcons.profileIcon,
+                icon1 = headerIcons.icon1,
+                icon2 = headerIcons.icon2,
+                icon3 = headerIcons.icon3,
+                icon4 = headerIcons.icon4,
+                style = headerStyle,
+                isDarkTheme = isDarkTheme,
+                onMenuClick = {
+                    when (it) {
+                        1 -> searchVisible = true
+                    }
+                }
+            )
+            if (searchVisible)
+                SearchBar(
+                    backgroundColor = remember(isDarkTheme) {
+                        if (isDarkTheme) Color(headerStyle.color_navbar_dark.toColorInt())
+                        else Color(headerStyle.color_navbar.toColorInt())
+                    },
+                    color = remember(isDarkTheme) {
+                        if (isDarkTheme) Color(headerStyle.color_navicons_dark.toColorInt())
+                        else Color(headerStyle.color_navicons.toColorInt())
+                    },
+                    showArrows = true,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    onExit = { searchVisible = false }
+                )
+        }
 
         //body
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 5.dp)
+        if (chatViewModel.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        AnimatedVisibility(
+            visible = !chatViewModel.isLoading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.weight(1f)
         ) {
-            itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
-                when {
-                    m.messageType == MESSAGETYPE.NOTE -> ChatNote(
-                        m.message.toString(),
-                        color = themeBodyColors.dateBubble,
-                        textColor = themeBodyColors.textSecondary
-                    )
-
-                    m.userid == (chatDetails?.senderId ?: 1) -> SenderMessage(
-                        text = m.message,
-                        sentTime = m.time.toString(),
-                        ticksIcon = blueTicksIcon,
-                        bubbleStyle = 1,
-                        bubbleRadius = bodyStyle.bubble_radius,
-                        bubbleTipRadius = bodyStyle.bubble_tip_radius,
-                        isFirst = i == 0 || messages[i - 1].userid != m.userid,
-                        color = themeBodyColors.senderBubble,
-                        textColor = themeBodyColors.textPrimary,
-                        textColorSecondary = themeBodyColors.textSecondary,
-                        file = chatMediaViewModel.mediaMap[m.fileId],
-                        screenWidth = screenWidthForMedia,
-                        imageLoader = imageLoader,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        onMediaClick = {
-                            navController.navigate("mediapreview/$it")
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 5.dp)
+            ) {
+                if (chatViewModel.isLoadingPrev) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
-                    )
+                    }
+                }
+                itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
+                    when {
+                        m.messageType == MESSAGETYPE.NOTE -> ChatNote(
+                            m.message.toString(),
+                            color = themeBodyColors.dateBubble,
+                            textColor = themeBodyColors.textSecondary
+                        )
 
-                    else -> Message(
-                        text = m.message,
-                        sentTime = m.time.toString(),
-                        bubbleStyle = 1,
-                        bubbleRadius = bodyStyle.bubble_radius,
-                        bubbleTipRadius = bodyStyle.bubble_tip_radius,
-                        isFirst = i == 0 || messages[i - 1].userid != m.userid,
-                        color = themeBodyColors.receiverBubble,
-                        textColor = themeBodyColors.textPrimary,
-                        textColorSecondary = themeBodyColors.textSecondary,
-                        file = chatMediaViewModel.mediaMap[m.fileId],
-                        screenWidth = screenWidthForMedia,
-                        imageLoader = imageLoader,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        onMediaClick = {
-                            navController.navigate("mediapreview/$it")
+                        m.userid == (chatDetails?.senderId ?: 1) -> SenderMessage(
+                            text = m.message,
+                            sentTime = m.time.toString(),
+                            ticksIcon = blueTicksIcon,
+                            bubbleStyle = 1,
+                            bubbleRadius = bodyStyle.bubble_radius,
+                            bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                            isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                            color = themeBodyColors.senderBubble,
+                            textColor = themeBodyColors.textPrimary,
+                            textColorSecondary = themeBodyColors.textSecondary,
+                            file = chatMediaViewModel.mediaMap[m.fileId],
+                            screenWidthDp = screenWidthDp,
+                            screenWidth = screenWidthForMedia,
+                            imageLoader = imageLoader,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onMediaClick = {
+                                navController.navigate("mediapreview/$it")
+                            }
+                        )
+
+                        else -> Message(
+                            text = m.message,
+                            sentTime = m.time.toString(),
+                            bubbleStyle = 1,
+                            bubbleRadius = bodyStyle.bubble_radius,
+                            bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                            isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                            color = themeBodyColors.receiverBubble,
+                            textColor = themeBodyColors.textPrimary,
+                            textColorSecondary = themeBodyColors.textSecondary,
+                            file = chatMediaViewModel.mediaMap[m.fileId],
+                            screenWidthDp = screenWidthDp,
+                            screenWidth = screenWidthForMedia,
+                            imageLoader = imageLoader,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onMediaClick = {
+                                navController.navigate("mediapreview/$it")
+                            }
+                        )
+                    }
+                }
+                if (chatViewModel.isLoadingNext) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
-                    )
+                    }
                 }
             }
         }

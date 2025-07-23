@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -56,14 +58,17 @@ fun SharedTransitionScope.Message(
     bubbleTipRadius: Float = 8f,
     file: FileEntity? = null,
     screenWidth: Int = 200,
+    screenWidthDp: Dp = 250.dp,
     isFirst: Boolean = false,
     isLast: Boolean = false,
     showTime: Boolean = true,
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    onMediaClick: (Int) -> Unit = {}
+    onMediaClick: (Int) -> Unit = {},
 ) {
-    val space = if (showTime) " ⠀ ⠀    " else ""
+    //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
+    val spaceCount = (sentTime.length * 0.6f).toInt()
+    val space = if (showTime) " " + "⠀".repeat(spaceCount) else ""
     val context = LocalContext.current
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
@@ -81,14 +86,14 @@ fun SharedTransitionScope.Message(
     )
 
     val bubbleModifier: Modifier =
-        getBubbleModifier(bubbleStyle, bubbleRadius, color, isFirst, isLast)
+        getBubbleModifier(bubbleStyle, bubbleRadius, color, isFirst, isLast, false)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(1.dp)
-            .padding(top = if (isFirst) 2.dp else 0.dp)
-            .padding(end = 40.dp), contentAlignment = Alignment.Center
+            .padding(top = if (isFirst) 2.dp else 0.dp),
+        contentAlignment = Alignment.Center
     ) {
         if (bubbleStyle == 1 && isFirst) Arrow(
             modifier = Modifier.align(Alignment.TopStart),
@@ -102,6 +107,7 @@ fun SharedTransitionScope.Message(
 
         Box(
             modifier = bubbleModifier
+                .widthIn(max = screenWidthDp * 0.8f)
                 .align(if (bubbleStyle != 3) Alignment.TopStart else Alignment.BottomStart)
                 .clickable {
                     if (file != null && isFile)
@@ -242,7 +248,7 @@ fun SharedTransitionScope.Message(
                     }
                 if (text != null || isFile)
                     Text(
-                        text = "$text $space",
+                        text = "$text$space",
                         color = textColor,
                         fontSize = 16.sp,
                         lineHeight = 20.sp,

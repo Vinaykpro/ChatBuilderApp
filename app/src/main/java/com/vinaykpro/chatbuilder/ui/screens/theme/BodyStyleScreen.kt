@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +81,7 @@ fun SharedTransitionScope.BodyStyleScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     var isDark by remember { mutableStateOf(isDarkTheme) }
     val theme = LocalThemeEntity.current
     var themeStyle = remember(theme.bodystyle) {
@@ -219,52 +221,56 @@ fun SharedTransitionScope.BodyStyleScreen(
             )
             SenderMessage(
                 text = "Hii",
+                color = previewColors.senderBubble,
+                textColor = previewColors.textPrimary,
+                textColorSecondary = previewColors.textSecondary,
                 ticksIcon = seenTicksPainter,
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
-                color = previewColors.senderBubble,
-                textColor = previewColors.textPrimary,
-                textColorSecondary = previewColors.textSecondary,
                 isFirst = true,
                 showTime = previewAttrs.show_time,
-                showTicks = previewAttrs.showticks
+                showTicks = previewAttrs.showticks,
+                screenWidthDp = screenWidthDp
             )
             SenderMessage(
                 text = "Hope you love using our app. Please leave a rating",
+                color = previewColors.senderBubble,
+                textColor = previewColors.textPrimary,
+                textColorSecondary = previewColors.textSecondary,
                 ticksIcon = seenTicksPainter,
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
-                color = previewColors.senderBubble,
-                textColor = previewColors.textPrimary,
-                textColorSecondary = previewColors.textSecondary,
                 isLast = true,
                 showTime = previewAttrs.show_time,
-                showTicks = previewAttrs.showticks
+                showTicks = previewAttrs.showticks,
+                screenWidthDp = screenWidthDp
             )
             Spacer(modifier = Modifier.size(4.dp))
             Message(
                 text = "Yep!",
-                bubbleStyle = previewAttrs.bubble_style,
-                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
-                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.receiverBubble,
                 textColor = previewColors.textPrimary,
                 textColorSecondary = previewColors.textSecondary,
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 isFirst = true,
-                showTime = previewAttrs.show_time
+                showTime = previewAttrs.show_time,
+                screenWidthDp = screenWidthDp
             )
             Message(
                 text = "Definitely :-)",
-                bubbleStyle = previewAttrs.bubble_style,
-                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
-                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 color = previewColors.receiverBubble,
                 textColor = previewColors.textPrimary,
                 textColorSecondary = previewColors.textSecondary,
+                bubbleStyle = previewAttrs.bubble_style,
+                bubbleRadius = previewAttrs.bubble_radius.toFloat(),
+                bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
                 isLast = true,
-                showTime = previewAttrs.show_time
+                showTime = previewAttrs.show_time,
+                screenWidthDp = screenWidthDp
             )
         }
         Column(

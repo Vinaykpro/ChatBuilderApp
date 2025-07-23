@@ -1,6 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.components
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +16,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
+import com.vinaykpro.chatbuilder.data.local.MyConstants
 
 //@Preview
 @SuppressLint("SuspiciousIndentation")
@@ -49,12 +56,14 @@ fun ChatToolbar(
     icon4: Painter = painterResource(R.drawable.ic_more),
     preview: Boolean = false,
     previewColors: ParsedHeaderStyle = ParsedHeaderStyle(),
-    previewAttrs: HeaderStyle = HeaderStyle()
+    previewAttrs: HeaderStyle = HeaderStyle(),
+    onMenuClick: (Int) -> Unit = {}
 ) {
     val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
     }
     val style = if (preview) previewAttrs else style
+    var expanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -66,7 +75,6 @@ fun ChatToolbar(
             .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         if (style.showbackbtn)
             IconButton(onClick = {}, modifier = Modifier.padding(start = style.backbtn_gap.dp)) {
                 Icon(
@@ -76,7 +84,6 @@ fun ChatToolbar(
                     tint = themeColors.navIcons
                 )
             }
-
         if (style.showprofilepic)
             Image(
                 painter = profileIcon,
@@ -137,7 +144,7 @@ fun ChatToolbar(
                     )
                 }
             }
-            IconButton(onClick = {}) {
+            IconButton(onClick = { expanded = true }) {
                 Icon(
                     modifier = Modifier.size(style.actionicons_size.dp),
                     painter = icon4,
@@ -145,9 +152,26 @@ fun ChatToolbar(
                     tint = themeColors.navIcons
                 )
             }
+            AnimatedVisibility(
+                visible = expanded
+            ) {
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.padding(horizontal = 10.dp)
+                ) {
+                    MyConstants.chatMenuList.forEachIndexed { index, item ->
+                        DropdownMenuItem(
+                            text = { Text(item) },
+                            onClick = { expanded = false; onMenuClick(index) }
+                        )
+                    }
+                }
+            }
         }
     }
 }
+
 
 fun HeaderStyle.toParsed(isDarkTheme: Boolean): ParsedHeaderStyle {
     fun parse(hex: String): Color = Color(hex.toColorInt())

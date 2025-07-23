@@ -7,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ChatViewModel(application: Application, private val chatId: Int) :
     AndroidViewModel(application) {
@@ -30,8 +32,9 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     private var nextId = 0
     private var prevId = 0
     private var pageSize = 80
-    private var isLoadingNext = true
-    private var isLoadingPrev = true
+    internal var isLoadingNext = true
+    internal var isLoadingPrev = true
+    internal var isLoading = true
     internal var isInitialLoad = true
     internal var isInitialScroll = true
     private var hasMoreNext = true
@@ -42,26 +45,31 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         isInitialLoad = false
         viewModelScope.launch {
             Log.i("vkpro", "lastid = $lastOpenedMsgId")
-            if (lastOpenedMsgId == null) {
-                val newMessages = dao.getMessagesPaged(chatId, pageSize)
-                if (newMessages.isNotEmpty()) {
-                    prevId = newMessages[0].messageId
-                    nextId = newMessages[newMessages.size - 1].messageId
-                    _messages.update { it + newMessages }
+            withContext(Dispatchers.IO) {
+                if (lastOpenedMsgId == null) {
+                    val newMessages = dao.getMessagesPaged(chatId, pageSize)
+                    if (newMessages.isNotEmpty()) {
+                        prevId = newMessages[0].messageId
+                        nextId = newMessages[newMessages.size - 1].messageId
+                        _messages.update { it + newMessages }
+                    }
+                } else {
+                    val newMessagesNext =
+                        dao.getNextMessages(chatId, lastOpenedMsgId - 1, pageSize / 2)
+                    val newMessagesPrev =
+                        dao.getPreviousMessages(chatId, lastOpenedMsgId, pageSize / 2)
+                    var newMessages = emptyList<MessageEntity>()
+                    if (newMessagesNext.isNotEmpty() || newMessagesPrev.isNotEmpty()) {
+                        newMessages = newMessagesPrev.reversed() + newMessagesNext
+                        prevId = newMessages[0].messageId
+                        nextId = newMessages[newMessages.size - 1].messageId
+                        _messages.update { it + newMessages }
+                    }
                 }
-            } else {
-                val newMessagesNext = dao.getNextMessages(chatId, lastOpenedMsgId - 1, pageSize / 2)
-                val newMessagesPrev = dao.getPreviousMessages(chatId, lastOpenedMsgId, pageSize / 2)
-                var newMessages = emptyList<MessageEntity>()
-                if (newMessagesNext.isNotEmpty() || newMessagesPrev.isNotEmpty()) {
-                    newMessages = newMessagesPrev.reversed() + newMessagesNext
-                    prevId = newMessages[0].messageId
-                    nextId = newMessages[newMessages.size - 1].messageId
-                    _messages.update { it + newMessages }
-                }
+                isLoading = false
+                isLoadingNext = false
+                isLoadingPrev = false
             }
-            isLoadingNext = false
-            isLoadingPrev = false
         }
     }
 
