@@ -12,6 +12,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages where chatid = :chatID")
     fun getAllMessages(chatID: Int): Flow<List<MessageEntity>>
 
+    @Query("SELECT messageId FROM messages where chatid = :chatID and message LIKE :text")
+    suspend fun getSearchResultsInChat(chatID: Int, text: String): List<Int>
+
     @Query("SELECT * FROM messages where chatid = :chatID and fileId not null")
     suspend fun getAllMediaMessages(chatID: Int): List<MessageEntity>
 

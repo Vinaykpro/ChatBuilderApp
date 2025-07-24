@@ -65,6 +65,7 @@ fun SharedTransitionScope.Message(
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onMediaClick: (Int) -> Unit = {},
+    searchedString: String? = null,
 ) {
     //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
@@ -246,19 +247,28 @@ fun SharedTransitionScope.Message(
                             }
                         }
                     }
-                if (text != null || isFile)
-                    Text(
-                        text = "$text$space",
-                        color = textColor,
-                        fontSize = 16.sp,
-                        lineHeight = 20.sp,
-                        modifier = Modifier.padding(
-                            top = 1.dp,
-                            bottom = 1.dp,
-                            start = 5.dp,
-                            end = 2.dp
+                if (text != null || isFile) {
+                    if(searchedString == null) {
+                        Text(
+                            text = "$text$space",
+                            color = textColor,
+                            fontSize = 16.sp,
+                            lineHeight = 20.sp,
+                            modifier = Modifier.padding(
+                                top = 1.dp,
+                                bottom = 1.dp,
+                                start = 5.dp,
+                                end = 2.dp
+                            )
                         )
-                    )
+                    } else {
+                        HighlightedText(
+                            fullText = if (isFile) " " else "$text$space",
+                            searchedText = searchedString,
+                            textColor = textColor,
+                        )
+                    }
+                }
             }
 
             if (showTime)

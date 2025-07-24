@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +44,12 @@ fun SearchBar(
     color: Color = Color.Black,
     showArrows: Boolean = false,
     modifier: Modifier = Modifier,
-    onExit: () -> Unit = {}
+    onExit: () -> Unit = {},
+    onSearch: (String) -> Unit = {},
+    onNext: () -> Unit = {},
+    onPrev: () -> Unit = {},
+    resultsLength: Int = 0,
+    currentResultIndex: Int = 0
 ) {
     var input by remember { mutableStateOf("") }
 
@@ -53,11 +61,18 @@ fun SearchBar(
         keyboardController?.show()
     }
 
-    Box(modifier = modifier.fillMaxWidth().background(backgroundColor), contentAlignment = Alignment.Center) {
-        Row(modifier = Modifier.padding(vertical = 5.dp)
-            .fillMaxWidth(0.95f)
-            .clip(RoundedCornerShape(30.dp))
-            .background(color.copy(alpha = 0.25f)),
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(vertical = 5.dp)
+                .fillMaxWidth(0.95f)
+                .clip(RoundedCornerShape(30.dp))
+                .background(color.copy(alpha = 0.25f)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onExit) {
@@ -80,6 +95,15 @@ fun SearchBar(
                     .focusRequester(focusRequester)
                     .height(40.dp)
                     .weight(1f),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        onSearch(input)
+                        keyboardController?.hide()
+                    }
+                ),
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier
@@ -93,23 +117,28 @@ fun SearchBar(
                         innerTextField()
                     }
                 }
+
             )
 
-            if(showArrows) {
-                IconButton(onClick = {}) {
+            if (showArrows) {
+                IconButton(onClick = { if (currentResultIndex < (resultsLength - 1)) onNext() }) {
                     Icon(
                         modifier = Modifier.size(22.dp),
                         painter = painterResource(R.drawable.ic_arrow),
-                        contentDescription = "back",
-                        tint = color
+                        contentDescription = "Next",
+                        tint = if (currentResultIndex < (resultsLength - 1)) color else color.copy(
+                            alpha = 0.5f
+                        )
                     )
                 }
-                IconButton(onClick = {}) {
+                IconButton(onClick = { if (currentResultIndex > 0) onPrev() }) {
                     Icon(
-                        modifier = Modifier.size(22.dp).rotate(-180f),
+                        modifier = Modifier
+                            .size(22.dp)
+                            .rotate(-180f),
                         painter = painterResource(R.drawable.ic_arrow),
-                        contentDescription = "back",
-                        tint = color
+                        contentDescription = "Prev",
+                        tint = if (currentResultIndex > 0) color else color.copy(alpha = 0.5f)
                     )
                 }
             }

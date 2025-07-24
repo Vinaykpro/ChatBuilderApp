@@ -28,54 +28,110 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     val messages: StateFlow<List<MessageEntity>> = _messages
 
+    //private val _searchedResults = MutableStateFlow<List<Int>>(emptyList())
+    //val searchedResults: StateFlow<List<Int>> = _searchedResults.asStateFlow()
+    var searchedResults: List<Int> = emptyList()
+    var searchedItemsSet: Set<Int> = emptySet()
+    var currentSearchIndex = 0
+    var searchTerm: String? = null
 
     private var nextId = 0
     private var prevId = 0
     private var pageSize = 80
-    internal var isLoadingNext = true
-    internal var isLoadingPrev = true
+    internal var isLoadingNext = false
+    internal var isLoadingPrev = false
     internal var isLoading = true
     internal var isInitialLoad = true
-    internal var isInitialScroll = true
+    internal var needScroll = true
     private var hasMoreNext = true
     private var hasMorePrev = true
 
+    var showToast = false
+    var toast: String? = null
+
     fun initialLoad(lastOpenedMsgId: Int?) {
         if (!isInitialLoad) return
-        isInitialLoad = false
         viewModelScope.launch {
             Log.i("vkpro", "lastid = $lastOpenedMsgId")
             withContext(Dispatchers.IO) {
                 if (lastOpenedMsgId == null) {
+                    isLoading = true
                     val newMessages = dao.getMessagesPaged(chatId, pageSize)
                     if (newMessages.isNotEmpty()) {
                         prevId = newMessages[0].messageId
                         nextId = newMessages[newMessages.size - 1].messageId
                         _messages.update { it + newMessages }
                     }
+                    isLoading = false
                 } else {
-                    val newMessagesNext =
-                        dao.getNextMessages(chatId, lastOpenedMsgId - 1, pageSize / 2)
-                    val newMessagesPrev =
-                        dao.getPreviousMessages(chatId, lastOpenedMsgId, pageSize / 2)
-                    var newMessages = emptyList<MessageEntity>()
-                    if (newMessagesNext.isNotEmpty() || newMessagesPrev.isNotEmpty()) {
-                        newMessages = newMessagesPrev.reversed() + newMessagesNext
-                        prevId = newMessages[0].messageId
-                        nextId = newMessages[newMessages.size - 1].messageId
-                        _messages.update { it + newMessages }
-                    }
+                    loadMessagesAtId(lastOpenedMsgId)
                 }
-                isLoading = false
+                isInitialLoad = false
                 isLoadingNext = false
                 isLoadingPrev = false
             }
         }
     }
 
-    fun loadNextPage() {
-        if (isLoadingNext || isLoadingPrev || !hasMoreNext) return
+    fun search(text: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                Log.i("vkpro", "searching for $text")
+                searchedResults = dao.getSearchResultsInChat(chatId, "%$text%")
+                searchedItemsSet = searchedResults.toSet()
+                Log.i("vkpro", "res size: ${searchedResults.size}")
+                if (searchedResults.isNotEmpty()) {
+                    searchTerm = text
+                    goToSearchedItem(0)
+                } else {
+                    toast = "No results found for '$text'"
+                    showToast = true
+                }
+            }
+        }
+    }
+
+    fun resetSearch() {
+        searchedResults = emptyList()
+        searchedItemsSet = emptySet()
+        currentSearchIndex = 0
+        searchTerm = null
+    }
+
+    fun goToSearchedItem(direction: Int) {
+        currentSearchIndex += direction
+        Log.i("vkpro", "going next")
+        viewModelScope.launch {
+            if (currentSearchIndex < searchedResults.size)
+                loadMessagesAtId(searchedResults[currentSearchIndex])
+            Log.i("vkpro", "loading at id: ${searchedResults[currentSearchIndex]}")
+        }
+    }
+
+    suspend fun loadMessagesAtId(id: Int) = withContext(Dispatchers.IO) {
+        if (isLoading && !isInitialLoad) return@withContext
+        isLoading = true
+        val newMessagesNext =
+            dao.getNextMessages(chatId, id - 1, pageSize / 2)
+        val newMessagesPrev =
+            dao.getPreviousMessages(chatId, id, pageSize / 2)
+        var newMessages = emptyList<MessageEntity>()
+        if (newMessagesNext.isNotEmpty() || newMessagesPrev.isNotEmpty()) {
+            newMessages = newMessagesPrev.reversed() + newMessagesNext
+            prevId = newMessages[0].messageId
+            nextId = newMessages[newMessages.size - 1].messageId
+            _messages.update { newMessages }
+        }
+        isLoadingNext = false
+        isLoadingPrev = false
+        isLoading = false
+        needScroll = true
+    }
+
+    suspend fun loadNextPage() = withContext(Dispatchers.IO) {
+        if (isLoadingNext || isLoadingPrev || !hasMoreNext) return@withContext
         isLoadingNext = true
+        Log.i("vkpro:", "Loading next msgs")
 
         viewModelScope.launch {
             val newMessages = dao.getNextMessages(chatId, nextId, pageSize)
@@ -92,8 +148,8 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun loadPrevPage() {
-        if (isLoadingPrev || isLoadingNext || !hasMorePrev) return
+    suspend fun loadPrevPage() = withContext(Dispatchers.IO) {
+        if (isLoadingPrev || isLoadingNext || !hasMorePrev) return@withContext
         isLoadingPrev = true
 
         viewModelScope.launch {
@@ -105,7 +161,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                 _messages.update { reversed + it }
             }
 
-            if (newMessages.size < pageSize) {
+            if (newMessages.size < pageSize && !isInitialLoad) {
                 hasMorePrev = false
             }
 

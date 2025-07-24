@@ -228,10 +228,11 @@ fun SharedTransitionScope.BodyStyleScreen(
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                screenWidthDp = screenWidthDp,
                 isFirst = true,
                 showTime = previewAttrs.show_time,
                 showTicks = previewAttrs.showticks,
-                screenWidthDp = screenWidthDp
+                searchedString = null
             )
             SenderMessage(
                 text = "Hope you love using our app. Please leave a rating",
@@ -242,10 +243,11 @@ fun SharedTransitionScope.BodyStyleScreen(
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                screenWidthDp = screenWidthDp,
                 isLast = true,
                 showTime = previewAttrs.show_time,
                 showTicks = previewAttrs.showticks,
-                screenWidthDp = screenWidthDp
+                searchedString = null
             )
             Spacer(modifier = Modifier.size(4.dp))
             Message(
@@ -256,9 +258,10 @@ fun SharedTransitionScope.BodyStyleScreen(
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                screenWidthDp = screenWidthDp,
                 isFirst = true,
                 showTime = previewAttrs.show_time,
-                screenWidthDp = screenWidthDp
+                searchedString = null
             )
             Message(
                 text = "Definitely :-)",
@@ -268,9 +271,10 @@ fun SharedTransitionScope.BodyStyleScreen(
                 bubbleStyle = previewAttrs.bubble_style,
                 bubbleRadius = previewAttrs.bubble_radius.toFloat(),
                 bubbleTipRadius = previewAttrs.bubble_tip_radius.toFloat(),
+                screenWidthDp = screenWidthDp,
                 isLast = true,
                 showTime = previewAttrs.show_time,
-                screenWidthDp = screenWidthDp
+                searchedString = null
             )
         }
         Column(

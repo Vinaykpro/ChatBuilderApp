@@ -1,6 +1,8 @@
 package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -61,6 +63,7 @@ import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.json.Json
 import kotlin.math.min
 
@@ -77,7 +80,7 @@ fun SharedTransitionScope.ChatScreen(
     val theme = LocalThemeEntity.current
 
     val context = LocalContext.current
-    val chatViewModel: ChatViewModel = viewModel(
+    val model: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(context.applicationContext as Application, chatId)
     )
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
@@ -125,34 +128,57 @@ fun SharedTransitionScope.ChatScreen(
             .build()
     }
     val listState = rememberLazyListState()
-    val chatDetails by chatViewModel.chatDetails.collectAsState()
-    val messages by chatViewModel.messages.collectAsState(initial = emptyList())
+    val chatDetails by model.chatDetails.collectAsState()
+    val messages by model.messages.collectAsState(initial = emptyList())
     LaunchedEffect(chatDetails?.lastOpenedMsgId) {
         delay(300)
-        chatDetails?.let { chatViewModel.initialLoad(it.lastOpenedMsgId) }
+        chatDetails?.let { model.initialLoad(it.lastOpenedMsgId) }
         chatMediaViewModel.load(chatDetails?.chatid ?: -1)
     }
-    LaunchedEffect(messages.size, chatDetails?.lastOpenedMsgId) {
-        if (chatViewModel.isInitialScroll) {
-            val index = messages.indexOfFirst { it.messageId == chatDetails?.lastOpenedMsgId }
+    LaunchedEffect(messages) {
+        Log.i("vkpro", "Tried scrolling to id;" + chatDetails?.lastOpenedMsgId)
+        if (model.needScroll && chatDetails?.lastOpenedMsgId != null) {
+            model.needScroll = false
+            val index = if (model.searchedResults.isNotEmpty()) {
+                messages.indexOfFirst {
+                    it.messageId == model.searchedResults[model.currentSearchIndex]
+                }
+            } else {
+                messages.indexOfFirst {
+                    it.messageId == chatDetails!!.lastOpenedMsgId
+                }
+            }
+            Log.i(
+                "vkpro",
+                "started scrolling to id;" + chatDetails?.lastOpenedMsgId + "index: $index"
+            )
             if (index >= 0) {
                 listState.scrollToItem(index)
-                chatViewModel.isInitialScroll = false
             }
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex to listState.layoutInfo.totalItemsCount }
+            .distinctUntilChanged()
             .collect { (firstIndex, totalCount) ->
-                if (firstIndex < 10) {
-                    chatViewModel.loadPrevPage()
+                if (totalCount == 0) return@collect
+
+                if (firstIndex < 15) {
+                    model.loadPrevPage()
                 }
 
                 if (totalCount - firstIndex < 25) {
-                    chatViewModel.loadNextPage()
+                    model.loadNextPage()
                 }
             }
+    }
+
+
+    LaunchedEffect(model.showToast) {
+        if (model.showToast && model.toast != null) {
+            Toast.makeText(context, model.toast, Toast.LENGTH_SHORT).show()
+        }
     }
 
     var searchVisible by remember { mutableStateOf(false) }
@@ -200,12 +226,20 @@ fun SharedTransitionScope.ChatScreen(
                     },
                     showArrows = true,
                     modifier = Modifier.align(Alignment.BottomCenter),
-                    onExit = { searchVisible = false }
+                    onExit = {
+                        searchVisible = false
+                        model.resetSearch()
+                    },
+                    onSearch = { model.search(it) },
+                    resultsLength = model.searchedResults.size,
+                    currentResultIndex = model.currentSearchIndex,
+                    onNext = { model.goToSearchedItem(1) },
+                    onPrev = { model.goToSearchedItem(-1) }
                 )
         }
 
         //body
-        if (chatViewModel.isLoading) {
+        if (model.isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -215,8 +249,16 @@ fun SharedTransitionScope.ChatScreen(
                 CircularProgressIndicator()
             }
         }
+//        if (model.isLoadingPrev && !model.isLoading) {
+//            Box(
+//                modifier = Modifier.fillMaxWidth(),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator()
+//            }
+//        }
         AnimatedVisibility(
-            visible = !chatViewModel.isLoading,
+            visible = !model.isLoading,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.weight(1f)
@@ -227,16 +269,6 @@ fun SharedTransitionScope.ChatScreen(
                     .fillMaxSize()
                     .padding(horizontal = 5.dp)
             ) {
-                if (chatViewModel.isLoadingPrev) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
                 itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
                     when {
                         m.messageType == MESSAGETYPE.NOTE -> ChatNote(
@@ -256,6 +288,7 @@ fun SharedTransitionScope.ChatScreen(
                             color = themeBodyColors.senderBubble,
                             textColor = themeBodyColors.textPrimary,
                             textColorSecondary = themeBodyColors.textSecondary,
+                            searchedString = if (m.messageId in model.searchedItemsSet) model.searchTerm else null,
                             file = chatMediaViewModel.mediaMap[m.fileId],
                             screenWidthDp = screenWidthDp,
                             screenWidth = screenWidthForMedia,
@@ -276,6 +309,7 @@ fun SharedTransitionScope.ChatScreen(
                             color = themeBodyColors.receiverBubble,
                             textColor = themeBodyColors.textPrimary,
                             textColorSecondary = themeBodyColors.textSecondary,
+                            searchedString = if (m.messageId in model.searchedItemsSet) model.searchTerm else null,
                             file = chatMediaViewModel.mediaMap[m.fileId],
                             screenWidthDp = screenWidthDp,
                             screenWidth = screenWidthForMedia,
@@ -287,18 +321,16 @@ fun SharedTransitionScope.ChatScreen(
                         )
                     }
                 }
-                if (chatViewModel.isLoadingNext) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
             }
         }
+//        if (model.isLoadingNext && !model.isLoading) {
+//            Box(
+//                modifier = Modifier.fillMaxWidth(),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator()
+//            }
+//        }
 
         //input
         ChatMessageBar(
@@ -317,7 +349,7 @@ fun SharedTransitionScope.ChatScreen(
             val index = listState.firstVisibleItemIndex
             val msgId = messages.getOrNull(index)?.messageId
             if (msgId != null) {
-                chatViewModel.saveScrollPosition(msgId)
+                model.saveScrollPosition(msgId)
             }
         }
     }

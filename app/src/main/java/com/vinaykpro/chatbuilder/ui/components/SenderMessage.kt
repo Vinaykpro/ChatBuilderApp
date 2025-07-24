@@ -36,9 +36,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +68,7 @@ fun SharedTransitionScope.SenderMessage(
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
     file: FileEntity? = null,
+    searchedString: String?,
     screenWidth: Int = 200,
     screenWidthDp: Dp,
     isFirst: Boolean = false,
@@ -259,19 +263,27 @@ fun SharedTransitionScope.SenderMessage(
                     }
                 }
 
-                if (text != null || isFile)
-                    Text(
-                        text = if (isFile) " " else "$text$space", // Extra spaces for spacing
-                        color = textColor,
-                        fontSize = 16.sp,
-                        lineHeight = 20.sp,
-                        modifier = Modifier.padding(
-                            top = 1.dp,
-                            bottom = 1.dp,
-                            start = 5.dp,
-                            end = 3.dp
+                if (text != null || isFile) {
+                    if (searchedString == null)
+                        Text(
+                            text = if (isFile) " " else "$text$space", // Extra spaces for spacing
+                            color = textColor,
+                            fontSize = 16.sp,
+                            lineHeight = 20.sp,
+                            modifier = Modifier.padding(
+                                top = 1.dp,
+                                bottom = 1.dp,
+                                start = 5.dp,
+                                end = 3.dp
+                            )
                         )
-                    )
+                    else
+                        HighlightedText(
+                            fullText = if (isFile) " " else "$text$space",
+                            searchedText = searchedString,
+                            textColor = textColor,
+                        )
+                }
             }
 
             // Sent time
@@ -480,4 +492,42 @@ fun getContainerModifier(
     return imageContainerModifier to
             if (imageWidthDp > 0) Modifier.width(imageWidthDp.dp)
             else Modifier.wrapContentWidth()
+}
+
+@Composable
+fun HighlightedText(
+    fullText: String,
+    searchedText: String,
+    textColor: Color,
+    highlightColor: Color = Color.Yellow
+) {
+
+    val annotatedString = buildAnnotatedString {
+        var startIndex = 0
+        val lowerFull = fullText.lowercase()
+        val lowerSearch = searchedText.lowercase()
+
+        while (startIndex < lowerFull.length) {
+            val index = lowerFull.indexOf(lowerSearch, startIndex)
+            if (index == -1) {
+                append(fullText.substring(startIndex))
+                break
+            }
+
+            append(fullText.substring(startIndex, index))
+
+            withStyle(SpanStyle(background = highlightColor, color = Color.Black)) {
+                append(fullText.substring(index, index + searchedText.length))
+            }
+            startIndex = index + searchedText.length
+        }
+    }
+
+    Text(
+        text = annotatedString,
+        color = textColor,
+        fontSize = 16.sp,
+        lineHeight = 20.sp,
+        modifier = Modifier.padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
+    )
 }
