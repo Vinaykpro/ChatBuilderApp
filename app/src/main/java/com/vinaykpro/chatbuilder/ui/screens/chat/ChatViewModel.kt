@@ -79,10 +79,11 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                 Log.i("vkpro", "searching for $text")
                 searchedResults = dao.getSearchResultsInChat(chatId, "%$text%")
                 searchedItemsSet = searchedResults.toSet()
+                currentSearchIndex = 0
                 Log.i("vkpro", "res size: ${searchedResults.size}")
                 if (searchedResults.isNotEmpty()) {
                     searchTerm = text
-                    goToSearchedItem(0)
+                    navigateSearchedItems(0)
                 } else {
                     toast = "No results found for '$text'"
                     showToast = true
@@ -98,7 +99,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         searchTerm = null
     }
 
-    fun goToSearchedItem(direction: Int) {
+    fun navigateSearchedItems(direction: Int) {
         currentSearchIndex += direction
         Log.i("vkpro", "going next")
         viewModelScope.launch {
@@ -124,6 +125,8 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
         isLoadingNext = false
         isLoadingPrev = false
+        hasMorePrev = true
+        hasMoreNext = true
         isLoading = false
         needScroll = true
     }
@@ -149,8 +152,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     }
 
     suspend fun loadPrevPage() = withContext(Dispatchers.IO) {
+        //Log.i("vkpro", "Trying LoadPrev ${!isLoadingPrev} && ${!isLoadingNext} && $hasMorePrev")
         if (isLoadingPrev || isLoadingNext || !hasMorePrev) return@withContext
         isLoadingPrev = true
+        Log.i("vkpro", "Started oading prev page")
 
         viewModelScope.launch {
             val newMessages = dao.getPreviousMessages(chatId, prevId, pageSize)

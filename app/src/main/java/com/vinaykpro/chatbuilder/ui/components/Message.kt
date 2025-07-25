@@ -70,6 +70,7 @@ fun SharedTransitionScope.Message(
     //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
     val space = if (showTime) " " + "⠀".repeat(spaceCount) else ""
+    val containsEmoji = text != null && containsEmoji(text)
     val context = LocalContext.current
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
@@ -248,7 +249,20 @@ fun SharedTransitionScope.Message(
                         }
                     }
                 if (text != null || isFile) {
-                    if(searchedString == null) {
+                    if(searchedString != null) {
+                        HighlightedText(
+                            fullText = if (isFile) " " else "$text$space",
+                            searchedText = searchedString,
+                            textColor = textColor,
+                        )
+                    } else if(containsEmoji) {
+                        EmojiStyledText(
+                            fullText = text!!,
+                            textColor = textColor,
+                            emojiFontSize = 22.sp,
+                            space = space
+                        )
+                    } else {
                         Text(
                             text = "$text$space",
                             color = textColor,
@@ -260,12 +274,6 @@ fun SharedTransitionScope.Message(
                                 start = 5.dp,
                                 end = 2.dp
                             )
-                        )
-                    } else {
-                        HighlightedText(
-                            fullText = if (isFile) " " else "$text$space",
-                            searchedText = searchedString,
-                            textColor = textColor,
                         )
                     }
                 }

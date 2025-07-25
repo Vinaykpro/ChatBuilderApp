@@ -2,6 +2,9 @@ package com.vinaykpro.chatbuilder.ui.components
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.icu.text.BreakIterator
+import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -39,10 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -83,6 +88,7 @@ fun SharedTransitionScope.SenderMessage(
     val spaceCount = (sentTime.length * 0.6f).toInt()
     var space = if (showTime) "  " + "⠀".repeat(spaceCount) else ""
     if (showTicks) space += "⠀"
+    val containsEmoji = text != null && containsEmoji(text)
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
@@ -264,7 +270,20 @@ fun SharedTransitionScope.SenderMessage(
                 }
 
                 if (text != null || isFile) {
-                    if (searchedString == null)
+                    if (searchedString != null)
+                        HighlightedText(
+                            fullText = if (isFile) " " else "$text$space",
+                            searchedText = searchedString,
+                            textColor = textColor,
+                        )
+                    else if (containsEmoji)
+                        EmojiStyledText(
+                            fullText = text!!,
+                            textColor = textColor,
+                            emojiFontSize = 22.sp,
+                            space = space
+                        )
+                    else
                         Text(
                             text = if (isFile) " " else "$text$space", // Extra spaces for spacing
                             color = textColor,
@@ -276,12 +295,6 @@ fun SharedTransitionScope.SenderMessage(
                                 start = 5.dp,
                                 end = 3.dp
                             )
-                        )
-                    else
-                        HighlightedText(
-                            fullText = if (isFile) " " else "$text$space",
-                            searchedText = searchedString,
-                            textColor = textColor,
                         )
                 }
             }
@@ -530,4 +543,76 @@ fun HighlightedText(
         lineHeight = 20.sp,
         modifier = Modifier.padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
     )
+}
+
+@Composable
+fun EmojiStyledText(
+    fullText: String,
+    textColor: Color = Color.Black,
+    fontSize: TextUnit = 16.sp,
+    emojiFontSize: TextUnit = 20.sp, // Bigger size for emoji
+    modifier: Modifier = Modifier,
+    space: String
+) {
+    Log.i("vkpro", "'$fullText' : len = ${fullText.length} : fontSize = ${emojiFontSize.value}")
+    val graphemes = fullText.graphemeClusters()
+    val emojiFontSize = getFontSizeForText(graphemes, emojiFontSize)
+
+    val annotated = buildAnnotatedString {
+        for (grapheme in graphemes) {
+            if (grapheme.isEmoji()) {
+                withStyle(
+                    style = SpanStyle(
+                        fontSize = emojiFontSize,
+                        baselineShift = BaselineShift(-0.1f)
+                    )
+                ) {
+                    append(grapheme)
+                }
+            } else {
+                append(grapheme)
+            }
+        }
+        append(space)
+    }
+
+    Text(
+        text = annotated,
+        color = textColor,
+        fontSize = fontSize,
+        modifier = Modifier.padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
+    )
+}
+
+fun getFontSizeForText(chunks: List<String>, defaultSize: TextUnit): TextUnit {
+    return when (chunks.size) {
+        1 -> 35.sp
+        2 -> if (chunks[0].isEmoji() && chunks[1].isEmoji()) 28.sp else defaultSize
+        else -> defaultSize
+    }
+}
+
+fun String.graphemeClusters(): List<String> {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        val result = mutableListOf<String>()
+        val iterator = BreakIterator.getCharacterInstance()
+        iterator.setText(this)
+        var start = iterator.first()
+        var end = iterator.next()
+        while (end != BreakIterator.DONE) {
+            result.add(this.substring(start, end))
+            start = end
+            end = iterator.next()
+        }
+        return result
+    }
+    return Regex("""\X""").findAll(this).map { it.value }.toList()
+}
+
+fun String.isEmoji(): Boolean {
+    return this.length > 1
+}
+
+fun containsEmoji(text: String): Boolean {
+    return text.any { Character.getType(it) == Character.SURROGATE.toInt() }
 }

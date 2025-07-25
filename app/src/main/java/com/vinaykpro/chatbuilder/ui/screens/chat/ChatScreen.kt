@@ -233,8 +233,8 @@ fun SharedTransitionScope.ChatScreen(
                     onSearch = { model.search(it) },
                     resultsLength = model.searchedResults.size,
                     currentResultIndex = model.currentSearchIndex,
-                    onNext = { model.goToSearchedItem(1) },
-                    onPrev = { model.goToSearchedItem(-1) }
+                    onNext = { model.navigateSearchedItems(1) },
+                    onPrev = { model.navigateSearchedItems(-1) }
                 )
         }
 

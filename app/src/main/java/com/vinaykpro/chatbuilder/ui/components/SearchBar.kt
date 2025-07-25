@@ -100,7 +100,7 @@ fun SearchBar(
                 ),
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        onSearch(input)
+                        if(input.isNotEmpty()) onSearch(input)
                         keyboardController?.hide()
                     }
                 ),
