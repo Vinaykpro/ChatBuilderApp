@@ -284,17 +284,32 @@ fun rememberCustomIconPainter(
     fallback: Int = R.drawable.logo
 ): Painter {
     val context = LocalContext.current
-    val file = remember(themeId, iconName) {
-        File(context.filesDir, "theme$themeId/$iconName")
-    }
+    val file = File(context.filesDir, "theme$themeId/$iconName")
     val fileExists = remember(refreshKey) { file.exists() }
-
     return if (fileExists) {
         key(refreshKey) {
             rememberAsyncImagePainter(file)
         }
     } else {
         painterResource(id = fallback)
+    }
+}
+
+@Composable
+fun rememberCustomProfileIconPainter(
+    chatId: Int,
+    refreshKey: Int,
+    fallback: Painter = painterResource(R.drawable.user)
+): Painter {
+    val context = LocalContext.current
+    val file = File(context.filesDir, "icons/icon$chatId.jpg")
+    val fileExists = remember(refreshKey) { file.exists() }
+    return if (fileExists) {
+        key(refreshKey) {
+            rememberAsyncImagePainter(file)
+        }
+    } else {
+        fallback
     }
 }
 

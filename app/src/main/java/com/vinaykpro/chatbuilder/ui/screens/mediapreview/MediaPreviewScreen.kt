@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.mediapreview
 
+import android.app.Activity
 import android.util.Log
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
@@ -27,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,8 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -57,6 +62,11 @@ fun SharedTransitionScope.MediaPreviewScreen(
 ) {
     val context = LocalContext.current
 
+    val activity = LocalContext.current as Activity
+    val view = LocalView.current
+    val window = activity.window
+    val controller = WindowInsetsControllerCompat(window, view)
+
     val startIndex = chatMediaViewModel.previewMediaMessages.indexOfFirst { it.fileId == fileid }
         .coerceAtLeast(0)
     val pagerState = rememberPagerState(
@@ -71,6 +81,16 @@ fun SharedTransitionScope.MediaPreviewScreen(
 
     var isZoomed by remember { mutableStateOf(false) }
     var detailsVisible by remember { mutableStateOf(true) }
+
+    LaunchedEffect(detailsVisible) {
+        if (detailsVisible) {
+            controller.show(WindowInsetsCompat.Type.statusBars())
+            controller.show(WindowInsetsCompat.Type.navigationBars())
+        } else {
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            controller.hide(WindowInsetsCompat.Type.navigationBars())
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -104,6 +124,7 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 val painter = rememberAsyncImagePainter(
                     ImageRequest.Builder(context)
                         .data(File(context.getExternalFilesDir(null), media.filename))
+                        .size(coil.size.Size.ORIGINAL)
                         .build()
                 )
 

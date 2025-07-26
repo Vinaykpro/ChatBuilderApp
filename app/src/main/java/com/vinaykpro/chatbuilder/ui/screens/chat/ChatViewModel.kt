@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 
 class ChatViewModel(application: Application, private val chatId: Int) :
     AndroidViewModel(application) {
@@ -73,14 +74,23 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun search(text: String) {
+    fun search(text: String, nearById: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 Log.i("vkpro", "searching for $text")
                 searchedResults = dao.getSearchResultsInChat(chatId, "%$text%")
                 searchedItemsSet = searchedResults.toSet()
                 currentSearchIndex = 0
-                Log.i("vkpro", "res size: ${searchedResults.size}")
+                var maxDiff: Int = Int.MAX_VALUE
+                searchedResults.forEachIndexed { ind, id ->
+                    val diff = abs(nearById - id)
+                    if (diff < maxDiff) {
+                        currentSearchIndex = ind
+                        //Log.i("vkpro", "index = $currentSearchIndex ; id = $id ; size = ${searchedResults.size}")
+                        maxDiff = diff
+                    }
+                }
+                //Log.i("vkpro", "res size: ${searchedResults.size}")
                 if (searchedResults.isNotEmpty()) {
                     searchTerm = text
                     navigateSearchedItems(0)

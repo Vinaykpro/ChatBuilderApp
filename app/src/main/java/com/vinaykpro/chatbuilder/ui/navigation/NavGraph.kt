@@ -26,6 +26,7 @@ import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
+import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.BodyStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.EditThemeScreen
@@ -115,6 +116,10 @@ fun AppNavHost(
                         chatMediaViewModel
                     )
                 }
+            }
+
+            composable("chatprofile") {
+                ChatProfileScreen(navController, this, chatMediaViewModel)
             }
 
             composable(

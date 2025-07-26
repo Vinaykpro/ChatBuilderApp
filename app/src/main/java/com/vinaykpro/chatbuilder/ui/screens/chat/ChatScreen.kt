@@ -61,6 +61,7 @@ import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
+import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -127,6 +128,13 @@ fun SharedTransitionScope.ChatScreen(
             .components { add(VideoFrameDecoder.Factory()) }
             .build()
     }
+
+    val profilePicPainter = rememberCustomProfileIconPainter(
+        chatId = chatMediaViewModel.currentChat?.chatid ?: 0,
+        refreshKey = 0,
+        fallback = headerIcons.profileIcon
+    )
+
     val listState = rememberLazyListState()
     val chatDetails by model.chatDetails.collectAsState()
     val messages by model.messages.collectAsState(initial = emptyList())
@@ -177,6 +185,7 @@ fun SharedTransitionScope.ChatScreen(
 
     LaunchedEffect(model.showToast) {
         if (model.showToast && model.toast != null) {
+            model.showToast = false
             Toast.makeText(context, model.toast, Toast.LENGTH_SHORT).show()
         }
     }
@@ -200,8 +209,9 @@ fun SharedTransitionScope.ChatScreen(
             ChatToolbar(
                 name = chatDetails?.name ?: "Chat $chatId",
                 status = chatDetails?.status ?: "Tap to edit",
+                scope = animatedVisibilityScope,
                 backIcon = headerIcons.backIcon,
-                profileIcon = headerIcons.profileIcon,
+                profileIcon = profilePicPainter,
                 icon1 = headerIcons.icon1,
                 icon2 = headerIcons.icon2,
                 icon3 = headerIcons.icon3,
@@ -211,7 +221,11 @@ fun SharedTransitionScope.ChatScreen(
                 onMenuClick = {
                     when (it) {
                         1 -> searchVisible = true
+                        2 -> navController.navigate("theme/${theme.id}")
                     }
+                },
+                onProfileClick = {
+                    navController.navigate("chatprofile")
                 }
             )
             if (searchVisible)
@@ -230,7 +244,13 @@ fun SharedTransitionScope.ChatScreen(
                         searchVisible = false
                         model.resetSearch()
                     },
-                    onSearch = { model.search(it) },
+                    onSearch = {
+                        Log.i(
+                            "vkpro",
+                            "PARAM index = ${listState.firstVisibleItemIndex} ; id = ${messages[listState.firstVisibleItemIndex].messageId}"
+                        )
+                        model.search(it, messages[listState.firstVisibleItemIndex].messageId)
+                    },
                     resultsLength = model.searchedResults.size,
                     currentResultIndex = model.currentSearchIndex,
                     onNext = { model.navigateSearchedItems(1) },

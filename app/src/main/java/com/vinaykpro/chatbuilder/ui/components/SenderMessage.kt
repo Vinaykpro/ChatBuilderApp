@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.icu.text.BreakIterator
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -514,7 +513,6 @@ fun HighlightedText(
     textColor: Color,
     highlightColor: Color = Color.Yellow
 ) {
-
     val annotatedString = buildAnnotatedString {
         var startIndex = 0
         val lowerFull = fullText.lowercase()
@@ -554,7 +552,7 @@ fun EmojiStyledText(
     modifier: Modifier = Modifier,
     space: String
 ) {
-    Log.i("vkpro", "'$fullText' : len = ${fullText.length} : fontSize = ${emojiFontSize.value}")
+    //Log.i("vkpro", "'$fullText' : len = ${fullText.length} : fontSize = ${emojiFontSize.value}")
     val graphemes = fullText.graphemeClusters()
     val emojiFontSize = getFontSizeForText(graphemes, emojiFontSize)
 

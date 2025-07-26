@@ -12,6 +12,9 @@ interface ChatDao {
     @Query("SELECT * FROM chats WHERE chatid = :id")
     fun getChatById(id: Int): Flow<ChatEntity?>
 
+    @Query("SELECT * FROM chats WHERE chatid = :id")
+    fun getChatEntityById(id: Int): ChatEntity?
+
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addOrUpdateChat(chat: ChatEntity): Long
 

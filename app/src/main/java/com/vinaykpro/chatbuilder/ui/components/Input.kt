@@ -39,6 +39,8 @@ fun Input(
     name: String = "Name: ",
     value: String = "Default",
     placeholder: String = "Enter here",
+    disabledColor: Color = Color(0x257B7B7B),
+    disabledTextColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
     onUpdate: (String) -> Unit = {}
 ) {
     var input by remember { mutableStateOf(value) }
@@ -47,47 +49,47 @@ fun Input(
         focusedIndicatorColor = Color.Transparent,
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
-        disabledContainerColor = Color(0x257B7B7B),
-        disabledTextColor = MaterialTheme.colorScheme.onSecondaryContainer
+        disabledContainerColor = disabledColor,
+        disabledTextColor = disabledTextColor
     )
-        TextField(
-            value = input,
-            enabled = enabled,
-            onValueChange = { input = it },
-            label = { Text(name, color = MaterialTheme.colorScheme.onSecondaryContainer) },
-            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.secondaryContainer) },
-            textStyle = TextStyle(fontSize = 15.sp),
-            colors = inputFieldColors,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    onUpdate(input)
-                }
-            ),
-            trailingIcon = {
-                IconButton( onClick = {
-                    if(enabled) onUpdate(input)
-                    enabled = !enabled
-                }) {
-                    Icon(
-                        painter = painterResource(if(enabled) R.drawable.ic_tick else R.drawable.ic_edit),
-                        contentDescription = "edit",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .clip(shape = RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.background)
-                .border(
-                    1.dp,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    shape = RoundedCornerShape(12.dp)
+    TextField(
+        value = input,
+        enabled = enabled,
+        onValueChange = { input = it },
+        label = { Text(name, color = disabledTextColor) },
+        placeholder = { Text(placeholder, color = disabledTextColor) },
+        textStyle = TextStyle(fontSize = 15.sp),
+        colors = inputFieldColors,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onUpdate(input)
+            }
+        ),
+        trailingIcon = {
+            IconButton(onClick = {
+                if (enabled) onUpdate(input)
+                enabled = !enabled
+            }) {
+                Icon(
+                    painter = painterResource(if (enabled) R.drawable.ic_tick else R.drawable.ic_edit),
+                    contentDescription = "edit",
+                    modifier = Modifier.size(20.dp),
+                    tint = disabledTextColor
                 )
-        )
+            }
+
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .clip(shape = RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.background)
+            .border(
+                1.dp,
+                color = disabledTextColor,
+                shape = RoundedCornerShape(12.dp)
+            )
+    )
 }

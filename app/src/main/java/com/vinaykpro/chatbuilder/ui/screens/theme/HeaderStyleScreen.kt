@@ -3,6 +3,8 @@ package com.vinaykpro.chatbuilder.ui.screens.theme
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -60,8 +62,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun HeaderStyleScreen(
+fun SharedTransitionScope.HeaderStyleScreen(
     navController: NavController = rememberNavController(),
     isDarkTheme: Boolean = false,
     themeViewModel: ThemeViewModel

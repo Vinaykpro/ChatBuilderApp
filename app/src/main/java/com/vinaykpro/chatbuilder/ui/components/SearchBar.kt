@@ -100,7 +100,9 @@ fun SearchBar(
                 ),
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        if(input.isNotEmpty()) onSearch(input)
+                        val text = input.trim()
+                        if (text.isEmpty()) return@KeyboardActions
+                        onSearch(text)
                         keyboardController?.hide()
                     }
                 ),
@@ -117,7 +119,6 @@ fun SearchBar(
                         innerTextField()
                     }
                 }
-
             )
 
             if (showArrows) {

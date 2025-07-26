@@ -52,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -66,9 +67,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +80,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -119,6 +123,14 @@ fun HomeScreen(
     val selectedTheme by themeViewModel.selectedThemeId.collectAsState()
 
     val colors = MaterialTheme.colorScheme
+
+    val view = LocalView.current
+    val activity = LocalContext.current as Activity
+    val useDarkIcons = colors.primary.luminance() > 0.5f
+    SideEffect {
+        val window = activity.window
+        WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
+    }
 
     val scope = rememberCoroutineScope()
 
@@ -301,11 +313,12 @@ fun HomeScreen(
                             LazyColumn(modifier = Modifier.fillMaxSize()) {
                                 items(chats, key = { chat -> chat.chatid }) { chat ->
                                     ChatListItem(
-                                        icon = R.drawable.logo,
+                                        id = chat.chatid,
                                         name = chat.name,
                                         lastMessage = chat.lastmsg,
                                         lastSeen = chat.lastmsgtime,
-                                        onClick = { navController.navigate("chat/${chat.chatid}") }
+                                        onClick = { navController.navigate("chat/${chat.chatid}") },
+                                        themeid = selectedTheme
                                     )
                                 }
                             }
@@ -668,11 +681,12 @@ fun HomeScreen(
                                 0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
                                     items(chats) { chat ->
                                         ChatListItem(
-                                            icon = R.drawable.logo,
+                                            id = chat.chatid,
                                             name = chat.name,
                                             lastMessage = chat.lastmsg,
                                             lastSeen = chat.lastmsgtime,
-                                            isForceFake = true
+                                            isForceFake = true,
+                                            themeid = selectedTheme
                                         )
                                     }
                                 }
