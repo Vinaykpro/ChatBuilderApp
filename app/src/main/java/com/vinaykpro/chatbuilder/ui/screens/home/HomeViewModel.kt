@@ -128,6 +128,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun addChat() {
+        viewModelScope.launch {
+            val newId = dao.addOrUpdateChat(
+                ChatEntity(
+                    name = "New chat",
+                )
+            )
+            dao.addOrUpdateChat(
+                ChatEntity(
+                    chatid = newId.toInt(),
+                    name = "New Chat $newId",
+                    status = "Tap to edit",
+                    lastmsg = "Tap to open and customize"
+                )
+            )
+        }
+    }
+
     fun closeImport() {
         importState = IMPORTSTATE.NONE
         importJob?.cancel()

@@ -25,6 +25,11 @@ data class MessageEntity(
     val replyMessageId: Int?,
 )
 
+data class UserInfo(
+    val userid: Int,
+    val username: String
+)
+
 object MESSAGETYPE {
     const val MESSAGE = 0
     const val NOTE = 1

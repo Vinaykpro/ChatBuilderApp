@@ -42,7 +42,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -397,16 +396,9 @@ fun HomeScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clickable(
-                            indication = rememberRipple(
-                                bounded = true,
-                                color = Color(0xFF056175),
-                                radius = 80.dp
-                            ),
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
-                        ),
-                    contentAlignment = Alignment.Center) {
+                        .clickable { scope.launch { pagerState.animateScrollToPage(0) } },
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             painter = painterResource(if (selectedTabIndex.value == 0) R.drawable.ic_chats_selected else R.drawable.ic_chats_unselected),
@@ -426,16 +418,9 @@ fun HomeScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clickable(
-                            indication = rememberRipple(
-                                bounded = true,
-                                color = Color(0xFF056175),
-                                radius = 80.dp
-                            ),
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
-                        ),
-                    contentAlignment = Alignment.Center) {
+                        .clickable { scope.launch { pagerState.animateScrollToPage(1) } },
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             painter = painterResource(if (selectedTabIndex.value == 1) R.drawable.ic_theme_selected else R.drawable.ic_theme_unselected),
@@ -455,16 +440,9 @@ fun HomeScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clickable(
-                            indication = rememberRipple(
-                                bounded = true,
-                                color = Color(0xFF056175),
-                                radius = 80.dp
-                            ),
-                            interactionSource = remember { MutableInteractionSource() },
-                            onClick = { scope.launch { pagerState.animateScrollToPage(2) } }
-                        ),
-                    contentAlignment = Alignment.Center) {
+                        .clickable { scope.launch { pagerState.animateScrollToPage(2) } },
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             painter = painterResource(if (selectedTabIndex.value == 2) R.drawable.ic_settings_selected else R.drawable.ic_settings_unselected),
@@ -494,9 +472,15 @@ fun HomeScreen(
     }
 
     // Real FAB Button
-    FloatingMenu(color = MaterialTheme.colorScheme.primary, onClick2 = {
-        pickFileLauncher.launch(arrayOf("application/zip", "text/plain"))
-    })
+    FloatingMenu(
+        color = MaterialTheme.colorScheme.primary,
+        onClick1 = {
+            homeViewModel.addChat()
+        },
+        onClick2 = {
+            pickFileLauncher.launch(arrayOf("application/zip", "text/plain"))
+        }
+    )
 
     if (homeViewModel.importState != IMPORTSTATE.NONE) {
         ImportChatUI(

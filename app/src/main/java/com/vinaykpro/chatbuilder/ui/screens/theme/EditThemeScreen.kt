@@ -297,10 +297,11 @@ fun rememberCustomIconPainter(
 
 @Composable
 fun rememberCustomProfileIconPainter(
-    chatId: Int,
+    chatId: Int?,
     refreshKey: Int,
-    fallback: Painter = painterResource(R.drawable.user)
+    fallback: Int = R.drawable.user
 ): Painter {
+    if(chatId == null) painterResource(fallback)
     val context = LocalContext.current
     val file = File(context.filesDir, "icons/icon$chatId.jpg")
     val fileExists = remember(refreshKey) { file.exists() }
@@ -309,7 +310,7 @@ fun rememberCustomProfileIconPainter(
             rememberAsyncImagePainter(file)
         }
     } else {
-        fallback
+        painterResource(fallback)
     }
 }
 

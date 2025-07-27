@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import com.vinaykpro.chatbuilder.data.local.UserInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +36,8 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     var searchedItemsSet: Set<Int> = emptySet()
     var currentSearchIndex = 0
     var searchTerm: String? = null
+
+    var userList: List<UserInfo> = emptyList()
 
     private var nextId = 0
     private var prevId = 0
@@ -181,6 +184,23 @@ class ChatViewModel(application: Application, private val chatId: Int) :
             }
 
             isLoadingPrev = false
+        }
+    }
+
+    fun loadUserList(chatid: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val users = dao.getUsersList(chatid)
+                userList = listOf(UserInfo(-1, "None")) + users
+            }
+        }
+    }
+
+    fun updateSenderId(chatid: Int, senderId: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                chatDao.updateSender(chatid, senderId)
+            }
         }
     }
 

@@ -85,7 +85,7 @@ fun ImportChatUI(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = { onClose() })
+                onClick = { })
             .padding(
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             )

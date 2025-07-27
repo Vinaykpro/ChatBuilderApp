@@ -38,11 +38,14 @@ import com.vinaykpro.chatbuilder.R
 fun Input(
     name: String = "Name: ",
     value: String = "Default",
+    maxLength: Int = 20,
+    nonEmpty: Boolean = false,
     placeholder: String = "Enter here",
     disabledColor: Color = Color(0x257B7B7B),
     disabledTextColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
     onUpdate: (String) -> Unit = {}
 ) {
+    var lastValue = value
     var input by remember { mutableStateOf(value) }
     var enabled by remember { mutableStateOf(false) }
     val inputFieldColors: TextFieldColors = TextFieldDefaults.colors().copy(
@@ -55,7 +58,9 @@ fun Input(
     TextField(
         value = input,
         enabled = enabled,
-        onValueChange = { input = it },
+        onValueChange = {
+            if (it.length <= maxLength) input = it
+        },
         label = { Text(name, color = disabledTextColor) },
         placeholder = { Text(placeholder, color = disabledTextColor) },
         textStyle = TextStyle(fontSize = 15.sp),
@@ -64,12 +69,25 @@ fun Input(
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(
             onDone = {
-                onUpdate(input)
+                if (nonEmpty && input.trim().isEmpty()) {
+                    input = lastValue
+                } else {
+                    lastValue = input
+                    enabled = !enabled
+                    onUpdate(input)
+                }
             }
         ),
         trailingIcon = {
             IconButton(onClick = {
-                if (enabled) onUpdate(input)
+                if (enabled) {
+                    if (nonEmpty && input.trim().isEmpty()) {
+                        input = lastValue
+                    } else {
+                        lastValue = input
+                        onUpdate(input)
+                    }
+                }
                 enabled = !enabled
             }) {
                 Icon(

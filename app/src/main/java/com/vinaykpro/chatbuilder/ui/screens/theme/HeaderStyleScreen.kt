@@ -335,14 +335,14 @@ fun SharedTransitionScope.HeaderStyleScreen(
                             onChange = {
                                 previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
                             })
-                        EditIcon(
-                            name = "Default profile icon",
-                            icon = profilePicPainter,
-                            filter = null,
-                            onClick = {
-                                pickedIcon = 1
-                                imagePicker.launch("image/*")
-                            })
+//                        EditIcon(
+//                            name = "Default profile icon",
+//                            icon = profilePicPainter,
+//                            filter = null,
+//                            onClick = {
+//                                pickedIcon = 1
+//                                imagePicker.launch("image/*")
+//                            })
                     }
                 }
             }

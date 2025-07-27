@@ -1,5 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,13 +39,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -62,7 +67,6 @@ import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.FileListItem
 import com.vinaykpro.chatbuilder.ui.components.Input
-import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
@@ -83,15 +87,12 @@ fun SharedTransitionScope.ChatProfileScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val theme = LocalThemeEntity.current
-    val customProfilePicPainter =
-        rememberCustomIconPainter(theme.id, "ic_profile.png", 0, R.drawable.user)
 
     val imageLoader = remember {
         ImageLoader.Builder(context)
             .components { add(VideoFrameDecoder.Factory()) }
             .build()
     }
-
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     var selectedTabIndex by remember(pagerState.currentPage) { mutableIntStateOf(pagerState.currentPage) }
@@ -102,33 +103,55 @@ fun SharedTransitionScope.ChatProfileScreen(
     }
 
     var refreshKey by remember { mutableIntStateOf(0) }
+    var profilePicLoading by remember { mutableStateOf(false) }
 
     val profilePicPainter = rememberCustomProfileIconPainter(
-        chatId = model.currentChat?.chatid ?: 0,
+        chatId = model.currentChat?.chatid,
         refreshKey = refreshKey,
-        fallback = customProfilePicPainter
+        fallback = R.drawable.user
     )
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             if (uri != null) {
+                profilePicLoading = true
                 scope.launch {
                     withContext(Dispatchers.IO) {
                         try {
-                            val themeDir = File(context.filesDir, "icons")
-                            if (!themeDir.exists()) themeDir.mkdirs()
+                            val iconsDir = File(context.filesDir, "icons")
+                            if (!iconsDir.exists()) iconsDir.mkdirs()
+
                             val inputStream = context.contentResolver.openInputStream(uri)
-                            val iconFile = File(themeDir, "icon${model.currentChat?.chatid}.jpg")
+                            val iconFile = File(iconsDir, "icon${model.currentChat?.chatid}.jpg")
 
                             inputStream?.use { input ->
+                                val originalBitmap = BitmapFactory.decodeStream(input)
+
+                                // Crop to square
+                                val size = minOf(originalBitmap.width, originalBitmap.height)
+                                val xOffset = (originalBitmap.width - size) / 2
+                                val yOffset = (originalBitmap.height - size) / 2
+
+                                val squareBitmap = Bitmap.createBitmap(
+                                    originalBitmap,
+                                    xOffset,
+                                    yOffset,
+                                    size,
+                                    size
+                                )
+
                                 FileOutputStream(iconFile).use { output ->
-                                    input.copyTo(output)
+                                    squareBitmap.compress(Bitmap.CompressFormat.JPEG, 70, output)
                                 }
+
+                                originalBitmap.recycle()
+                                squareBitmap.recycle()
                             }
                         } catch (e: Exception) {
                             Log.e("SaveIcon", "Failed to save icon", e)
                         }
+                        profilePicLoading = false
                         refreshKey++
                     }
                 }
@@ -176,12 +199,16 @@ fun SharedTransitionScope.ChatProfileScreen(
                 painter = profilePicPainter,
                 contentDescription = null,
                 modifier = Modifier
-                    .clip(shape = CircleShape)
                     .size(100.dp)
+                    .alpha(if (profilePicLoading) 0f else 1f)
                     .sharedElement(
                         state = rememberSharedContentState(0),
                         animatedVisibilityScope = animatedScope
-                    ),
+                    )
+                    .graphicsLayer {
+                        clip = true
+                        shape = CircleShape
+                    },
                 contentScale = ContentScale.Crop
             )
             Row {
@@ -215,7 +242,12 @@ fun SharedTransitionScope.ChatProfileScreen(
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             shape = RoundedCornerShape(10.dp)
                         )
-                        .clickable { }
+                        .clickable {
+                            val iconFile =
+                                File(context.filesDir, "icons/icon${model.currentChat?.chatid}.jpg")
+                            iconFile.delete()
+                            refreshKey++
+                        }
                         .padding(8.dp)
                         .padding(horizontal = 8.dp)
                 ) {
@@ -230,15 +262,24 @@ fun SharedTransitionScope.ChatProfileScreen(
                 }
             }
             Input(
-                value = "Vinaykpro",
+                value = model.currentChat?.name ?: "",
+                nonEmpty = true,
                 onUpdate = {
-
+                    if (model.currentChat != null) {
+                        val chat = model.currentChat!!.copy(name = it)
+                        model.updateChat(chat)
+                        model.currentChat = chat
+                    }
                 })
             Input(
                 name = "Status/username",
-                value = "online",
+                value = model.currentChat?.status ?: "",
                 onUpdate = {
-
+                    val chat = model.currentChat!!.copy(name = it)
+                    if (model.currentChat != null) {
+                        model.updateChat(model.currentChat!!.copy(status = it))
+                        model.currentChat = chat
+                    }
                 })
         }
 

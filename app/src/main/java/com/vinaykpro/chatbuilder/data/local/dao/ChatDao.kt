@@ -18,6 +18,9 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addOrUpdateChat(chat: ChatEntity): Long
 
+    @Query("UPDATE chats SET senderId = :senderId WHERE chatid = :chatId")
+    suspend fun updateSender(chatId: Int, senderId: Int)
+
     @Query("SELECT * FROM chats ORDER BY lastopened")
     fun getAllChats(): Flow<List<ChatEntity>>
 

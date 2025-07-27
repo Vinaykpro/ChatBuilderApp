@@ -31,6 +31,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.ImageLoader
+import coil.annotation.ExperimentalCoilApi
 import coil.decode.VideoFrameDecoder
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.BodyStyle
@@ -60,6 +62,7 @@ import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
+import com.vinaykpro.chatbuilder.ui.components.SwapSenderWidget
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
@@ -68,7 +71,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.json.Json
 import kotlin.math.min
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalCoilApi::class)
 //@Preview(showBackground = true)
 @Composable
 fun SharedTransitionScope.ChatScreen(
@@ -129,17 +132,24 @@ fun SharedTransitionScope.ChatScreen(
             .build()
     }
 
+    var refreshKey by remember { mutableIntStateOf(0) }
+
     val profilePicPainter = rememberCustomProfileIconPainter(
-        chatId = chatMediaViewModel.currentChat?.chatid ?: 0,
-        refreshKey = 0,
-        fallback = headerIcons.profileIcon
+        chatId = chatMediaViewModel.currentChat?.chatid,
+        refreshKey = refreshKey,
+        fallback = R.drawable.user
     )
 
     val listState = rememberLazyListState()
     val chatDetails by model.chatDetails.collectAsState()
     val messages by model.messages.collectAsState(initial = emptyList())
+
+    var currentUserId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
+
     LaunchedEffect(chatDetails?.lastOpenedMsgId) {
+        chatDetails.let { currentUserId = chatDetails?.senderId ?: -1 }
         delay(300)
+        refreshKey++
         chatDetails?.let { model.initialLoad(it.lastOpenedMsgId) }
         chatMediaViewModel.load(chatDetails?.chatid ?: -1)
     }
@@ -191,6 +201,7 @@ fun SharedTransitionScope.ChatScreen(
     }
 
     var searchVisible by remember { mutableStateOf(false) }
+    var swapUsersVisible by remember { mutableStateOf(false) }
 
 
     Column(
@@ -220,8 +231,18 @@ fun SharedTransitionScope.ChatScreen(
                 isDarkTheme = isDarkTheme,
                 onMenuClick = {
                     when (it) {
+                        0 -> navController.navigate("chatprofile")
                         1 -> searchVisible = true
                         2 -> navController.navigate("theme/${theme.id}")
+                        3 -> {
+                            if (model.userList.isEmpty()) model.loadUserList(chatId)
+                            swapUsersVisible = true
+                        }
+
+                        5 -> {
+                            chatMediaViewModel.clearChat(chatId)
+                            imageLoader.diskCache?.clear()
+                        }
                     }
                 },
                 onProfileClick = {
@@ -297,7 +318,7 @@ fun SharedTransitionScope.ChatScreen(
                             textColor = themeBodyColors.textSecondary
                         )
 
-                        m.userid == (chatDetails?.senderId ?: 1) -> SenderMessage(
+                        m.userid == (currentUserId) -> SenderMessage(
                             text = m.message,
                             sentTime = m.time.toString(),
                             ticksIcon = blueTicksIcon,
@@ -364,6 +385,25 @@ fun SharedTransitionScope.ChatScreen(
             icon3 = messageBarIcons.icon3
         )
     }
+
+    AnimatedVisibility(
+        visible = swapUsersVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        SwapSenderWidget(
+            users = model.userList,
+            currentId = currentUserId,
+            onSenderChange = {
+                currentUserId = it
+            },
+            onClose = {
+                model.updateSenderId(chatId, currentUserId)
+                swapUsersVisible = false
+            },
+        )
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             val index = listState.firstVisibleItemIndex

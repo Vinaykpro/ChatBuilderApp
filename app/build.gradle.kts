@@ -75,7 +75,7 @@ dependencies {
     // Other libraries
     implementation("me.onebone:toolbar-compose:2.3.5")
     implementation("com.airbnb.android:lottie-compose:6.4.0")
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+    implementation("io.github.zj565061763.kmp:compose-wheelpicker-android:1.0.0-alpha01")
 
     // Room with KSP
     implementation("androidx.room:room-runtime:2.6.1")

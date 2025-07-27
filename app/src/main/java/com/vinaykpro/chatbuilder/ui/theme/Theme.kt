@@ -51,6 +51,7 @@ var LightColorScheme = lightColorScheme(
     */
 )
 
+
 @Composable
 fun ChatBuilderTheme(
     theme: ThemeEntity,
@@ -58,7 +59,7 @@ fun ChatBuilderTheme(
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(
-        LocalThemeEntity provides theme
+        LocalThemeEntity provides theme,
     ) {
         LightColorScheme = remember(theme.appcolor) {
             LightColorScheme.copy(primary = Color(theme.appcolor.toColorInt()))

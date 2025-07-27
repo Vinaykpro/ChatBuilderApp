@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,8 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -58,7 +59,7 @@ import com.vinaykpro.chatbuilder.data.local.MyConstants
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun SharedTransitionScope.ChatToolbar(
-    name: String = "Vinaykprodfbsfdbsfdbfbsfbsfbfgbfgbfgbfgbfgfbssbsfbsfdbb",
+    name: String = "Vinaykpro",
     status: String = "online",
     scope: AnimatedVisibilityScope? = null,
     isDarkTheme: Boolean = false,
@@ -114,23 +115,28 @@ fun SharedTransitionScope.ChatToolbar(
                 )
             }
         if (style.showprofilepic)
-            Image(
-                painter = profileIcon,
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(horizontal = style.profilepic_gap_sides.dp)
-                    .clip(shape = CircleShape)
-                    .size(style.profilepic_size.dp)
-                    .then(
-                        if (scope != null)
-                            Modifier.sharedElement(
-                                state = rememberSharedContentState(0),
-                                animatedVisibilityScope = scope
-                            )
-                        else Modifier
-                    ),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                Image(
+                    painter = profileIcon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(horizontal = style.profilepic_gap_sides.dp)
+                        .size(style.profilepic_size.dp)
+                        .then(
+                            if (scope != null)
+                                Modifier.sharedElement(
+                                    state = rememberSharedContentState(0),
+                                    animatedVisibilityScope = scope
+                                )
+                            else Modifier
+                        )
+                        .graphicsLayer {
+                            clip = true
+                            shape = CircleShape
+                        },
+                    contentScale = ContentScale.Crop
+                )
+            }
 
         Spacer(modifier = Modifier.width(8.dp))
 

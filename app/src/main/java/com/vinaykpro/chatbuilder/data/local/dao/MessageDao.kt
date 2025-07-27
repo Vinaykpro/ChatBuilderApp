@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import com.vinaykpro.chatbuilder.data.local.UserInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -36,6 +37,12 @@ interface MessageDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessages(messages: List<MessageEntity>)
+
+    @Query("SELECT DISTINCT userid, username FROM messages WHERE chatid = :chatId AND username IS NOT NULL")
+    suspend fun getUsersList(chatId: Int): List<UserInfo>
+
+    @Query("DELETE FROM messages WHERE chatid = :chatId")
+    suspend fun deleteMessages(chatId: Int)
 
     @Query("SELECT messageId FROM messages ORDER BY messageId DESC LIMIT 1")
     suspend fun getLastMessageId(): Int?
