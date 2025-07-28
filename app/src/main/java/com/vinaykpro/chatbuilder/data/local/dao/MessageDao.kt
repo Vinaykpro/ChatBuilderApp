@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.vinaykpro.chatbuilder.data.local.DateInfo
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import com.vinaykpro.chatbuilder.data.local.UserInfo
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,9 @@ interface MessageDao {
 
     @Query("SELECT DISTINCT userid, username FROM messages WHERE chatid = :chatId AND username IS NOT NULL")
     suspend fun getUsersList(chatId: Int): List<UserInfo>
+
+    @Query("SELECT date, MIN(messageId) AS messageId FROM messages WHERE chatid = :chatId GROUP BY date ORDER BY messageId")
+    suspend fun getDatesList(chatId: Int): List<DateInfo>
 
     @Query("DELETE FROM messages WHERE chatid = :chatId")
     suspend fun deleteMessages(chatId: Int)

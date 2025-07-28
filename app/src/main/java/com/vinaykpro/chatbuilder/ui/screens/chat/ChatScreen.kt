@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +60,8 @@ import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
+import com.vinaykpro.chatbuilder.ui.components.ClearChatWidget
+import com.vinaykpro.chatbuilder.ui.components.DateNavigationWidget
 import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
@@ -145,34 +148,35 @@ fun SharedTransitionScope.ChatScreen(
     val messages by model.messages.collectAsState(initial = emptyList())
 
     var currentUserId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
+    var currentDateId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
 
-    LaunchedEffect(chatDetails?.lastOpenedMsgId) {
-        chatDetails.let { currentUserId = chatDetails?.senderId ?: -1 }
+    var searchVisible by remember { mutableStateOf(false) }
+    var swapUsersVisible by remember { mutableStateOf(false) }
+    var dateNavigatorVisible by remember { mutableStateOf(false) }
+    var clearChatVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(chatDetails) {
+        chatDetails.let {
+            currentUserId = chatDetails?.senderId ?: -1
+            model.loadUserList(chatId, isDarkTheme)
+        }
         delay(300)
         refreshKey++
-        chatDetails?.let { model.initialLoad(it.lastOpenedMsgId) }
         chatMediaViewModel.load(chatDetails?.chatid ?: -1)
+        chatDetails?.let { model.initialLoad(it.lastOpenedMsgId) }
     }
+
     LaunchedEffect(messages) {
-        Log.i("vkpro", "Tried scrolling to id;" + chatDetails?.lastOpenedMsgId)
-        if (model.needScroll && chatDetails?.lastOpenedMsgId != null) {
+        Log.i("vkpro", "Tried scrolling to index: ${model.scrollIndex}")
+        if (model.needScroll && model.scrollIndex != null) {
             model.needScroll = false
-            val index = if (model.searchedResults.isNotEmpty()) {
-                messages.indexOfFirst {
-                    it.messageId == model.searchedResults[model.currentSearchIndex]
-                }
-            } else {
-                messages.indexOfFirst {
-                    it.messageId == chatDetails!!.lastOpenedMsgId
-                }
-            }
             Log.i(
                 "vkpro",
-                "started scrolling to id;" + chatDetails?.lastOpenedMsgId + "index: $index"
+                "started scrolling to id;" + chatDetails?.lastOpenedMsgId + "index: ${model.scrollIndex}"
             )
-            if (index >= 0) {
-                listState.scrollToItem(index)
-            }
+            if (model.scrollIndex!! < messages.size)
+                listState.scrollToItem(model.scrollIndex!!)
+            model.scrollIndex = null
         }
     }
 
@@ -192,16 +196,12 @@ fun SharedTransitionScope.ChatScreen(
             }
     }
 
-
     LaunchedEffect(model.showToast) {
         if (model.showToast && model.toast != null) {
             model.showToast = false
             Toast.makeText(context, model.toast, Toast.LENGTH_SHORT).show()
         }
     }
-
-    var searchVisible by remember { mutableStateOf(false) }
-    var swapUsersVisible by remember { mutableStateOf(false) }
 
 
     Column(
@@ -235,13 +235,21 @@ fun SharedTransitionScope.ChatScreen(
                         1 -> searchVisible = true
                         2 -> navController.navigate("theme/${theme.id}")
                         3 -> {
-                            if (model.userList.isEmpty()) model.loadUserList(chatId)
+                            if (model.userList.isEmpty()) {
+                                model.loadUserList(chatId, isDarkTheme)
+                            }
                             swapUsersVisible = true
                         }
 
-                        5 -> {
-                            chatMediaViewModel.clearChat(chatId)
-                            imageLoader.diskCache?.clear()
+                        4 -> {
+                            if (model.datesList.isEmpty()) {
+                                model.loadDatesList(chatId)
+                            }
+                            dateNavigatorVisible = true
+                        }
+
+                        6 -> {
+                            clearChatVisible = true
                         }
                     }
                 },
@@ -321,11 +329,20 @@ fun SharedTransitionScope.ChatScreen(
                         m.userid == (currentUserId) -> SenderMessage(
                             text = m.message,
                             sentTime = m.time.toString(),
+                            date = if (i == 0 || messages[i - 1].date != m.date) {
+                                {
+                                    ChatNote(
+                                        m.date.toString(),
+                                        color = themeBodyColors.dateBubble,
+                                        textColor = themeBodyColors.textSecondary
+                                    )
+                                }
+                            } else null,
                             ticksIcon = blueTicksIcon,
                             bubbleStyle = 1,
                             bubbleRadius = bodyStyle.bubble_radius,
                             bubbleTipRadius = bodyStyle.bubble_tip_radius,
-                            isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                            isFirst = (i == 0 || messages[i - 1].userid != m.userid || messages[i - 1].date != m.date),
                             color = themeBodyColors.senderBubble,
                             textColor = themeBodyColors.textPrimary,
                             textColorSecondary = themeBodyColors.textSecondary,
@@ -343,10 +360,22 @@ fun SharedTransitionScope.ChatScreen(
                         else -> Message(
                             text = m.message,
                             sentTime = m.time.toString(),
+                            senderName = m.username,
+                            senderColor = model.userColorMap[m.userid]
+                                ?: MaterialTheme.colorScheme.onPrimaryContainer,
+                            date = if (i == 0 || messages[i - 1].date != m.date) {
+                                {
+                                    ChatNote(
+                                        m.date.toString(),
+                                        color = themeBodyColors.dateBubble,
+                                        textColor = themeBodyColors.textSecondary
+                                    )
+                                }
+                            } else null,
                             bubbleStyle = 1,
                             bubbleRadius = bodyStyle.bubble_radius,
                             bubbleTipRadius = bodyStyle.bubble_tip_radius,
-                            isFirst = i == 0 || messages[i - 1].userid != m.userid,
+                            isFirst = (i == 0 || messages[i - 1].userid != m.userid || messages[i - 1].date != m.date),
                             color = themeBodyColors.receiverBubble,
                             textColor = themeBodyColors.textPrimary,
                             textColorSecondary = themeBodyColors.textSecondary,
@@ -401,6 +430,45 @@ fun SharedTransitionScope.ChatScreen(
                 model.updateSenderId(chatId, currentUserId)
                 swapUsersVisible = false
             },
+        )
+    }
+
+    AnimatedVisibility(
+        visible = dateNavigatorVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        if (model.datesList.isEmpty())
+            CircularProgressIndicator()
+        else
+            DateNavigationWidget(
+                dates = model.datesList,
+                currentId = currentDateId,
+                onNavigation = {
+                    model.navigateToDate(it)
+                    currentDateId = it
+                },
+                onClose = {
+                    dateNavigatorVisible = false
+                },
+            )
+    }
+
+    AnimatedVisibility(
+        visible = clearChatVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        ClearChatWidget(
+            onCancel = {
+                clearChatVisible = false
+            },
+            onClear = {
+                chatMediaViewModel.clearChat(chatId, onDone = {
+                    imageLoader.diskCache?.clear()
+                    navController.popBackStack()
+                })
+            }
         )
     }
 

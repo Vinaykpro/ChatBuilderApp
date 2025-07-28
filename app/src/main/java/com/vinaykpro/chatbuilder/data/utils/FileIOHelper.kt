@@ -18,11 +18,8 @@ import com.vinaykpro.chatbuilder.data.local.ZipItem
 import com.vinaykpro.chatbuilder.data.local.formatFileSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.InputStreamReader
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
@@ -33,6 +30,11 @@ class FileIOHelper {
     private val systemMessagePattern = Regex(
         """^(\d{1,4})[./-](\d{1,4})[./-](\d{1,4}),\s*(\d{1,2})[:.](\d{1,2})\s*(.*?)\s*[-–]\s*(.*)$"""
     )
+    private val messagePatternIOS = Regex(
+        """^\[?(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?[\u202F\u00A0 ]*(AM|PM|am|pm)?\]?\s*(.+?):\s*(.*)$"""
+    )
+    private val mediaRefPattern = Regex("""<attached:\s*(.+?)\s*>""")
+
     private val context: Context
 
     constructor(context: Context) {
@@ -75,17 +77,25 @@ class FileIOHelper {
                             try {
                                 val betterFileName =
                                     maxOf(filename, fileName, compareBy { it.length })
-                                val result = decodeChat(zipInputStream, betterFileName)
+                                val lines = zipInputStream.bufferedReader().lineSequence().toList()
+                                val result = decodeChat(lines.asSequence(), betterFileName)
                                 messages = result.messages
                                 mediaIndexes = result.mediaIndexes
                                 chatName = result.chatName
                                 senderId = result.senderId
-                                Log.i("vkpro", "import done")
+                                if (messages == null) {
+                                    val result = decodeChatIOS(lines.asSequence(), betterFileName)
+                                    messages = result.messages
+                                    mediaIndexes = result.mediaIndexes
+                                    chatName = result.chatName
+                                    senderId = result.senderId
+                                }
+                                Log.i("vkpro", "zip import part done")
                             } catch (e: Exception) {
                                 Log.i("vkpro", e.toString())
                             }
                             isChatFound = messages != null
-                        } else if (!fileName.endsWith(".vcf")) {
+                        } else {
                             val fileType = getFileType(fileName, zipInputStream)
                             val fileSize = getZipItemSize(zipInputStream)
 
@@ -113,10 +123,17 @@ class FileIOHelper {
                     val txtInputStream = context.contentResolver.openInputStream(fileUri!!)
                     txtInputStream.use { stream ->
                         if (stream != null) {
-                            val result = decodeChat(stream, filename)
+                            val lines = stream.bufferedReader().lineSequence().toList()
+                            val result = decodeChat(lines.asSequence(), filename)
                             messages = result.messages
                             chatName = result.chatName
                             senderId = result.senderId
+                            if (messages == null) {
+                                val result = decodeChatIOS(lines.asSequence(), filename)
+                                messages = result.messages
+                                chatName = result.chatName
+                                senderId = result.senderId
+                            }
                         }
                     }
                 }
@@ -141,18 +158,16 @@ class FileIOHelper {
         )
     }
 
-    fun decodeChat(file: InputStream, fileName: String): DecodeResponse {
+    fun decodeChat(lines: Sequence<String>, fileName: String): DecodeResponse {
         val userMap = mutableMapOf<String, Int>() // For remembering users
         var nextUserId = 1
         val messageList: MutableList<MessageEntity> = mutableListOf()
         val mediaIndexes: MutableList<Int> = mutableListOf()
-        val reader = BufferedReader(InputStreamReader(file))
-        var line: String? = reader.readLine()
         var currMessage: MessageEntity? = null
         var invalidCount = 0
         var totalCount = 0
         var index = 0
-        while (line != null) {
+        for (line in lines) {
             if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(null, null, "", null)
             val isMessage = messagePattern.matchEntire(line)
             val isNote = if (isMessage == null) systemMessagePattern.matchEntire(line) else null
@@ -226,11 +241,11 @@ class FileIOHelper {
                     index++
                 }
             }
-            line = reader.readLine()?.trim()
-            if (line == null && currMessage != null) {
-                Log.i("vkpro", "caught last msg ${currMessage.message}")
-                messageList.add(currMessage)
-            }
+
+        }
+        if (currMessage != null) {
+            Log.i("vkpro", "caught last msg ${currMessage.message}")
+            messageList.add(currMessage)
         }
         var chatname = ""
         var senderId: Int? = null
@@ -251,6 +266,113 @@ class FileIOHelper {
             mediaIndexes = mediaIndexes,
             chatName = chatname,
             senderId = senderId
+        )
+    }
+
+    fun decodeChatIOS(lines: Sequence<String>, fileName: String): DecodeResponse {
+        val userMap = mutableMapOf<String, Int>()
+        var nextUserId = 1
+        val messageList: MutableList<MessageEntity> = mutableListOf()
+        val mediaIndexes: MutableList<Int> = mutableListOf()
+        var currMessage: MessageEntity? = null
+        var invalidCount = 0
+        var totalCount = 0
+        var index = 0
+
+        for (line in lines) {
+            val line = line.trimStart(
+                '\u200E',
+                '\u202A',
+                '\u202B',
+                '\u202C',
+                '\u202D',
+                '\u202E',
+                '\u2066',
+                '\u2067',
+                '\u2068',
+                '\u2069'
+            )
+            if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(null, null, "", null)
+            val isMessage = messagePatternIOS.matchEntire(line)
+            totalCount++
+            if (isMessage != null) {
+                if (currMessage != null) {
+                    messageList.add(currMessage); currMessage = null;
+                    index++
+                }
+                val (d1, d2, d3, h, m, s, meridian, name, msg) = isMessage.destructured
+                val userId = userMap.getOrPut(name) { val id = nextUserId; nextUserId++; id }
+                currMessage = MessageEntity(
+                    chatid = chatId,
+                    messageType = MESSAGETYPE.MESSAGE,
+                    userid = userId,
+                    username = name,
+                    message = msg,
+                    date = "$d1/$d2/$d3",
+                    time = "$h:$m ${meridian.trim()}",
+                    timestamp = null,
+                    fileId = null,
+                    messageStatus = MESSAGESTATUS.SEEN,
+                    replyMessageId = null
+                )
+                if (line.contains("<attached: ")) {
+                    mediaIndexes.add(index)
+                }
+            } else {
+                invalidCount++
+                if (currMessage != null) {
+                    currMessage = currMessage.copy(message = currMessage.message + "\n" + line)
+                } else {
+                    //So when it cannot be decoded just showing raw content by note
+                    val note = MessageEntity(
+                        chatid = chatId,
+                        messageType = MESSAGETYPE.NOTE,
+                        message = line,
+                        date = "02/01/2004",
+                        time = "12:00 am",
+                        timestamp = null,
+                        userid = null,
+                        username = null,
+                        fileId = null,
+                        messageStatus = null,
+                        isStarred = false,
+                        isForwarded = false,
+                        replyMessageId = null,
+                    )
+                    messageList.add(note)
+                    index++
+                }
+            }
+        }
+        if (currMessage != null) {
+            Log.i("vkpro", "caught last msg ${currMessage.message}")
+            messageList.add(currMessage)
+        }
+        var chatname = ""
+        var senderId: Int? = null
+        for ((name, id) in userMap) {
+            if (fileName.contains(name) && name.length > chatname.length) {
+                chatname = name
+            } else {
+                senderId = id
+            }
+        }
+        if (chatname == "") chatname =
+            fileName.replace(Regex("whatsapp chat with", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\.[a-zA-Z0-9]{1,5}$"), "")
+                .trim()
+
+        return DecodeResponse(
+            messages = messageList,
+            mediaIndexes = mediaIndexes,
+            chatName = chatname,
+            senderId = senderId
+        )
+        return DecodeResponse(
+            messages = null,
+            mediaIndexes = null,
+            chatName = "",
+            senderId = -1
         )
     }
 

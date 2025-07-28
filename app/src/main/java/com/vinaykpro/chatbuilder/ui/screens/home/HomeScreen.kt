@@ -8,8 +8,11 @@ import android.content.SharedPreferences
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,13 +89,13 @@ import androidx.navigation.NavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.vinaykpro.chatbuilder.ImportChatUI
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.IMPORTSTATE
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
+import com.vinaykpro.chatbuilder.ui.components.ImportChatWidget
 import com.vinaykpro.chatbuilder.ui.components.SettingsItem
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
@@ -482,8 +485,12 @@ fun HomeScreen(
         }
     )
 
-    if (homeViewModel.importState != IMPORTSTATE.NONE) {
-        ImportChatUI(
+    AnimatedVisibility(
+        visible = homeViewModel.importState != IMPORTSTATE.NONE,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        ImportChatWidget(
             step = homeViewModel.importState,
             files = homeViewModel.importedFileList,
             onUpdate = { homeViewModel.importedFileList = it },

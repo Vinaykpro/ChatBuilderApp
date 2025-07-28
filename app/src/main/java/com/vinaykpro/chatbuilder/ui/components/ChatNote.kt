@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 fun ChatNote(note: String = "Today", color: Color = MaterialTheme.colorScheme.secondaryContainer, textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer) {
     Box(modifier = Modifier.padding(top = 3.dp).padding(horizontal = 28.dp).fillMaxWidth()) {
         Text(text = note, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight(500), color = textColor, textAlign = TextAlign.Center,
-            modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp))
+            modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(8.dp))
                 .background(color).padding(horizontal = 12.dp, vertical = 8.dp))
     }
 }

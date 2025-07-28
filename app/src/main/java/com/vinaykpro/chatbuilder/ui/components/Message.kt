@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +51,9 @@ import java.io.File
 fun SharedTransitionScope.Message(
     text: String? = "Hii man",
     sentTime: String = "11:25 pm",
+    senderName: String? = "Vinaykpro",
+    senderColor: Color = Color.Black,
+    date: (@Composable () -> Unit)? = null,
     color: Color = Color(0xFFFFFFFF),
     textColor: Color = Color(0xFF000000),
     textColorSecondary: Color = Color(0xFF414141),
@@ -90,6 +94,7 @@ fun SharedTransitionScope.Message(
     val bubbleModifier: Modifier =
         getBubbleModifier(bubbleStyle, bubbleRadius, color, isFirst, isLast, false)
 
+    date?.invoke()
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,6 +157,20 @@ fun SharedTransitionScope.Message(
                 }
         ) {
             Column(modifier = containerModifier) {
+                if (isFirst && senderName != null)
+                    Text(
+                        text = senderName,
+                        color = senderColor,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight(500),
+                        modifier = Modifier.padding(
+                            top = 1.dp,
+                            bottom = if (file != null) 4.dp else 0.dp,
+                            start = 5.dp,
+                            end = 5.dp
+                        )
+                    )
                 if (file != null)
                     Box(
                         modifier = imageContainerModifier
@@ -249,13 +268,13 @@ fun SharedTransitionScope.Message(
                         }
                     }
                 if (text != null || isFile) {
-                    if(searchedString != null) {
+                    if (searchedString != null) {
                         HighlightedText(
                             fullText = if (isFile) " " else "$text$space",
                             searchedText = searchedString,
                             textColor = textColor,
                         )
-                    } else if(containsEmoji) {
+                    } else if (containsEmoji) {
                         EmojiStyledText(
                             fullText = text!!,
                             textColor = textColor,

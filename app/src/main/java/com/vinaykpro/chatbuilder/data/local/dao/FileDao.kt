@@ -18,6 +18,9 @@ interface FileDao {
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addFiles(files: List<FileEntity>): List<Long>
 
+    @Query("DELETE FROM files WHERE chatid = :chatId")
+    suspend fun deleteAllFiles(chatId: Int)
+
     @Query("SELECT * FROM files")
     fun getAllFiles(): Flow<List<FileEntity>>
 }

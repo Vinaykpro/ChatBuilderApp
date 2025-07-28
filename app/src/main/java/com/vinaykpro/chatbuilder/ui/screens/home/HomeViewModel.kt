@@ -72,7 +72,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     importState = IMPORTSTATE.MEDIASELECTION
                 } else {
                     messageDao.insertMessages(messages = importedMesssages)
-                    importState = IMPORTSTATE.NONE
+                    importState = IMPORTSTATE.SUCCESS
                 }
             } else {
                 dao.deleteChatById(id.toInt())
@@ -84,7 +84,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun keepOrSkipFiles(keep: Boolean = true) {
-        importState = IMPORTSTATE.STARTED
+        importState = IMPORTSTATE.ALMOSTCOMPLETED
         saveJob = viewModelScope.launch {
             if (keep) {
                 val filesRes = fileHelper.saveFiles(importedFileList)
@@ -122,9 +122,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         Log.i("vkpro", "Error matching: ${e.toString()}")
                     }
                 }
+                importState = IMPORTSTATE.SUCCESS
+            } else {
+
+                importState = IMPORTSTATE.NONE
             }
             messageDao.insertMessages(messages = importedMesssages)
-            importState = IMPORTSTATE.NONE
         }
     }
 

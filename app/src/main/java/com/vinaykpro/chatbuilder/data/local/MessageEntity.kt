@@ -30,6 +30,11 @@ data class UserInfo(
     val username: String
 )
 
+data class DateInfo(
+    val messageId: Int,
+    val date: String
+)
+
 object MESSAGETYPE {
     const val MESSAGE = 0
     const val NOTE = 1

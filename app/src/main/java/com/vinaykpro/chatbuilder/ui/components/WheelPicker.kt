@@ -35,8 +35,8 @@ fun WheelPicker(
     LaunchedEffect(state) {
         snapshotFlow { state.snappedIndex }
             .collect {
-                Log.i("Vkpro", "Swapped Sender index $it ; ${items.size}")
-                if(it >= 0) onItemChange(it)
+                Log.i("Vkpro", "Wheel picker index $it ; ${items.size}")
+                if (it >= 0) onItemChange(it)
             }
     }
 

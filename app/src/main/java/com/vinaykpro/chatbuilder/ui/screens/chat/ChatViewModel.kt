@@ -2,10 +2,12 @@ package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
+import com.vinaykpro.chatbuilder.data.local.DateInfo
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import com.vinaykpro.chatbuilder.data.local.UserInfo
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
+import kotlin.random.Random
 
 class ChatViewModel(application: Application, private val chatId: Int) :
     AndroidViewModel(application) {
@@ -37,7 +40,12 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     var currentSearchIndex = 0
     var searchTerm: String? = null
 
+    var scrollIndex: Int? = null
+
     var userList: List<UserInfo> = emptyList()
+    var userColorMap: MutableMap<Int, Color> = mutableMapOf()
+
+    var datesList: List<DateInfo> = emptyList()
 
     private var nextId = 0
     private var prevId = 0
@@ -46,7 +54,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     internal var isLoadingPrev = false
     internal var isLoading = true
     internal var isInitialLoad = true
-    internal var needScroll = true
+    internal var needScroll = false
     private var hasMoreNext = true
     private var hasMorePrev = true
 
@@ -122,13 +130,23 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
+    fun navigateToDate(dateId: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                loadMessagesAtId(dateId)
+            }
+        }
+    }
+
     suspend fun loadMessagesAtId(id: Int) = withContext(Dispatchers.IO) {
         if (isLoading && !isInitialLoad) return@withContext
         isLoading = true
+        needScroll = true
         val newMessagesNext =
             dao.getNextMessages(chatId, id - 1, pageSize / 2)
         val newMessagesPrev =
             dao.getPreviousMessages(chatId, id, pageSize / 2)
+        scrollIndex = newMessagesPrev.size
         var newMessages = emptyList<MessageEntity>()
         if (newMessagesNext.isNotEmpty() || newMessagesPrev.isNotEmpty()) {
             newMessages = newMessagesPrev.reversed() + newMessagesNext
@@ -141,7 +159,6 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         hasMorePrev = true
         hasMoreNext = true
         isLoading = false
-        needScroll = true
     }
 
     suspend fun loadNextPage() = withContext(Dispatchers.IO) {
@@ -187,11 +204,28 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun loadUserList(chatid: Int) {
+    fun loadUserList(chatid: Int, darkColors: Boolean) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val users = dao.getUsersList(chatid)
                 userList = listOf(UserInfo(-1, "None")) + users
+                val (start, end) = if (darkColors) 180 to 256 else 40 to 100
+                for (user in userList) {
+                    val randomColor = Color(
+                        red = Random.nextInt(start, end),
+                        green = Random.nextInt(start, end),
+                        blue = Random.nextInt(start, end)
+                    )
+                    userColorMap[user.userid] = randomColor
+                }
+            }
+        }
+    }
+
+    fun loadDatesList(chatid: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                datesList = dao.getDatesList(chatid)
             }
         }
     }

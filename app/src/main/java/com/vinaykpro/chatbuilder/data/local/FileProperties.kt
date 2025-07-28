@@ -45,6 +45,7 @@ object IMPORTSTATE {
     const val UNSUPPORTEDFILE = 3
     const val ALMOSTCOMPLETED = 4
     const val WATCHAD = 5
+    const val SUCCESS = 6
 }
 
 object FILETYPE {
@@ -62,6 +63,7 @@ object MyConstants {
         "Search",
         "Theme",
         "Swap sender",
+        "Go to Date",
         "Export chat to HTML",
         "Clear chat"
     )

@@ -64,6 +64,7 @@ import java.io.File
 fun SharedTransitionScope.SenderMessage(
     text: String? = "Hii man",
     sentTime: String = "11:25 pm",
+    date: (@Composable () -> Unit)? = null,
     color: Color = Color(0xFFBEFFEA),
     textColor: Color = Color(0xFF000000),
     textColorSecondary: Color = Color(0xFF414141),
@@ -108,6 +109,7 @@ fun SharedTransitionScope.SenderMessage(
     val bubbleModifier: Modifier =
         getBubbleModifier(bubbleStyle, bubbleRadius, color, isFirst, isLast)
 
+    date?.invoke()
     Box(
         modifier = Modifier
             .fillMaxWidth()

@@ -11,6 +11,7 @@ import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.local.FileEntity
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -48,20 +49,22 @@ class ChatMediaViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun clearChat(chatId: Int) {
+    fun clearChat(chatId: Int, onDone: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                // Deleting media first
-                for (f in mediaMap) {
-                    Log.i("vkpro", "Deleting ${f.value.filename}")
-                    val file = File(context.getExternalFilesDir(null), f.value.filename)
+                for ((_, file) in mediaMap) {
+                    Log.i("vkpro", "Deleting ${file.filename}")
+                    val file = File(context.getExternalFilesDir(null), file.filename)
                     file.delete()
                 }
                 val iconFile = File(context.filesDir, "icons/icon$chatId.jpg")
                 iconFile.delete()
-                messageDao.deleteMessages(chatId = chatId)
+                mediaDao.deleteAllFiles(chatId)
+                messageDao.deleteMessages(chatId)
                 chatDao.deleteChatById(chatId)
             }
+            delay(50)
+            onDone()
         }
     }
 }
