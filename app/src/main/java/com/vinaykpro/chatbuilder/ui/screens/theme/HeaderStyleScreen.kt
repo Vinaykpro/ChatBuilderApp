@@ -487,22 +487,15 @@ fun HeaderStyle.isSameAttrAs(other: HeaderStyle): Boolean {
     return this.showbackbtn == other.showbackbtn &&
             this.backbtn_size == other.backbtn_size &&
             this.backbtn_gap == other.backbtn_gap &&
-            this.backbtn_icon == other.backbtn_icon &&
             this.showprofilepic == other.showprofilepic &&
             this.profilepic_size == other.profilepic_size &&
             this.profilepic_gap_sides == other.profilepic_gap_sides &&
-            this.profilepic_icon == other.profilepic_icon &&
             this.showstatus == other.showstatus &&
-            this.threedots_icon == other.threedots_icon &&
             this.actionicons_gap == other.actionicons_gap &&
             this.actionicons_size == other.actionicons_size &&
-            this.actionicons_order == other.actionicons_order &&
             this.is_icon1_visible == other.is_icon1_visible &&
             this.is_icon2_visible == other.is_icon2_visible &&
-            this.is_icon3_visible == other.is_icon3_visible &&
-            this.icon1 == other.icon1 &&
-            this.icon2 == other.icon2 &&
-            this.icon3 == other.icon3
+            this.is_icon3_visible == other.is_icon3_visible
 }
 
 fun colorToHex(color: Color): String {

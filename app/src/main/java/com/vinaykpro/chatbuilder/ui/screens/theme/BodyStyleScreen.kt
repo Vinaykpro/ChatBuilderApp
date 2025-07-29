@@ -477,7 +477,6 @@ fun BodyStyle.isSameAttrAs(other: BodyStyle): Boolean {
             this.show_time == other.show_time &&
             this.use12hr == other.use12hr &&
             this.showticks == other.showticks &&
-            this.ticks_icon == other.ticks_icon &&
             this.showreceiverpic == other.showreceiverpic
 }
 

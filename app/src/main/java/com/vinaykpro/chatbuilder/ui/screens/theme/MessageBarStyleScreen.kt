@@ -515,16 +515,9 @@ fun MessageBarStyle.isSameAttrAs(other: MessageBarStyle): Boolean {
     return showleftinnerbutton == other.showleftinnerbutton &&
             showrightinnerbutton == other.showrightinnerbutton &&
             showouterbutton == other.showouterbutton &&
-            leftinnerbutton_icon == other.leftinnerbutton_icon &&
-            rightinnerbutton_icon == other.rightinnerbutton_icon &&
-            outerbutton_icon == other.outerbutton_icon &&
-            actionicons_order == other.actionicons_order &&
             is_icon1_visible == other.is_icon1_visible &&
             is_icon2_visible == other.is_icon2_visible &&
-            is_icon3_visible == other.is_icon3_visible &&
-            icon1 == other.icon1 &&
-            icon2 == other.icon2 &&
-            icon3 == other.icon3
+            is_icon3_visible == other.is_icon3_visible
 }
 
 fun copyPainter(original: Painter): Painter = object : Painter() {

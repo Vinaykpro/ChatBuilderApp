@@ -124,8 +124,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 importState = IMPORTSTATE.SUCCESS
             } else {
-
-                importState = IMPORTSTATE.NONE
+                importState = IMPORTSTATE.SUCCESS
             }
             messageDao.insertMessages(messages = importedMesssages)
         }

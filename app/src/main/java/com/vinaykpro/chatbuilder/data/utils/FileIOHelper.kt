@@ -353,12 +353,12 @@ class FileIOHelper {
         for ((name, id) in userMap) {
             if (fileName.contains(name) && name.length > chatname.length) {
                 chatname = name
-            } else {
+            } else if (senderId == null) {
                 senderId = id
             }
         }
         if (chatname == "") chatname =
-            fileName.replace(Regex("whatsapp chat with", RegexOption.IGNORE_CASE), "")
+            fileName.replace(Regex("whatsapp chat -", RegexOption.IGNORE_CASE), "")
                 .replace(Regex("\\.[a-zA-Z0-9]{1,5}$"), "")
                 .trim()
 
@@ -367,12 +367,6 @@ class FileIOHelper {
             mediaIndexes = mediaIndexes,
             chatName = chatname,
             senderId = senderId
-        )
-        return DecodeResponse(
-            messages = null,
-            mediaIndexes = null,
-            chatName = "",
-            senderId = -1
         )
     }
 

@@ -8,16 +8,12 @@ import kotlinx.serialization.Serializable
 @Entity(tableName = "themes")
 data class ThemeEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val icon: String? = null,
     val name: String = "Default theme",
     val author: String = "Vinaykpro",
     val appcolor: String = "#FF1283A6",
     val appcolordark: String = "#FF323232",
-
     val headerstyle: String = "",
-
     val bodystyle: String = "",
-
     val messagebarstyle: String = "",
 )
 
@@ -35,22 +31,15 @@ data class HeaderStyle(
     val showbackbtn: Boolean = true,
     val backbtn_size: Int = 24,
     val backbtn_gap: Int = 2,
-    val backbtn_icon: String? = null,
     val showprofilepic: Boolean = true,
     val profilepic_size: Int = 40,
     val profilepic_gap_sides: Int = 2,
-    val profilepic_icon: String? = null,
     val showstatus: Boolean = true,
-    val threedots_icon: String? = null,
     val actionicons_gap: Int = 0,
     val actionicons_size: Int = 24,
-    val actionicons_order: List<Int> = listOf(1,2,3),
     val is_icon1_visible: Boolean = true,
     val is_icon2_visible: Boolean = true,
-    val is_icon3_visible: Boolean = false,
-    val icon1: String? = null,
-    val icon2: String? = null,
-    val icon3: String? = null,
+    val is_icon3_visible: Boolean = false
 )
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -59,14 +48,14 @@ data class BodyStyle(
     val bubble_style: Int = 1,
     val bubble_radius: Float = 8f,
     val bubble_tip_radius: Float = 8f,
-    val color_chatbackground: String = "#FFC5B6A1",
-    val color_senderbubble: String = "#FFADFFF5",
+    val color_chatbackground: String = "#FFA7C4A9",
+    val color_senderbubble: String = "#FFC7FFFD",
     val color_receiverbubble: String = "#FFffffff",
     val color_datebubble: String = "#FFdddddd",
     val color_text_primary: String = "#FF000000",
     val color_text_secondary: String = "#FF5E5E5E",
     val color_chatbackground_dark: String = "#FF000000",
-    val color_senderbubble_dark: String = "#FF1A7585",
+    val color_senderbubble_dark: String = "#FF083D51",
     val color_receiverbubble_dark: String = "#FF323232",
     val color_datebubble_dark: String = "#FF2a2a2a",
     val color_text_primary_dark: String = "#FFffffff",
@@ -74,7 +63,6 @@ data class BodyStyle(
     val show_time: Boolean = true,
     val use12hr: Boolean = true,
     val showticks: Boolean = true,
-    val ticks_icon: String? = null,
     val showreceiverpic: Boolean = false
 )
 
@@ -106,15 +94,18 @@ data class MessageBarStyle(
     val showleftinnerbutton: Boolean = true,
     val showrightinnerbutton: Boolean = false,
     val showouterbutton: Boolean = true,
-    val leftinnerbutton_icon: String? = null,
-    val rightinnerbutton_icon: String? = null,
-    val outerbutton_icon: String? = null,
-    val actionicons_order: List<Int> = listOf(1,2,3),
     val is_icon1_visible: Boolean = true,
     val is_icon2_visible: Boolean = true,
-    val is_icon3_visible: Boolean = false,
-    val icon1: String? = null,
-    val icon2: String? = null,
-    val icon3: String? = null,
+    val is_icon3_visible: Boolean = false
 )
 
+@Serializable
+data class ExportedTheme(
+    val name: String,
+    val author: String,
+    val appcolor: String,
+    val appcolordark: String,
+    val headerstyle: HeaderStyle,
+    val bodystyle: BodyStyle,
+    val messagebarstyle: MessageBarStyle,
+)

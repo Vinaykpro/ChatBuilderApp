@@ -16,5 +16,8 @@ interface ThemeDao {
     suspend fun insertTheme(theme: ThemeEntity): Long
 
     @Query("SELECT * FROM themes")
-    suspend fun getAllThemes(): List<ThemeEntity>
+    fun getAllThemes(): Flow<List<ThemeEntity>>
+
+    @Query("DELETE FROM themes where id = :themeId")
+    fun deleteTheme(themeId: Int)
 }

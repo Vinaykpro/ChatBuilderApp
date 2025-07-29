@@ -19,11 +19,11 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,27 +37,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vinaykpro.chatbuilder.R
 
 @Preview
 @Composable
 fun FloatingMenu(
-    modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    page: Int = 0,
     onClick1: () -> Unit = {},
     onClick2: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
-
+    val (b1, b2, icon) = when (page) {
+        0 -> Triple("New Chat", "Import Chat", R.drawable.ic_newchat)
+        else -> Triple("New theme", "Import theme", R.drawable.ic_newtheme)
+    }
     // Rotation animation for the main FAB icon
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 45f else 0f,
         label = "Rotation"
     )
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         // Dimmed background with fade in/out
         AnimatedVisibility(
             visible = expanded,
@@ -67,7 +72,11 @@ fun FloatingMenu(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0x88383838)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { expanded = false })
+                    .background(Color(0x88383838))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { expanded = false })
             )
         }
 
@@ -75,7 +84,10 @@ fun FloatingMenu(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 160.dp, end = 16.dp),
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding() + 160.dp, end = 16.dp
+                ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.End
         ) {
@@ -92,9 +104,17 @@ fun FloatingMenu(
                         modifier = Modifier.padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "New Chat", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = b1,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("New Chat", fontSize = 16.sp, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Text(
+                            b1,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                     }
                 }
             }
@@ -112,9 +132,17 @@ fun FloatingMenu(
                         modifier = Modifier.padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = "Import Chat", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Icon(
+                            painterResource(R.drawable.ic_import),
+                            contentDescription = b2,
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Import Chat", fontSize = 16.sp, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Text(
+                            b2,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                     }
                 }
             }
@@ -125,15 +153,18 @@ fun FloatingMenu(
             onClick = { expanded = !expanded },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 90.dp, end = 24.dp),
+                .padding(
+                    bottom = WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding() + 90.dp, end = 24.dp
+                ),
             containerColor = color,
             contentColor = Color.White,
             shape = RoundedCornerShape(100.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Menu",
-                modifier = Modifier.rotate(rotation)
+                painter = painterResource(if(expanded) R.drawable.ic_add else icon),
+                contentDescription = "Add chat",
+                modifier = Modifier.size(24.dp).rotate(rotation)
             )
         }
     }

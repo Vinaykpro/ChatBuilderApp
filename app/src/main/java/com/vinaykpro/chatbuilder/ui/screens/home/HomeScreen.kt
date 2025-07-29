@@ -160,6 +160,14 @@ fun HomeScreen(
         }
     }
 
+    val pickFileLauncherForTheme = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            themeViewModel.importTheme(context, uri)
+        }
+    }
+
     val localUri = rememberSaveable { mutableStateOf(sharedFileUri?.toString()) }
     LaunchedEffect(localUri.value) {
         if (localUri.value != null) {
@@ -475,15 +483,30 @@ fun HomeScreen(
     }
 
     // Real FAB Button
-    FloatingMenu(
-        color = MaterialTheme.colorScheme.primary,
-        onClick1 = {
-            homeViewModel.addChat()
-        },
-        onClick2 = {
-            pickFileLauncher.launch(arrayOf("application/zip", "text/plain"))
-        }
-    )
+    AnimatedVisibility(
+        visible = pagerState.currentPage != 2,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        FloatingMenu(
+            color = MaterialTheme.colorScheme.primary,
+            page = pagerState.currentPage,
+            onClick1 = {
+                if (pagerState.currentPage == 0) {
+                    homeViewModel.addChat()
+                } else {
+                    themeViewModel.addBlankTheme()
+                }
+            },
+            onClick2 = {
+                if (pagerState.currentPage == 0) {
+                    pickFileLauncher.launch(arrayOf("application/zip", "text/plain"))
+                } else {
+                    pickFileLauncherForTheme.launch(arrayOf("application/zip"))
+                }
+            }
+        )
+    }
 
     AnimatedVisibility(
         visible = homeViewModel.importState != IMPORTSTATE.NONE,

@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -56,7 +58,6 @@ import com.vinaykpro.chatbuilder.ui.components.Input
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.launch
 import java.io.File
-
 
 @Composable
 fun EditThemeScreen(
@@ -96,7 +97,32 @@ fun EditThemeScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            BasicToolbar(name = theme.name, color = if (isDark) appColorDark else appColor)
+            BasicToolbar(
+                name = theme.name,
+                color = if (isDark) appColorDark else appColor,
+                icon1 = if (theme.id != 1) painterResource(R.drawable.ic_delete) else null,
+                icon2 = painterResource(R.drawable.ic_export),
+                onIcon1Click = {
+                    themeViewModel.deleteTheme(context, onDone = {
+                        navController.popBackStack()
+                    })
+                },
+                onIcon2Click = {
+                    themeViewModel.exportTheme(context, onDone = {
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            it
+                        )
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/zip"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Share theme zip"))
+                    })
+                },
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -301,7 +327,7 @@ fun rememberCustomProfileIconPainter(
     refreshKey: Int,
     fallback: Int = R.drawable.user
 ): Painter {
-    if(chatId == null) painterResource(fallback)
+    if (chatId == null) painterResource(fallback)
     val context = LocalContext.current
     val file = File(context.filesDir, "icons/icon$chatId.jpg")
     val fileExists = remember(refreshKey) { file.exists() }

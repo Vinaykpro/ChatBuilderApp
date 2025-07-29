@@ -38,7 +38,6 @@ import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 
-
 @Composable
 fun ThemeScreen(
     themeViewModel: ThemeViewModel,
@@ -61,9 +60,11 @@ fun ThemeScreen(
                 color = MaterialTheme.colorScheme.primary,
                 icon1 = painterResource(R.drawable.ic_info)
             )
-            LazyColumn(modifier = Modifier
-                .weight(1f)
-                .padding(bottom = 10.dp)) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(bottom = 10.dp)
+            ) {
                 items(themes) { i ->
                     ThemeItem(
                         context = context,

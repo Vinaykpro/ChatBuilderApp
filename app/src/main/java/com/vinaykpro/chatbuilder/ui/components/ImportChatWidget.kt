@@ -225,7 +225,7 @@ fun ImportChatWidget(
                                 .padding(top = 3.dp)
                         ) {
                             Text(
-                                text = "Cancel",
+                                text = "Skip",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight(500),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -253,10 +253,6 @@ fun ImportChatWidget(
                                     .padding(12.dp)
                             )
                         }
-                    }
-
-                    4 -> {
-
                     }
                 }
             }
