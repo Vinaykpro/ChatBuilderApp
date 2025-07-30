@@ -79,6 +79,7 @@ import kotlin.math.min
 @Composable
 fun SharedTransitionScope.ChatScreen(
     chatId: Int = 1,
+    messageId: Int = -1,
     isDarkTheme: Boolean = false,
     navController: NavHostController = rememberNavController(),
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -162,8 +163,15 @@ fun SharedTransitionScope.ChatScreen(
         }
         delay(300)
         refreshKey++
-        chatMediaViewModel.load(chatDetails?.chatid ?: -1)
-        chatDetails?.let { model.initialLoad(it.lastOpenedMsgId) }
+        chatMediaViewModel.load(chatId)
+        chatDetails?.let { model.initialLoad(if (messageId >= 0) messageId else it.lastOpenedMsgId) }
+    }
+
+    LaunchedEffect(chatMediaViewModel.showInChat) {
+        if (chatMediaViewModel.showInChat != null) {
+            model.loadMessagesAtId(chatMediaViewModel.showInChat!!)
+            chatMediaViewModel.showInChat = null
+        }
     }
 
     LaunchedEffect(messages) {

@@ -30,6 +30,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
 
     val chatDetails: StateFlow<ChatEntity?> = chatDao.getChatById(chatId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     val messages: StateFlow<List<MessageEntity>> = _messages
 
@@ -66,7 +67,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         viewModelScope.launch {
             Log.i("vkpro", "lastid = $lastOpenedMsgId")
             withContext(Dispatchers.IO) {
-                if (lastOpenedMsgId == null) {
+                if (lastOpenedMsgId == null || lastOpenedMsgId < 0) {
                     isLoading = true
                     val newMessages = dao.getMessagesPaged(chatId, pageSize)
                     if (newMessages.isNotEmpty()) {

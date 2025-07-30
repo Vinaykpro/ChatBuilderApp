@@ -33,6 +33,9 @@ interface MessageDao {
         limit: Int
     ): List<MessageEntity>
 
+    @Query("SELECT * FROM messages WHERE message LIKE :searchTerm LIMIT :limit OFFSET :offset")
+    suspend fun search(searchTerm: String, limit: Int, offset: Int): List<MessageEntity>
+
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addMessage(chat: MessageEntity)
 

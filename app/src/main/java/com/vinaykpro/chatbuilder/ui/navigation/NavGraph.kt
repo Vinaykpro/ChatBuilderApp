@@ -18,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.vinaykpro.chatbuilder.TestMessages
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
@@ -27,6 +29,7 @@ import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
 import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
+import com.vinaykpro.chatbuilder.ui.screens.search.SearchScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.BodyStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.EditThemeScreen
@@ -37,7 +40,7 @@ import com.vinaykpro.chatbuilder.ui.screens.theme.ThemeScreen
 object Routes {
     const val Splash = "splash"
     const val Home = "home"
-    const val Chat = "chat/{chatId}"
+    const val Chat = "chat/{chatId}?messageId={messageId}"
     const val Themes = "themes"
     const val EditTheme = "theme/{name}"
     const val HeaderStyle = "headerstyle"
@@ -79,8 +82,18 @@ fun AppNavHost(
                     sharedFileUri = sharedFileUri
                 )
             }
+            composable(route = "search") {
+                SearchScreen(
+                    navController = navController,
+                    isDark = isDarkTheme.value
+                )
+            }
             composable(
                 route = Routes.Chat,
+                arguments = listOf(
+                    navArgument("chatId") { type = NavType.IntType },
+                    navArgument("messageId") { type = NavType.IntType; defaultValue = -1 }
+                ),
                 enterTransition = {
                     if (targetState.destination.route?.startsWith("mediapreview") == true) {
                         null
@@ -106,16 +119,16 @@ fun AppNavHost(
                     }
                 }
             ) { backStackEntry ->
-                val chatId = backStackEntry.arguments?.getString("chatId")?.toIntOrNull()
-                chatId?.let {
-                    ChatScreen(
-                        chatId = it,
-                        isDarkTheme.value,
-                        navController,
-                        this,
-                        chatMediaViewModel
-                    )
-                }
+                val chatId = backStackEntry.arguments?.getInt("chatId")!!
+                val messageId = backStackEntry.arguments?.getInt("messageId") ?: -1
+                ChatScreen(
+                    chatId = chatId,
+                    messageId = messageId,
+                    isDarkTheme.value,
+                    navController,
+                    this,
+                    chatMediaViewModel
+                )
             }
 
             composable("chatprofile") {

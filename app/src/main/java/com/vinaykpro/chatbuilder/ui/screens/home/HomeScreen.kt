@@ -223,7 +223,9 @@ fun HomeScreen(
                     ) {
                         val scope = rememberCoroutineScope()
 
-                        IconButton(onClick = {}) {
+                        IconButton(
+                            onClick = { navController.navigate("search") }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
@@ -327,7 +329,7 @@ fun HomeScreen(
                                         name = chat.name,
                                         lastMessage = chat.lastmsg,
                                         lastSeen = chat.lastmsgtime,
-                                        onClick = { navController.navigate("chat/${chat.chatid}") },
+                                        onClick = { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}") },
                                         themeid = selectedTheme
                                     )
                                 }

@@ -35,6 +35,16 @@ data class DateInfo(
     val date: String
 )
 
+data class GLobalSearchResultInfo(
+    val chatId: Int,
+    val messageId: Int,
+    val chatName: String,
+    val senderName: String,
+    val message: String,
+    val date: String,
+    val searchTerm: String?,
+)
+
 object MESSAGETYPE {
     const val MESSAGE = 0
     const val NOTE = 1

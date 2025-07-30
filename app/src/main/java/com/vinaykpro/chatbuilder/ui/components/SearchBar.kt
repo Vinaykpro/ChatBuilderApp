@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,13 +38,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 
+@OptIn(FlowPreview::class)
 @Preview
 @Composable
 fun SearchBar(
-    backgroundColor: Color = Color.White,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
     color: Color = Color.Black,
+    hint: String = "Search...",
     showArrows: Boolean = false,
+    autoSearch: Boolean = false,
     modifier: Modifier = Modifier,
     onExit: () -> Unit = {},
     onSearch: (String) -> Unit = {},
@@ -59,6 +67,16 @@ fun SearchBar(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboardController?.show()
+    }
+
+    if(autoSearch) {
+        LaunchedEffect(input) {
+            snapshotFlow { input }
+                .debounce(500)
+                .collectLatest {
+                    onSearch(it)
+                }
+        }
     }
 
     Box(
@@ -114,7 +132,7 @@ fun SearchBar(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         if (input.isEmpty()) {
-                            Text(text = "Search...", color = color.copy(alpha = 0.7f))
+                            Text(text = hint, color = color.copy(alpha = 0.7f))
                         }
                         innerTextField()
                     }

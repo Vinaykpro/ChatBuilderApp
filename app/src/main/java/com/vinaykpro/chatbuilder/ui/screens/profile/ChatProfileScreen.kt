@@ -1,8 +1,11 @@
 package com.vinaykpro.chatbuilder.ui.screens.profile
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -17,12 +20,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -30,8 +35,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,11 +57,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil.ImageLoader
@@ -69,12 +79,12 @@ import com.vinaykpro.chatbuilder.ui.components.FileListItem
 import com.vinaykpro.chatbuilder.ui.components.Input
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
-import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 //@Preview
@@ -86,7 +96,15 @@ fun SharedTransitionScope.ChatProfileScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val theme = LocalThemeEntity.current
+    val density = LocalDensity.current
+    val statusBarDp = with(density) {
+        WindowInsets.statusBars.getTop(this).toDp()
+    }
+    val navBarDp = with(density) {
+        WindowInsets.statusBars.getTop(this).toDp()
+    }
+    val heightWithoutToolbar =
+        (LocalConfiguration.current.screenHeightDp.dp - statusBarDp - navBarDp - 90.dp)
 
     val imageLoader = remember {
         ImageLoader.Builder(context)
@@ -190,8 +208,9 @@ fun SharedTransitionScope.ChatProfileScreen(
         // Edit Profile
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.65f)
-                .padding(bottom = 20.dp),
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(state = rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -261,29 +280,35 @@ fun SharedTransitionScope.ChatProfileScreen(
                     )
                 }
             }
-            Input(
-                value = model.currentChat?.name ?: "",
-                nonEmpty = true,
-                onUpdate = {
-                    if (model.currentChat != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.65f)
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Input(
+                    value = model.currentChat?.name ?: "",
+                    nonEmpty = true,
+                    onUpdate = {
+                        if (model.currentChat != null) {
+                            val chat = model.currentChat!!.copy(name = it)
+                            model.updateChat(chat)
+                            model.currentChat = chat
+                        }
+                    })
+                Input(
+                    name = "Status/username",
+                    value = model.currentChat?.status ?: "",
+                    onUpdate = {
                         val chat = model.currentChat!!.copy(name = it)
-                        model.updateChat(chat)
-                        model.currentChat = chat
-                    }
-                })
-            Input(
-                name = "Status/username",
-                value = model.currentChat?.status ?: "",
-                onUpdate = {
-                    val chat = model.currentChat!!.copy(name = it)
-                    if (model.currentChat != null) {
-                        model.updateChat(model.currentChat!!.copy(status = it))
-                        model.currentChat = chat
-                    }
-                })
-        }
+                        if (model.currentChat != null) {
+                            model.updateChat(model.currentChat!!.copy(status = it))
+                            model.currentChat = chat
+                        }
+                    })
+            }
 
-        // Media
+            // Media
 //        Text(
 //            text = "Media and docs (23)",
 //            fontSize = 17.sp,
@@ -294,115 +319,169 @@ fun SharedTransitionScope.ChatProfileScreen(
 //                .padding(vertical = 18.dp, horizontal = 18.dp)
 //        )
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            listOf("Media", "Docs").forEachIndexed { index, title ->
-                val isSelected = index == selectedTabIndex
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = title,
-                        fontSize = 16.sp,
-                        lineHeight = 40.sp,
-                        color = if (isSelected) LightColorScheme.primary else Color.Gray,
-                        fontWeight = if (isSelected) FontWeight(600) else FontWeight(400)
-                    )
-                    if (isSelected)
-                        Spacer(
-                            modifier = Modifier
-                                .fillMaxWidth(0.75f)
-                                .height(2.dp)
-                                .background(LightColorScheme.primary)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                listOf(
+                    "Media (${model.previewMediaMessages.size})",
+                    "Docs (${nonMediaFileMessages.size})"
+                ).forEachIndexed { index, title ->
+                    val isSelected = index == selectedTabIndex
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = title,
+                            fontSize = 16.sp,
+                            lineHeight = 40.sp,
+                            color = if (isSelected) LightColorScheme.primary else Color.Gray,
+                            fontWeight = if (isSelected) FontWeight(600) else FontWeight(400)
                         )
+                        if (isSelected)
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.75f)
+                                    .height(2.dp)
+                                    .background(LightColorScheme.primary)
+                            )
+                    }
                 }
             }
-        }
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            when (selectedTabIndex) {
-                0 -> {
-                    if (model.previewMediaMessages.isNotEmpty()) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            items(model.previewMediaMessages) { m ->
-                                val file = model.mediaMap[m.fileId]
-                                val painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(context)
-                                        .data(
-                                            File(
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 1,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(heightWithoutToolbar),
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        if (model.previewMediaMessages.isNotEmpty()) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                items(model.previewMediaMessages) { m ->
+                                    val file = model.mediaMap[m.fileId]
+                                    val painter = rememberAsyncImagePainter(
+                                        model = ImageRequest.Builder(context)
+                                            .data(
+                                                File(
+                                                    context.getExternalFilesDir(null),
+                                                    file?.filename ?: ""
+                                                )
+                                            )
+                                            .build(),
+                                        imageLoader = imageLoader
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .aspectRatio(1f)
+                                            .padding(1.dp)
+                                            .clickable {
+                                                navController.navigate("mediapreview/${m.fileId}")
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .sharedElement(
+                                                    state = rememberSharedContentState(
+                                                        m.fileId ?: ""
+                                                    ),
+                                                    animatedVisibilityScope = animatedScope
+                                                ),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        if (file?.type == FILETYPE.VIDEO) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_playbtn),
+                                                contentDescription = null,
+                                                tint = Color.Unspecified,
+                                                modifier = Modifier.size(35.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No image/video files found",
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    1 -> {
+                        if (nonMediaFileMessages.isNotEmpty()) {
+                            LazyColumn {
+                                items(nonMediaFileMessages) { m ->
+                                    val file = model.mediaMap[m.fileId]
+                                    FileListItem(msg = m, file = file, onClick = {
+                                        try {
+                                            val filePath = File(
                                                 context.getExternalFilesDir(null),
                                                 file?.filename ?: ""
                                             )
-                                        )
-                                        .build(),
-                                    imageLoader = imageLoader
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .aspectRatio(1f)
-                                        .padding(1.dp)
-                                        .clickable {
-                                            navController.navigate("mediapreview/${m.fileId}")
+                                            val uri = FileProvider.getUriForFile(
+                                                context,
+                                                "${context.packageName}.provider",
+                                                filePath
+                                            )
+
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(
+                                                    uri,
+                                                    context.contentResolver.getType(uri) ?: "*/*"
+                                                )
+                                                flags =
+                                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                                            }
+
+                                            try {
+                                                context.startActivity(intent)
+                                            } catch (e: ActivityNotFoundException) {
+                                                Toast.makeText(
+                                                    context,
+                                                    "No app found to open this file",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            Toast.makeText(
+                                                context,
+                                                "This file doesn't exist in storage",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
-                                ) {
-                                    Image(
-                                        painter = painter,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .sharedElement(
-                                                state = rememberSharedContentState(m.fileId ?: ""),
-                                                animatedVisibilityScope = animatedScope
-                                            ),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    })
                                 }
                             }
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No image/video files found",
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
-
-                1 -> {
-                    if (nonMediaFileMessages.isNotEmpty()) {
-                        LazyColumn {
-                            items(nonMediaFileMessages) { m ->
-                                FileListItem(msg = m, file = model.mediaMap[m.fileId])
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No files found",
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             }
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No files found",
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
                         }
                     }
                 }

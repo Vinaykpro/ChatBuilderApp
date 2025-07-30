@@ -24,6 +24,9 @@ interface ChatDao {
     @Query("SELECT * FROM chats ORDER BY lastopened")
     fun getAllChats(): Flow<List<ChatEntity>>
 
+    @Query("SELECT * FROM chats")
+    fun getAllChatEntities(): List<ChatEntity>
+
     @Query("DELETE FROM chats WHERE chatid = :id")
     suspend fun deleteChatById(id: Int)
 

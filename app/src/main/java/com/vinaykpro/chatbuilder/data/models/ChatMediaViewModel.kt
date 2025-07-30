@@ -29,6 +29,8 @@ class ChatMediaViewModel(application: Application) : AndroidViewModel(applicatio
     var previewMediaMessages: List<MessageEntity> = emptyList()
     var currentChat: ChatEntity? = null
 
+    var showInChat: Int? = null
+
     fun load(chatid: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {

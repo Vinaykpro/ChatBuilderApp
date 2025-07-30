@@ -33,7 +33,8 @@ import com.vinaykpro.chatbuilder.data.local.MessageEntity
 @Composable
 fun FileListItem(
     msg: MessageEntity? = null,
-    file: FileEntity? = FileEntity()
+    file: FileEntity? = FileEntity(),
+    onClick: () -> Unit = {}
 ) {
     val icon = painterResource(
         when (file?.type) {
@@ -48,14 +49,16 @@ fun FileListItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 2.dp)
-            .clickable { }
+            .clickable { onClick() }
             .padding(vertical = 12.dp, horizontal = 5.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Icon(
             painter = icon,
             contentDescription = null,
             tint = Color.Unspecified,
-            modifier = Modifier.padding(horizontal = 8.dp).size(28.dp)
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .size(28.dp)
         )
 
         Column(modifier = Modifier.weight(1f)) {
@@ -87,5 +90,10 @@ fun FileListItem(
             modifier = Modifier.fillMaxHeight()
         )
     }
-    Spacer(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.secondaryContainer))
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+    )
 }
