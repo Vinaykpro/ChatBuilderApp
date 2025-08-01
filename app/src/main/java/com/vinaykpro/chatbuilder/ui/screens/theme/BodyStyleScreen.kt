@@ -407,17 +407,16 @@ fun SharedTransitionScope.BodyStyleScreen(
         }
 
     }
-    if (loadPicker)
-        AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
-            ColorPicker(
-                initialColor = selectedColor,
-                onColorPicked = {
-                    colors[pickedColorIndex] = it
-                    isColorsChanged = true
-                },
-                onClose = { showColorPicker = false }
-            )
-        }
+    AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+        ColorPicker(
+            initialColor = selectedColor,
+            onColorPicked = {
+                colors[pickedColorIndex] = it
+                isColorsChanged = true
+            },
+            onClose = { showColorPicker = false }
+        )
+    }
 }
 
 

@@ -23,7 +23,9 @@ var DarkColorScheme = darkColorScheme(
     onPrimaryContainer = White,
     onSecondaryContainer = Color.LightGray,
 
-    onTertiaryContainer = White
+    onTertiaryContainer = White,
+
+    onSurface = Color(0xFF252525)
 )
 
 var LightColorScheme = lightColorScheme(
@@ -38,7 +40,9 @@ var LightColorScheme = lightColorScheme(
     onPrimaryContainer = Black,
     onSecondaryContainer = Color.Gray,
 
-    onTertiaryContainer = headerLight
+    onTertiaryContainer = headerLight,
+
+    onSurface = Color.White
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

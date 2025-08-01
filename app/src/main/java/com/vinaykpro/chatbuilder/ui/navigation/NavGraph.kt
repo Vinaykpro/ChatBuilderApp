@@ -26,6 +26,7 @@ import com.vinaykpro.chatbuilder.TestMessages
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
+import com.vinaykpro.chatbuilder.ui.screens.hiddenchats.HiddenChatsScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
 import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
@@ -40,12 +41,13 @@ import com.vinaykpro.chatbuilder.ui.screens.theme.ThemeScreen
 object Routes {
     const val Splash = "splash"
     const val Home = "home"
-    const val Chat = "chat/{chatId}?messageId={messageId}"
+    const val Chat = "chat/{chatId}?messageId={messageId}&hidden={hidden}"
     const val Themes = "themes"
     const val EditTheme = "theme/{name}"
     const val HeaderStyle = "headerstyle"
     const val BodyStyle = "bodystyle"
     const val MessagebarStyle = "barstyle"
+    const val HiddenChats = "hiddenchats"
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -92,7 +94,8 @@ fun AppNavHost(
                 route = Routes.Chat,
                 arguments = listOf(
                     navArgument("chatId") { type = NavType.IntType },
-                    navArgument("messageId") { type = NavType.IntType; defaultValue = -1 }
+                    navArgument("messageId") { type = NavType.IntType; defaultValue = -1 },
+                    navArgument("hidden") { type = NavType.IntType; defaultValue = 0 }
                 ),
                 enterTransition = {
                     if (targetState.destination.route?.startsWith("mediapreview") == true) {
@@ -121,9 +124,11 @@ fun AppNavHost(
             ) { backStackEntry ->
                 val chatId = backStackEntry.arguments?.getInt("chatId")!!
                 val messageId = backStackEntry.arguments?.getInt("messageId") ?: -1
+                val hidden = backStackEntry.arguments?.getInt("hidden") ?: 0
                 ChatScreen(
                     chatId = chatId,
                     messageId = messageId,
+                    hidden = hidden,
                     isDarkTheme.value,
                     navController,
                     this,
@@ -144,6 +149,24 @@ fun AppNavHost(
             ) { backStackEntry ->
                 val fileid = backStackEntry.arguments?.getString("fileid")?.toIntOrNull()
                 MediaPreviewScreen(fileid, navController, this, chatMediaViewModel)
+            }
+
+            composable(
+                Routes.HiddenChats,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }
+            ) {
+                HiddenChatsScreen(navController)
             }
 
 

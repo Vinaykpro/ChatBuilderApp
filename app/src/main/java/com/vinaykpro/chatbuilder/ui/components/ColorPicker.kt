@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,7 +56,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,8 +74,11 @@ import com.vinaykpro.chatbuilder.R
 fun ColorPicker(
     initialColor: Color = Color.Red,
     onColorPicked: (Color) -> Unit = {},
+    canPickImage: Boolean = false,
     onClose: () -> Unit = {}
 ) {
+    //val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     var state by remember {
         mutableStateOf(ColorPickerState(0f, 1f, 1f, 1f))
     }
@@ -81,14 +90,31 @@ fun ColorPicker(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0x77000000))
-        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onClose() })
-        .padding(bottom =  WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0x77000000))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onClose() })
+            .padding(
+                bottom = WindowInsets.ime
+                    .only(WindowInsetsSides.Bottom)
+                    .exclude(WindowInsets.navigationBars)
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            )
+    ) {
         Column(
-            modifier = Modifier.clip(RoundedCornerShape(20.dp, 20.dp))
-                .background(MaterialTheme.colorScheme.background)
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp, 20.dp))
+                .background(MaterialTheme.colorScheme.onSurface)
                 .align(Alignment.BottomCenter)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {})
                 .padding(bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -113,23 +139,32 @@ fun ColorPicker(
                 }
             }
 
-                Box(
-                    Modifier
-                        .padding(vertical = 10.dp)
-                        .height(48.dp)
-                        .fillMaxWidth(0.7f)
-                        .background(state.toColor(), RoundedCornerShape(10.dp))
-                        .border(2.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(10.dp))
-                ) {
-                    Text(
-                        text = "Preview",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight(500),
-                        color = MaterialTheme.colorScheme.background,
-                        modifier = Modifier.align(Alignment.Center),
-                        style = TextStyle(shadow = Shadow(color = MaterialTheme.colorScheme.onPrimaryContainer, blurRadius = 8f))
+            Box(
+                Modifier
+                    .padding(vertical = 10.dp)
+                    .height(48.dp)
+                    .fillMaxWidth(0.7f)
+                    .background(state.toColor(), RoundedCornerShape(10.dp))
+                    .border(
+                        2.dp,
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        RoundedCornerShape(10.dp)
                     )
-                }
+            ) {
+                Text(
+                    text = "Preview",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.align(Alignment.Center),
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            blurRadius = 8f
+                        )
+                    )
+                )
+            }
 
             SVBox(
                 hue = state.hue,
@@ -161,7 +196,10 @@ fun ColorPicker(
 
             Spacer(Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(0.85f), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(0.85f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column {
                     Text(
                         text = "Hex code",
@@ -187,42 +225,48 @@ fun ColorPicker(
                             Icon(
                                 painter = painterResource(R.drawable.ic_copy),
                                 contentDescription = "Copy",
-                                tint = Color.Unspecified,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier
                                     .padding(8.dp)
                                     .size(24.dp)
-                                    .clickable {}
+                                    .clickable {
+                                        clipboardManager.setText(AnnotatedString(hexInputText))
+                                    }
                             )
                         }
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier =Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Pick Image",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight(500),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
-                    )
-                    Box(
-                        Modifier
-                            .height(60.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                if (canPickImage)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_image),
-                            contentDescription = "Pick Image",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(13.dp)
+                        Text(
+                            text = "Pick Image",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight(500),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 6.dp)
                         )
+                        Box(
+                            Modifier
+                                .height(60.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_image),
+                                contentDescription = "Pick Image",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(13.dp)
+                            )
+                        }
                     }
-                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -230,7 +274,6 @@ fun ColorPicker(
         }
     }
 }
-
 
 
 @SuppressLint("UseKtx", "UnusedBoxWithConstraintsScope")

@@ -42,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
@@ -72,7 +73,7 @@ fun FloatingMenu(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0x88383838))
+                    .background(Color(0x65000000))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -98,7 +99,8 @@ fun FloatingMenu(
             ) {
                 FloatingActionButton(
                     onClick = { onClick1(); expanded = false },
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(30.dp),
+                    containerColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp),
@@ -107,13 +109,13 @@ fun FloatingMenu(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = b1,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            tint = if(MaterialTheme.colorScheme == LightColorScheme) LightColorScheme.primary else Color.White
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             b1,
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            color = if(MaterialTheme.colorScheme == LightColorScheme) LightColorScheme.primary else Color.White
                         )
                     }
                 }
@@ -126,7 +128,8 @@ fun FloatingMenu(
             ) {
                 FloatingActionButton(
                     onClick = { onClick2(); expanded = false },
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(30.dp),
+                    containerColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp),
@@ -135,13 +138,13 @@ fun FloatingMenu(
                         Icon(
                             painterResource(R.drawable.ic_import),
                             contentDescription = b2,
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                            tint = if(MaterialTheme.colorScheme == LightColorScheme) LightColorScheme.primary else Color.White
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             b2,
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            color = if(MaterialTheme.colorScheme == LightColorScheme) LightColorScheme.primary else Color.White
                         )
                     }
                 }

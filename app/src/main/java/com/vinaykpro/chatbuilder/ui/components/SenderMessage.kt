@@ -83,6 +83,7 @@ fun SharedTransitionScope.SenderMessage(
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onMediaClick: (Int) -> Unit = {},
+    onCopy: (String) -> Unit = {}
 ) {
     //var space = if (showTime) "  " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
@@ -114,6 +115,9 @@ fun SharedTransitionScope.SenderMessage(
         modifier = Modifier
             .fillMaxWidth()
             .padding(1.dp)
+            .clickable {
+                if (text != null) onCopy(text)
+            }
             .padding(top = if (isFirst) 2.dp else 0.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -131,45 +135,51 @@ fun SharedTransitionScope.SenderMessage(
             modifier = bubbleModifier
                 .widthIn(max = screenWidthDp * 0.8f)
                 .align(if (bubbleStyle != 3) Alignment.TopEnd else Alignment.BottomEnd)
-                .clickable {
-                    if (file != null && isFile)
-                        try {
-                            val filePath = File(
-                                context.getExternalFilesDir(null),
-                                file.filename
-                            )
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                filePath
-                            )
+                .then(
+                    if (file != null) {
+                        Modifier.clickable {
+                            if (isFile)
+                                try {
+                                    val filePath = File(
+                                        context.getExternalFilesDir(null),
+                                        file.filename
+                                    )
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.provider",
+                                        filePath
+                                    )
 
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(
-                                    uri,
-                                    context.contentResolver.getType(uri) ?: "*/*"
-                                )
-                                flags =
-                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(
+                                            uri,
+                                            context.contentResolver.getType(uri) ?: "*/*"
+                                        )
+                                        flags =
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
 
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                Toast.makeText(
-                                    context,
-                                    "No app found to open this file",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "This file doesn't exist in storage",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: ActivityNotFoundException) {
+                                        Toast.makeText(
+                                            context,
+                                            "No app found to open this file",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        "This file doesn't exist in storage",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                         }
-                }
+                    } else {
+                        Modifier
+                    }
+                )
         ) {
             Column(modifier = containerModifier) {
                 if (file != null) {
@@ -610,7 +620,18 @@ fun String.graphemeClusters(): List<String> {
 }
 
 fun String.isEmoji(): Boolean {
-    return this.length > 1
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        val cp = this.codePoints().toArray()
+
+        val hasEmojiTraits = cp.any { it in 0x1F600..0x1FAFF || it in 0x2600..0x27BF }
+                || this.contains('\uFE0F')  // Emoji VS-16
+                || cp.any { it in 0x1F3FB..0x1F3FF } // skin tones
+                || (this.contains('\u200D') && cp.any { it >= 0x1F300 }) // ZWJ + emoji
+
+        return hasEmojiTraits
+    } else {
+        return this.length > 1
+    }
 }
 
 fun containsEmoji(text: String): Boolean {

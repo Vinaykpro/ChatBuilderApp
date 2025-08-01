@@ -34,7 +34,6 @@ fun ChatListItem(
     lastMessage: String = "Somemsg",
     lastSeen: String = "12:15",
     onClick: () -> Unit = {},
-    themeid: Int = 0,
     isForceFake: Boolean = false,
 ) {
     val profilePicPainter = rememberCustomProfileIconPainter(

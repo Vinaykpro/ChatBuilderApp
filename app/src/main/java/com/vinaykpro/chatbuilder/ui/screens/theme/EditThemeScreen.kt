@@ -50,6 +50,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
@@ -192,49 +193,52 @@ fun EditThemeScreen(
                         .fillMaxWidth()
                         .padding(end = 18.dp)
                         .clip(shape = RoundedCornerShape(15.dp))
-                        .background(Color(0x0F7B7B7B))
+                        .background(if (isDark) Color(0x0FFFFFFF) else Color(0x0F7B7B7B))
                         .padding(vertical = 10.dp)
                 ) {
-                    StyleItem(onClick = { navController.navigate("headerstyle") })
+                    StyleItem(onClick = { DebounceClickHandler.run { navController.navigate("headerstyle") } })
                     StyleItem(
                         icon = painterResource(R.drawable.ic_body),
                         name = "Body",
                         context = "Chat bubbles, background, widgets, etc.,",
                         onClick = {
-                            navController.navigate("bodystyle")
+                            DebounceClickHandler.run {
+                                navController.navigate("bodystyle")
+                            }
                         })
                     StyleItem(
                         icon = painterResource(R.drawable.ic_msgbar),
                         name = "Message Bar",
                         context = "Chat input, buttons, actions, etc.,",
                         onClick = {
-                            navController.navigate("barstyle")
+                            DebounceClickHandler.run {
+                                navController.navigate("barstyle")
+                            }
                         })
                 }
             }
         }
 
-        if (loadPicker)
-            AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
-                ColorPicker(
-                    initialColor = selectedColor,
-                    onColorPicked = {
-                        if (isPickingColorDark)
-                            appColorDark = it
-                        else
-                            appColor = it
-                    },
-                    onClose = {
-                        showColorPicker = false
-                        themeViewModel.updateTheme(
-                            theme.copy(
-                                appcolor = String.format("#%08X", appColor.toArgb()),
-                                appcolordark = String.format("#%08X", appColorDark.toArgb())
-                            )
+        AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
+            ColorPicker(
+                initialColor = selectedColor,
+                onColorPicked = {
+                    if (isPickingColorDark)
+                        appColorDark = it
+                    else
+                        appColor = it
+                },
+                onClose = {
+                    showColorPicker = false
+                    themeViewModel.updateTheme(
+                        theme.copy(
+                            appcolor = String.format("#%08X", appColor.toArgb()),
+                            appcolordark = String.format("#%08X", appColorDark.toArgb())
                         )
-                    }
-                )
-            }
+                    )
+                }
+            )
+        }
     }
 
     BackHandler {

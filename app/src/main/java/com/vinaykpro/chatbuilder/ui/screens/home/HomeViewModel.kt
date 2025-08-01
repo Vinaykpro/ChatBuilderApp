@@ -63,7 +63,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         senderId = res.senderId,
                         lastOpenedMsgId = if (beginningMsgId == 0) 0 else beginningMsgId + 1,
                         lastmsg = lastMessage.message ?: "",
-                        lastmsgtime = lastMessage.time ?: "",
+                        lastmsgtime = lastMessage.date ?: "",
                     )
                 )
                 if (res.isMediaFound) {

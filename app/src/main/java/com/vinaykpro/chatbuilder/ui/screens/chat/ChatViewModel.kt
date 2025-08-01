@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
 import com.vinaykpro.chatbuilder.data.local.DateInfo
+import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import com.vinaykpro.chatbuilder.data.local.UserInfo
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +35,12 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     private val _messages = MutableStateFlow<List<MessageEntity>>(emptyList())
     val messages: StateFlow<List<MessageEntity>> = _messages
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _messageBarSenderIndex = MutableStateFlow(0)
+    val messageBarSenderIndex: StateFlow<Int> = _messageBarSenderIndex
+
     //private val _searchedResults = MutableStateFlow<List<Int>>(emptyList())
     //val searchedResults: StateFlow<List<Int>> = _searchedResults.asStateFlow()
     var searchedResults: List<Int> = emptyList()
@@ -53,7 +60,6 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     private var pageSize = 80
     internal var isLoadingNext = false
     internal var isLoadingPrev = false
-    internal var isLoading = true
     internal var isInitialLoad = true
     internal var needScroll = false
     private var hasMoreNext = true
@@ -68,14 +74,14 @@ class ChatViewModel(application: Application, private val chatId: Int) :
             Log.i("vkpro", "lastid = $lastOpenedMsgId")
             withContext(Dispatchers.IO) {
                 if (lastOpenedMsgId == null || lastOpenedMsgId < 0) {
-                    isLoading = true
+                    _isLoading.value = true
                     val newMessages = dao.getMessagesPaged(chatId, pageSize)
                     if (newMessages.isNotEmpty()) {
                         prevId = newMessages[0].messageId
                         nextId = newMessages[newMessages.size - 1].messageId
                         _messages.update { it + newMessages }
                     }
-                    isLoading = false
+                    _isLoading.value = false
                 } else {
                     loadMessagesAtId(lastOpenedMsgId)
                 }
@@ -140,8 +146,8 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     }
 
     suspend fun loadMessagesAtId(id: Int) = withContext(Dispatchers.IO) {
-        if (isLoading && !isInitialLoad) return@withContext
-        isLoading = true
+        if (_isLoading.value && !isInitialLoad) return@withContext
+        _isLoading.value = true
         needScroll = true
         val newMessagesNext =
             dao.getNextMessages(chatId, id - 1, pageSize / 2)
@@ -159,7 +165,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         isLoadingPrev = false
         hasMorePrev = true
         hasMoreNext = true
-        isLoading = false
+        _isLoading.value = false
     }
 
     suspend fun loadNextPage() = withContext(Dispatchers.IO) {
@@ -205,12 +211,62 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
+    fun addNewMessage(chatId: Int, message: String, user: UserInfo) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val (date, time) = java.util.Date().let {
+                    java.text.SimpleDateFormat("d/M/yy", java.util.Locale.getDefault())
+                        .format(it) to
+                            java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                                .format(it)
+                }
+                val message = MessageEntity(
+                    messageType = MESSAGETYPE.MESSAGE,
+                    chatid = chatId,
+                    userid = user.userid,
+                    username = user.username,
+                    message = message,
+                    date = date,
+                    time = time,
+                    timestamp = null,
+                    fileId = null,
+                    messageStatus = null,
+                    replyMessageId = null
+                )
+                if (message.message != null && message.date != null)
+                    chatDao.updateLastMesssage(chatId, message.message, message.date)
+                val msgId = dao.addMessage(message).toInt()
+                if (hasMoreNext) {
+                    Log.i("vkpro", "Loading last page")
+                    loadMessagesAtId(msgId)
+                } else {
+                    Log.i("vkpro", "Just scrolling after last page")
+                    hasMoreNext = true
+                    loadNextPage()
+                    needScroll = true
+                    scrollIndex = -1 // for scrolling to end
+                }
+            }
+        }
+    }
+
+    fun hideUnhideChat(chatId: Int, hiddenState: Int, onDone: () -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val updatedState = if (hiddenState == 0) 1 else 0
+                chatDao.updateHiddenState(chatId, updatedState)
+            }
+            onDone()
+        }
+    }
+
     fun loadUserList(chatid: Int, darkColors: Boolean) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val users = dao.getUsersList(chatid)
                 userList = listOf(UserInfo(-1, "None")) + users
-                val (start, end) = if (darkColors) 180 to 256 else 40 to 100
+                _messageBarSenderIndex.value = if (userList.size > 1) 1 else 0
+                val (start, end) = if (darkColors) 128 to 256 else 0 to 128
                 for (user in userList) {
                     val randomColor = Color(
                         red = Random.nextInt(start, end),
@@ -229,6 +285,22 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                 datesList = dao.getDatesList(chatid)
             }
         }
+    }
+
+    fun updateMessageBarUserIndex(dir: Int) {
+        val updated = _messageBarSenderIndex.value + dir
+        if (updated > 0 && updated < userList.size) {
+            _messageBarSenderIndex.value = updated
+        }
+    }
+
+    fun addUser(name: String) {
+        var newId = 0
+        for (u in userList) {
+            if (u.userid >= newId) newId = u.userid
+        }
+        userList = userList + listOf(UserInfo(newId + 1, name))
+        _messageBarSenderIndex.value = userList.size - 1
     }
 
     fun updateSenderId(chatid: Int, senderId: Int) {

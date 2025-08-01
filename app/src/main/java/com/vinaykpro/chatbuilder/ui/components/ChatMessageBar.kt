@@ -1,7 +1,9 @@
 package com.vinaykpro.chatbuilder.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,11 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,12 +45,17 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
+import com.vinaykpro.chatbuilder.data.local.UserInfo
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
 fun ChatMessageBar(
     placeholder: String = "Message",
     value: String = "",
+    user: UserInfo? = UserInfo(1, "Vinay"),
+    onUserChange: (Int) -> Unit = {},
+    onAddUser: () -> Unit = {},
     outerIcon: Painter = painterResource(R.drawable.ic_send),
     leftInnerIcon: Painter = painterResource(R.drawable.ic_emoji),
     rightInnerIcon: Painter = painterResource(R.drawable.ic_send),
@@ -56,7 +66,8 @@ fun ChatMessageBar(
     isDarkTheme: Boolean = false,
     preview: Boolean = false,
     previewColors: ParsedMessageBarStyle = ParsedMessageBarStyle(),
-    previewAttrs: MessageBarStyle = MessageBarStyle()
+    previewAttrs: MessageBarStyle = MessageBarStyle(),
+    onSend: (String) -> Unit = {}
 ) {
     var input by remember { mutableStateOf(value) }
     val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
@@ -69,105 +80,183 @@ fun ChatMessageBar(
                 bottom = if (preview) 0.dp else WindowInsets.navigationBars.asPaddingValues()
                     .calculateBottomPadding()
             )
-            .height(52.dp)
+            .padding(vertical = 3.dp)
             .fillMaxWidth()
             .background(themeColors.widgetBackground),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Bottom
     ) {
-        Row(
-            modifier = Modifier
-                .padding(start = 2.dp)
-                .height(46.dp)
-                .weight(1f)
-                .clip(RoundedCornerShape(40.dp))
-                .background(themeColors.barBackground),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (style.showleftinnerbutton)
-                Icon(
-                    painter = leftInnerIcon,
-                    contentDescription = null,
-                    tint = themeColors.leftInnerButtonIcon,
+        Column(modifier = Modifier.weight(1f)) {
+            if (!preview && input.isNotEmpty()) {
+                Row(
                     modifier = Modifier
-                        .padding(horizontal = 3.dp)
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(themeColors.leftInnerButton)
-                        .padding(8.dp)
-                )
-            else Spacer(modifier = Modifier.width(15.dp))
-            BasicTextField(
-                value = input,
-                onValueChange = { input = it },
-                textStyle = TextStyle(
-                    fontSize = 18.sp,
-                    lineHeight = 18.sp,
-                    color = themeColors.inputText
-                ),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f)
-                    .padding(start = 0.dp),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    autoCorrect = true
-                ),
-                decorationBox = { innerTextField ->
-                    Box(
+                        .fillMaxWidth()
+                        .padding(start = 2.dp)
+                        .clip(RoundedCornerShape(20.dp, 20.dp, 0.dp, 0.dp))
+                        .background(themeColors.barBackground)
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_send),
+                        contentDescription = null,
+                        tint = LightColorScheme.primary,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 0.dp, vertical = 0.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (input.isEmpty()) {
-                            Text(text = placeholder, color = themeColors.hintText)
-                        }
-                        innerTextField()
+                            .padding(horizontal = 5.dp)
+                            .size(15.dp)
+                    )
+                    Text(
+                        if (user != null) "Sender: " else "No users found, Add now",
+                        fontWeight = FontWeight(500),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    if (user != null) {
+                        Text(
+                            user.username,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (user != null) {
+                        Icon(
+                            painterResource(R.drawable.ic_arrow),
+                            contentDescription = "Next",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier
+                                .padding(horizontal = 15.dp)
+                                .size(18.dp)
+                                .clickable { onUserChange(1) },
+                        )
+                        Icon(
+                            painterResource(R.drawable.ic_arrow),
+                            contentDescription = "Prev",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .rotate(180f)
+                                .clickable { onUserChange(-1) },
+                        )
+                    }
+                    Icon(
+                        painterResource(R.drawable.ic_add_round),
+                        contentDescription = "Add",
+                        tint = LightColorScheme.primary,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 8.dp)
+                            .size(25.dp)
+                            .clickable { onAddUser() }
+                    )
                 }
-            )
+            }
+            Row(
+                modifier = Modifier
+                    .padding(start = 2.dp)
+                    .height(46.dp)
+                    .fillMaxWidth()
+                    .clip(
+                        if (input.isNotEmpty()) RoundedCornerShape(
+                            0.dp,
+                            0.dp,
+                            28.dp,
+                            28.dp
+                        ) else RoundedCornerShape(40.dp)
+                    )
+                    .background(themeColors.barBackground),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (style.showleftinnerbutton)
+                    Icon(
+                        painter = leftInnerIcon,
+                        contentDescription = null,
+                        tint = themeColors.leftInnerButtonIcon,
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.leftInnerButton)
+                            .padding(8.dp)
+                    )
+                else Spacer(modifier = Modifier.width(15.dp))
+                BasicTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    textStyle = TextStyle(
+                        fontSize = 18.sp,
+                        lineHeight = 18.sp,
+                        color = themeColors.inputText
+                    ),
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f)
+                        .padding(start = 0.dp),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        autoCorrect = true
+                    ),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 0.dp, vertical = 0.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (input.isEmpty()) {
+                                Text(text = placeholder, color = themeColors.hintText)
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
 
 
-            if (style.is_icon1_visible)
-                Icon(
-                    painter = icon1, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .size(22.dp)
-                )
-            if (style.is_icon2_visible)
-                Icon(
-                    painter = icon2, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .size(22.dp)
-                )
-            if (style.is_icon3_visible)
-                Icon(
-                    painter = icon3, contentDescription = null, tint = themeColors.colorIcons,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .size(22.dp)
-                )
+                if (style.is_icon1_visible)
+                    Icon(
+                        painter = icon1, contentDescription = null, tint = themeColors.colorIcons,
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .size(22.dp)
+                    )
+                if (style.is_icon2_visible)
+                    Icon(
+                        painter = icon2, contentDescription = null, tint = themeColors.colorIcons,
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .size(22.dp)
+                    )
+                if (style.is_icon3_visible)
+                    Icon(
+                        painter = icon3, contentDescription = null, tint = themeColors.colorIcons,
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .size(22.dp)
+                    )
 
-            if (style.showrightinnerbutton)
-                Icon(
-                    painter = rightInnerIcon,
-                    contentDescription = null,
-                    tint = themeColors.rightInnerButtonIcon,
-                    modifier = Modifier
-                        .padding(horizontal = 3.dp)
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(themeColors.rightInnerButton)
-                        .padding(10.dp)
-                )
-            else Spacer(modifier = Modifier.size(10.dp))
+                if (style.showrightinnerbutton)
+                    Icon(
+                        painter = rightInnerIcon,
+                        contentDescription = null,
+                        tint = themeColors.rightInnerButtonIcon,
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.rightInnerButton)
+                            .padding(10.dp)
+                    )
+                else Spacer(modifier = Modifier.size(10.dp))
+            }
         }
-        if (style.showouterbutton)
+        if (style.showouterbutton || input.trim().isNotEmpty())
             Icon(
                 painter = outerIcon, contentDescription = null, tint = themeColors.outerButtonIcon,
                 modifier = Modifier
+                    .clickable {
+                        if (user != null && input.trim().isNotEmpty()) {
+                            onSend(input)
+                            input = ""
+                        }
+                    }
                     .padding(horizontal = 3.dp)
                     .size(46.dp)
                     .clip(CircleShape)

@@ -13,6 +13,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -77,6 +79,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
@@ -91,7 +94,10 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.IMPORTSTATE
+import com.vinaykpro.chatbuilder.data.local.MyConstants
+import com.vinaykpro.chatbuilder.data.local.MyConstants.appUrl
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
@@ -105,7 +111,7 @@ import me.onebone.toolbar.CollapsingToolbarScaffold
 import me.onebone.toolbar.ScrollStrategy
 import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 
-@SuppressLint("RememberReturnType")
+@SuppressLint("RememberReturnType", "UseKtx")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
@@ -144,6 +150,8 @@ fun HomeScreen(
     val pagerState = rememberPagerState(pageCount = { HomeTabs.entries.size })
     val selectedTabIndex =
         remember(pagerState.currentPage) { derivedStateOf { pagerState.currentPage } }
+
+    var menuExpanded by remember { mutableStateOf(false) }
 
     // dark/light mode toggle
     var iconCenter by remember(Offset.Zero) { mutableStateOf(Offset.Zero) }
@@ -224,7 +232,9 @@ fun HomeScreen(
                         val scope = rememberCoroutineScope()
 
                         IconButton(
-                            onClick = { navController.navigate("search") }
+                            onClick = {
+                                DebounceClickHandler.run { navController.navigate("search") }
+                            }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -273,7 +283,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        IconButton(onClick = { /* Handle navigation click */ }) {
+                        IconButton(onClick = { menuExpanded = true }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "Search",
@@ -281,6 +291,49 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(24.dp)
                             )
+                        }
+                        AnimatedVisibility(
+                            visible = menuExpanded
+                        ) {
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false }
+                            ) {
+                                MyConstants.homeMenuList.forEachIndexed { index, item ->
+                                    Text(
+                                        text = item,
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                menuExpanded = false
+                                                when (item) {
+                                                    "Hidden chats" -> {
+                                                        navController.navigate("hiddenchats")
+                                                    }
+
+                                                    "Themes" -> {
+                                                        scope.launch { pagerState.scrollToPage(1) }
+                                                    }
+
+                                                    "Settings" -> {
+                                                        scope.launch { pagerState.scrollToPage(2) }
+                                                    }
+
+                                                    "Rate this app" -> {
+                                                        val intent = Intent(
+                                                            Intent.ACTION_VIEW,
+                                                            appUrl.toUri()
+                                                        )
+                                                        context.startActivity(intent)
+                                                    }
+                                                }
+                                            }
+                                            .padding(horizontal = 18.dp, vertical = 12.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                     Row(
@@ -322,18 +375,35 @@ fun HomeScreen(
                                 .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                items(chats, key = { chat -> chat.chatid }) { chat ->
-                                    ChatListItem(
-                                        id = chat.chatid,
-                                        name = chat.name,
-                                        lastMessage = chat.lastmsg,
-                                        lastSeen = chat.lastmsgtime,
-                                        onClick = { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}") },
-                                        themeid = selectedTheme
+                            if (chats.isEmpty())
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 30.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
+                                        fontSize = 15.sp,
+                                        lineHeight = 20.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
-                            }
+                            else
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(chats, key = { chat -> chat.chatid }) { chat ->
+                                        ChatListItem(
+                                            id = chat.chatid,
+                                            name = chat.name,
+                                            lastMessage = chat.lastmsg,
+                                            lastSeen = chat.lastmsgtime,
+                                            onClick = {
+                                                DebounceClickHandler.run { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}") }
+                                            }
+                                        )
+                                    }
+                                }
                         }
 
                         1 -> Column(
@@ -359,7 +429,9 @@ fun HomeScreen(
                                         author = i.author,
                                         iconColor = Color(i.appcolor.toColorInt()),
                                         onClick = { themeViewModel.changeTheme(i.id) },
-                                        onNextClick = { navController.navigate("theme/${i.name}") })
+                                        onNextClick = {
+                                            DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
+                                        })
                                 }
                             }
                         }
@@ -373,13 +445,15 @@ fun HomeScreen(
                                 icon = painterResource(R.drawable.ic_theme),
                                 name = "Chat theme",
                                 context = "Create, import or customize the current chat theme",
-                                onClick = { navController.navigate("themes") }
+                                onClick = {
+                                    DebounceClickHandler.run { navController.navigate("themes") }
+                                }
                             )
                             SettingsItem(
                                 icon = painterResource(R.drawable.ic_animate),
                                 name = "Animate a chat",
                                 context = "Play any chat realtime",
-                                onClick = { navController.navigate("temp") }
+                                onClick = { }
                             )
                             SettingsItem(
                                 icon = painterResource(R.drawable.ic_lockedchats),
@@ -487,7 +561,7 @@ fun HomeScreen(
     // Real FAB Button
     AnimatedVisibility(
         visible = pagerState.currentPage != 2,
-        enter = fadeIn(),
+        enter = scaleIn(),
         exit = fadeOut()
     ) {
         FloatingMenu(
@@ -701,8 +775,7 @@ fun HomeScreen(
                                             name = chat.name,
                                             lastMessage = chat.lastmsg,
                                             lastSeen = chat.lastmsgtime,
-                                            isForceFake = true,
-                                            themeid = selectedTheme
+                                            isForceFake = true
                                         )
                                     }
                                 }

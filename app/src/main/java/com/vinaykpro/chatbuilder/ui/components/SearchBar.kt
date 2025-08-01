@@ -49,6 +49,7 @@ fun SearchBar(
     backgroundColor: Color = MaterialTheme.colorScheme.primary,
     color: Color = Color.Black,
     hint: String = "Search...",
+    value: String = "",
     showArrows: Boolean = false,
     autoSearch: Boolean = false,
     modifier: Modifier = Modifier,
@@ -59,17 +60,19 @@ fun SearchBar(
     resultsLength: Int = 0,
     currentResultIndex: Int = 0
 ) {
-    var input by remember { mutableStateOf("") }
+    var input by remember { mutableStateOf(value) }
 
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-        keyboardController?.show()
+        if(value == "") {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
     }
 
-    if(autoSearch) {
+    if (autoSearch) {
         LaunchedEffect(input) {
             snapshotFlow { input }
                 .debounce(500)

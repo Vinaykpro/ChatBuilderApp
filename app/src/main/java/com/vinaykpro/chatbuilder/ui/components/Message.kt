@@ -69,6 +69,7 @@ fun SharedTransitionScope.Message(
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onMediaClick: (Int) -> Unit = {},
+    onCopy: (String) -> Unit = {},
     searchedString: String? = null,
 ) {
     //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
@@ -99,6 +100,9 @@ fun SharedTransitionScope.Message(
         modifier = Modifier
             .fillMaxWidth()
             .padding(1.dp)
+            .clickable {
+                if (text != null) onCopy(text)
+            }
             .padding(top = if (isFirst) 2.dp else 0.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -116,45 +120,51 @@ fun SharedTransitionScope.Message(
             modifier = bubbleModifier
                 .widthIn(max = screenWidthDp * 0.8f)
                 .align(if (bubbleStyle != 3) Alignment.TopStart else Alignment.BottomStart)
-                .clickable {
-                    if (file != null && isFile)
-                        try {
-                            val filePath = File(
-                                context.getExternalFilesDir(null),
-                                file.filename
-                            )
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                filePath
-                            )
+                .then(
+                    if (file != null) {
+                        Modifier.clickable {
+                            if (isFile)
+                                try {
+                                    val filePath = File(
+                                        context.getExternalFilesDir(null),
+                                        file.filename
+                                    )
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.provider",
+                                        filePath
+                                    )
 
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(
-                                    uri,
-                                    context.contentResolver.getType(uri) ?: "*/*"
-                                )
-                                flags =
-                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(
+                                            uri,
+                                            context.contentResolver.getType(uri) ?: "*/*"
+                                        )
+                                        flags =
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
 
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                Toast.makeText(
-                                    context,
-                                    "No app found to open this file",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "This file doesn't exist in storage",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: ActivityNotFoundException) {
+                                        Toast.makeText(
+                                            context,
+                                            "No app found to open this file",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        "This file doesn't exist in storage",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                         }
-                }
+                    } else {
+                        Modifier
+                    }
+                )
         ) {
             Column(modifier = containerModifier) {
                 if (isFirst && senderName != null)

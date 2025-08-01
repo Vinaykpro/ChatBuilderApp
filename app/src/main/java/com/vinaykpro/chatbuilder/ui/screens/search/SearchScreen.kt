@@ -24,6 +24,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +38,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -43,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
 import com.vinaykpro.chatbuilder.data.local.GLobalSearchResultInfo
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.GlobalSearchItem
 import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +86,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         if (searchTerm != null) {
             loadResults(searchTerm!!)
         }
+    }
+
+    fun resetItems() {
+        _searchResultItems.update { emptyList() }
     }
 
     fun loadResults(text: String) {
@@ -131,14 +138,14 @@ fun SearchScreen(
         WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
     }
 
-    val model: SearchViewModel = viewModel(
-        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
-    )
+    val model: SearchViewModel = viewModel()
 
     val listState = rememberLazyListState()
 
     val items by model.searchResultItems.collectAsState(initial = emptyList())
     val isLoading by model.isLoading.collectAsState()
+
+    var currentSearch by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -170,9 +177,12 @@ fun SearchScreen(
             backgroundColor = MaterialTheme.colorScheme.primary,
             color = Color.White,
             hint = "Search everywhere",
+            value = currentSearch,
             autoSearch = true,
             onSearch = {
-                if (it.trim().isNotEmpty()) model.search(it)
+                if (it.trim().isNotEmpty() && it.trim() != currentSearch) model.search(it)
+                if (it.trim().isEmpty()) model.resetItems()
+                currentSearch = it
             },
             onExit = {
                 navController.popBackStack()
@@ -190,7 +200,10 @@ fun SearchScreen(
                     CircularProgressIndicator()
                 else if (items.isEmpty())
                     Text(
-                        text = "No results found",
+                        text =
+                            if (currentSearch.trim().isEmpty())
+                                "Your search results will appear here"
+                            else "No results found for '$currentSearch'",
                         fontSize = 15.sp,
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -211,7 +224,7 @@ fun SearchScreen(
                         date = item.date,
                         searchTerm = item.searchTerm,
                         onClick = {
-                            navController.navigate("chat/${item.chatId}?messageId=${item.messageId}")
+                            DebounceClickHandler.run { navController.navigate("chat/${item.chatId}?messageId=${item.messageId}") }
                         }
                     )
                 }

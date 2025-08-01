@@ -58,6 +58,13 @@ object FILETYPE {
 }
 
 object MyConstants {
+    val homeMenuList = listOf(
+        "Themes",
+        "Hidden chats",
+        "Rate this app",
+        "Settings",
+    )
+    val appUrl = "https://play.google.com/store/apps/details?id=com.vinaykpro.chatbuilder"
     val chatMenuList = listOf(
         "Edit profile",
         "Search",
@@ -65,6 +72,7 @@ object MyConstants {
         "Swap sender",
         "Go to Date",
         "Export chat to HTML",
+        "Hide/Unhide chat",
         "Clear chat"
     )
 }

@@ -179,12 +179,14 @@ class FileIOHelper {
                 }
                 val (d1, d2, d3, h, m, meridian, name, msg) = isMessage.destructured
                 val userId = userMap.getOrPut(name) { val id = nextUserId; nextUserId++; id }
+                val message = if (msg.contains("<This message was edited>"))
+                    msg.replace("<This message was edited>", "") else msg
                 currMessage = MessageEntity(
                     chatid = chatId,
                     messageType = MESSAGETYPE.MESSAGE,
                     userid = userId,
                     username = name,
-                    message = msg,
+                    message = message,
                     date = "$d1/$d2/$d3",
                     time = "$h:$m ${meridian.trim()}",
                     timestamp = null,

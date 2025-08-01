@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,7 +49,7 @@ fun SwapSenderWidget(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+            .background(Color(0x59000000))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -61,7 +62,7 @@ fun SwapSenderWidget(
                 .fillMaxWidth(0.8f)
                 .padding(bottom = 10.dp)
                 .clip(RoundedCornerShape(15.dp))
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.onSurface)
         ) {
             Row(
                 modifier = Modifier.padding(start = 20.dp),

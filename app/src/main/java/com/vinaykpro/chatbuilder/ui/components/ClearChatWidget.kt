@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,7 +40,7 @@ fun ClearChatWidget(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+            .background(Color(0x59000000))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -51,7 +52,7 @@ fun ClearChatWidget(
             modifier = Modifier
                 .fillMaxWidth(0.85f)
                 .background(
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onSurface,
                     shape = RoundedCornerShape(25.dp)
                 )
                 .padding(22.dp),

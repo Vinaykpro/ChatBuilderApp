@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 
@@ -74,7 +75,10 @@ fun ThemeScreen(
                         author = i.author,
                         iconColor = Color(i.appcolor.toColorInt()),
                         onClick = { themeViewModel.changeTheme(i.id) },
-                        onNextClick = { navController.navigate("theme/${i.name}") })
+                        onNextClick = {
+                            DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
+                        }
+                    )
                 }
             }
         }

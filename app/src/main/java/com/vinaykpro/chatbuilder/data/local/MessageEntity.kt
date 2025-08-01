@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 data class MessageEntity(
     @PrimaryKey(autoGenerate = true) val messageId: Int = 0,
     val chatid: Int,
-    val messageType: Int = MESSAGETYPE.NOTE,
+    val messageType: Int,
     val userid: Int?,
     val username: String?,
     val message: String?,

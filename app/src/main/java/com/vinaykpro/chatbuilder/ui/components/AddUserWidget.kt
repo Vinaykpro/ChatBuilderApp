@@ -10,47 +10,72 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
-import com.vinaykpro.chatbuilder.data.local.DateInfo
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
-fun DateNavigationWidget(
-    dates: List<DateInfo> = emptyList(),
-    currentId: Int = 0,
-    onNavigation: (Int) -> Unit = {},
+fun AddUserWidget(
+    onAdd: (String) -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    var currentIndex by remember { mutableIntStateOf(0) }
-    var names = mutableListOf<String>()
-    var currentDateId by remember { mutableIntStateOf(currentId) }
-    dates.forEachIndexed { ind, item ->
-        if (item.messageId == currentId) currentIndex = ind
-        names.add(item.date)
+    var input by remember { mutableStateOf("") }
+
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
     }
+
+    val colors = TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+
+        focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+
+        cursorColor = LightColorScheme.primary,
+        selectionColors = TextSelectionColors(
+            handleColor = LightColorScheme.primary,
+            backgroundColor = LightColorScheme.primary.copy(alpha = 0.4f)
+        ),
+
+        focusedIndicatorColor = LightColorScheme.primary,
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondaryContainer
+    )
+
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -65,16 +90,16 @@ fun DateNavigationWidget(
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.8f)
-                .padding(bottom = 10.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .background(MaterialTheme.colorScheme.onSurface)
+                .padding(bottom = 20.dp)
         ) {
             Row(
                 modifier = Modifier.padding(start = 20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Navigate to Date",
+                    text = "Add User",
                     fontSize = 20.sp,
                     fontWeight = FontWeight(500),
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -90,57 +115,35 @@ fun DateNavigationWidget(
                     )
                 }
             }
-            if (names.size == dates.size) {
-                WheelPicker(
-                    names,
-                    visibleExtrasCount = 3,
-                    selectedIndex = currentIndex,
-                    onItemChange = {
-                        if(dates.isNotEmpty())
-                        currentDateId = dates[it].messageId
+            Row {
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = {
+                        if(it.length < 15)
+                        input = it
+                    },
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .padding(start = 12.dp)
+                        .weight(1f),
+                    shape = RoundedCornerShape(15.dp),
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onPrimaryContainer),
+                    colors = colors
+                )
+
+                IconButton(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    onClick = {
+                        if(input.trim().isNotEmpty()) onAdd(input)
                     }
-                )
-            } else {
-                CircularProgressIndicator()
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(elevation = 1.dp)
-                    .padding(3.dp)
-                    .padding(top = 3.dp)
-            ) {
-                Text(
-                    text = "Close",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0x4B777777))
-                        .clickable { onClose() }
-                        .padding(12.dp)
-                )
-                Text(
-                    text = "Go",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight(500),
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(LightColorScheme.primary)
-                        .clickable {
-                            onNavigation(currentDateId)
-                            onClose()
-                        }
-                        .padding(12.dp)
-                )
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tick),
+                        contentDescription = null,
+                        tint = if(input.trim().isNotEmpty()) LightColorScheme.primary else MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
             }
         }
     }

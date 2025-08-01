@@ -41,8 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,6 +59,8 @@ import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
+import com.vinaykpro.chatbuilder.ui.components.AddUserWidget
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
@@ -80,6 +84,7 @@ import kotlin.math.min
 fun SharedTransitionScope.ChatScreen(
     chatId: Int = 1,
     messageId: Int = -1,
+    hidden: Int = 0,
     isDarkTheme: Boolean = false,
     navController: NavHostController = rememberNavController(),
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -88,6 +93,8 @@ fun SharedTransitionScope.ChatScreen(
     val theme = LocalThemeEntity.current
 
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
     val model: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(context.applicationContext as Application, chatId)
     )
@@ -147,21 +154,27 @@ fun SharedTransitionScope.ChatScreen(
     val listState = rememberLazyListState()
     val chatDetails by model.chatDetails.collectAsState()
     val messages by model.messages.collectAsState(initial = emptyList())
+    val isLoading by model.isLoading.collectAsState(initial = true)
 
     var currentUserId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
     var currentDateId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
+
+    val messageBarUserIndex by model.messageBarSenderIndex.collectAsState()
 
     var searchVisible by remember { mutableStateOf(false) }
     var swapUsersVisible by remember { mutableStateOf(false) }
     var dateNavigatorVisible by remember { mutableStateOf(false) }
     var clearChatVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(chatDetails) {
+    var addUserVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(50)
         chatDetails.let {
             currentUserId = chatDetails?.senderId ?: -1
             model.loadUserList(chatId, isDarkTheme)
         }
-        delay(300)
+        delay(250)
         refreshKey++
         chatMediaViewModel.load(chatId)
         chatDetails?.let { model.initialLoad(if (messageId >= 0) messageId else it.lastOpenedMsgId) }
@@ -182,8 +195,11 @@ fun SharedTransitionScope.ChatScreen(
                 "vkpro",
                 "started scrolling to id;" + chatDetails?.lastOpenedMsgId + "index: ${model.scrollIndex}"
             )
-            if (model.scrollIndex!! < messages.size)
+            if (model.scrollIndex!! < messages.size && model.scrollIndex!! >= 0)
                 listState.scrollToItem(model.scrollIndex!!)
+            else if (model.scrollIndex!! == -1) {
+                listState.scrollToItem(messages.size - 1)
+            }
             model.scrollIndex = null
         }
     }
@@ -211,7 +227,6 @@ fun SharedTransitionScope.ChatScreen(
         }
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -238,33 +253,57 @@ fun SharedTransitionScope.ChatScreen(
                 style = headerStyle,
                 isDarkTheme = isDarkTheme,
                 onMenuClick = {
-                    when (it) {
-                        0 -> navController.navigate("chatprofile")
-                        1 -> searchVisible = true
-                        2 -> navController.navigate("theme/${theme.id}")
-                        3 -> {
-                            if (model.userList.isEmpty()) {
-                                model.loadUserList(chatId, isDarkTheme)
+                    DebounceClickHandler.run {
+                        when (it) {
+                            0 -> navController.navigate("chatprofile")
+                            1 -> searchVisible = true
+                            2 -> navController.navigate("theme/${theme.id}")
+                            3 -> {
+                                if (model.userList.isEmpty()) {
+                                    model.loadUserList(chatId, isDarkTheme)
+                                }
+                                swapUsersVisible = true
                             }
-                            swapUsersVisible = true
-                        }
 
-                        4 -> {
-                            if (model.datesList.isEmpty()) {
-                                model.loadDatesList(chatId)
+                            4 -> {
+                                if (model.datesList.isEmpty()) {
+                                    model.loadDatesList(chatId)
+                                }
+                                dateNavigatorVisible = true
                             }
-                            dateNavigatorVisible = true
-                        }
 
-                        6 -> {
-                            clearChatVisible = true
+                            5 -> {
+                                Toast.makeText(context, "Update coming soon", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+
+                            6 -> {
+                                model.hideUnhideChat(chatId, hidden, onDone = {
+                                    if (hidden == 0) Toast.makeText(
+                                        context,
+                                        "Chat hidden, view hidden chats from settings or from home menu",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    else Toast.makeText(
+                                        context,
+                                        "Chat moved to home screen",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    navController.popBackStack()
+                                })
+                            }
+
+                            7 -> {
+                                clearChatVisible = true
+                            }
                         }
                     }
                 },
                 onProfileClick = {
-                    navController.navigate("chatprofile")
+                    DebounceClickHandler.run(1200) { navController.navigate("chatprofile") }
                 }
             )
+
             if (searchVisible)
                 SearchBar(
                     backgroundColor = remember(isDarkTheme) {
@@ -296,7 +335,7 @@ fun SharedTransitionScope.ChatScreen(
         }
 
         //body
-        if (model.isLoading) {
+        if (isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -306,16 +345,8 @@ fun SharedTransitionScope.ChatScreen(
                 CircularProgressIndicator()
             }
         }
-//        if (model.isLoadingPrev && !model.isLoading) {
-//            Box(
-//                modifier = Modifier.fillMaxWidth(),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                CircularProgressIndicator()
-//            }
-//        }
         AnimatedVisibility(
-            visible = !model.isLoading,
+            visible = !isLoading,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.weight(1f)
@@ -361,7 +392,12 @@ fun SharedTransitionScope.ChatScreen(
                             imageLoader = imageLoader,
                             animatedVisibilityScope = animatedVisibilityScope,
                             onMediaClick = {
-                                navController.navigate("mediapreview/$it")
+                                DebounceClickHandler.run { navController.navigate("mediapreview/$it") }
+                            },
+                            onCopy = {
+                                clipboardManager.setText(AnnotatedString(it))
+                                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         )
 
@@ -394,24 +430,30 @@ fun SharedTransitionScope.ChatScreen(
                             imageLoader = imageLoader,
                             animatedVisibilityScope = animatedVisibilityScope,
                             onMediaClick = {
-                                navController.navigate("mediapreview/$it")
+                                DebounceClickHandler.run { navController.navigate("mediapreview/$it") }
+                            },
+                            onCopy = {
+                                clipboardManager.setText(AnnotatedString(it))
+                                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         )
                     }
                 }
             }
         }
-//        if (model.isLoadingNext && !model.isLoading) {
-//            Box(
-//                modifier = Modifier.fillMaxWidth(),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                CircularProgressIndicator()
-//            }
-//        }
 
         //input
         ChatMessageBar(
+            user =
+                if (messageBarUserIndex > 0 && messageBarUserIndex < model.userList.size)
+                    model.userList[messageBarUserIndex]
+                else null,
+            onUserChange = { model.updateMessageBarUserIndex(it) },
+            onAddUser = { addUserVisible = true },
+            onSend = {
+                model.addNewMessage(chatId, it, model.userList[messageBarUserIndex])
+            },
             style = messageBarStyle,
             isDarkTheme = isDarkTheme,
             outerIcon = messageBarIcons.outerIcon,
@@ -480,6 +522,20 @@ fun SharedTransitionScope.ChatScreen(
         )
     }
 
+    AnimatedVisibility(
+        visible = addUserVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        AddUserWidget(
+            onClose = { addUserVisible = false },
+            onAdd = {
+                model.addUser(it)
+                addUserVisible = false
+            }
+        )
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             val index = listState.firstVisibleItemIndex
@@ -490,7 +546,6 @@ fun SharedTransitionScope.ChatScreen(
         }
     }
 }
-
 
 fun BodyStyle.toParsed(isDarkTheme: Boolean): ParsedBodyStyle {
     fun parse(hex: String): Color = Color(hex.toColorInt())

@@ -74,6 +74,7 @@ import coil.request.ImageRequest
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.FileListItem
 import com.vinaykpro.chatbuilder.ui.components.Input
@@ -386,7 +387,7 @@ fun SharedTransitionScope.ChatProfileScreen(
                                             .aspectRatio(1f)
                                             .padding(1.dp)
                                             .clickable {
-                                                navController.navigate("mediapreview/${m.fileId}")
+                                                DebounceClickHandler.run { navController.navigate("mediapreview/${m.fileId}") }
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {

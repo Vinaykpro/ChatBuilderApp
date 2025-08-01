@@ -11,6 +11,7 @@ data class ChatEntity(
     val senderId: Int? = null,
     val lastOpenedMsgId: Int? = null,
     val lastmsg: String = "",
+    val hidden: Int = 0, // 0 -> false
     val lastmsgtime: String = "",
     val lastopened: Long = System.currentTimeMillis(),
 )

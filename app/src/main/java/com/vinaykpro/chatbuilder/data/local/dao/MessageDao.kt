@@ -37,7 +37,7 @@ interface MessageDao {
     suspend fun search(searchTerm: String, limit: Int, offset: Int): List<MessageEntity>
 
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
-    suspend fun addMessage(chat: MessageEntity)
+    suspend fun addMessage(chat: MessageEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessages(messages: List<MessageEntity>)
