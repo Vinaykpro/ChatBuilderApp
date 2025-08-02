@@ -27,12 +27,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowInsetsControllerCompat
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 
-@Preview
+//@Preview
 @Composable
 fun BasicToolbar(
     name: String = "Chat theme",
@@ -42,7 +42,7 @@ fun BasicToolbar(
     icon2: Painter? = null,
     onIcon1Click: () -> Unit = {},
     onIcon2Click: () -> Unit = {},
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit
 ) {
     val view = LocalView.current
     val activity = LocalContext.current as Activity
@@ -59,7 +59,12 @@ fun BasicToolbar(
         .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
         .padding(bottom = 6.dp, start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        IconButton( onClick = onBackClick ) {
+        IconButton( onClick = {
+            DebounceClickHandler.run {
+                onBackClick()
+            }
+        }
+        ) {
             Icon( modifier = Modifier.size(24.dp),
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "back",

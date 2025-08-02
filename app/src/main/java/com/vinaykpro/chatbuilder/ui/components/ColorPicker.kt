@@ -218,6 +218,7 @@ fun ColorPicker(
                                 state.updateFromColor(parsed)
                             }
                         },
+                        textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.onSecondaryContainer),
                         modifier = Modifier
                             .fillMaxWidth(0.7f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),

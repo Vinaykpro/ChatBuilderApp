@@ -33,6 +33,9 @@ interface ChatDao {
     @Query("UPDATE chats SET hidden = :state WHERE chatid = :chatId")
     fun updateHiddenState(chatId: Int, state: Int)
 
+    @Query("UPDATE chats SET showReceiverName = :state WHERE chatid = :chatId")
+    fun updateReceiverVisibleState(chatId: Int, state: Boolean)
+
     @Query("SELECT * FROM chats")
     fun getAllChatEntities(): List<ChatEntity>
 

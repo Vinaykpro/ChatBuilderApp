@@ -50,6 +50,14 @@ class ThemeViewModel(application: Application) : AndroidViewModel(application) {
 
     val json = Json { encodeDefaults = true }
 
+    fun trySavedIdSwitch(id: Int) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                if (dao.isThemeAvailable(id)) _selectedThemeId.value = id
+            }
+        }
+    }
+
     fun changeTheme(id: Int) {
         _selectedThemeId.value = id
     }

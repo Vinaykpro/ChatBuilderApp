@@ -123,6 +123,9 @@ fun EditThemeScreen(
                         context.startActivity(Intent.createChooser(intent, "Share theme zip"))
                     })
                 },
+                onBackClick = {
+                    navController.popBackStack()
+                },
             )
             Column(
                 modifier = Modifier

@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -203,6 +204,9 @@ fun SharedTransitionScope.BodyStyleScreen(
                         )
                     )
                 )
+            },
+            onBackClick = {
+                navController.popBackStack()
             })
 
         Column(
@@ -416,6 +420,13 @@ fun SharedTransitionScope.BodyStyleScreen(
             },
             onClose = { showColorPicker = false }
         )
+    }
+    BackHandler {
+        if (showColorPicker) {
+            showColorPicker = false
+        } else {
+            navController.popBackStack()
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -47,6 +48,7 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.ui.components.ActionIconItem
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
@@ -55,7 +57,6 @@ import com.vinaykpro.chatbuilder.ui.components.EditIcon
 import com.vinaykpro.chatbuilder.ui.components.ParsedMessageBarStyle
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
-import com.vinaykpro.chatbuilder.ui.components.actionIconItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -236,6 +237,9 @@ fun MessageBarStyleScreen(
                         )
                     )
                 )
+            },
+            onBackClick = {
+                navController.popBackStack()
             })
 
         Column(
@@ -422,7 +426,7 @@ fun MessageBarStyleScreen(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
-                    actionIconItem(
+                    ActionIconItem(
                         "Icon 1",
                         navIconPainters[0],
                         iconSize = 22,
@@ -435,8 +439,8 @@ fun MessageBarStyleScreen(
                             previewAttrs = previewAttrs.copy(is_icon1_visible = it)
                         }
                     )
-                    actionIconItem(
-                        "Icon 1",
+                    ActionIconItem(
+                        "Icon 2",
                         navIconPainters[1],
                         iconSize = 22,
                         previewAttrs.is_icon2_visible,
@@ -448,8 +452,8 @@ fun MessageBarStyleScreen(
                             previewAttrs = previewAttrs.copy(is_icon2_visible = it)
                         }
                     )
-                    actionIconItem(
-                        "Icon 1",
+                    ActionIconItem(
+                        "Icon 3",
                         navIconPainters[2],
                         iconSize = 22,
                         previewAttrs.is_icon3_visible,
@@ -492,6 +496,13 @@ fun MessageBarStyleScreen(
             },
             onClose = { showColorPicker = false }
         )
+    }
+    BackHandler {
+        if (showColorPicker) {
+            showColorPicker = false
+        } else {
+            navController.popBackStack()
+        }
     }
 }
 

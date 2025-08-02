@@ -360,6 +360,7 @@ fun SharedTransitionScope.ChatProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(heightWithoutToolbar),
+                verticalAlignment = Alignment.Top
             ) { page ->
                 when (page) {
                     0 -> {

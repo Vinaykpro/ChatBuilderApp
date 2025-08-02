@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -47,6 +48,7 @@ import androidx.navigation.compose.rememberNavController
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.ui.components.ActionIconItem
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
@@ -56,7 +58,6 @@ import com.vinaykpro.chatbuilder.ui.components.ParsedHeaderStyle
 import com.vinaykpro.chatbuilder.ui.components.ProgressItem
 import com.vinaykpro.chatbuilder.ui.components.SelectModeWidget
 import com.vinaykpro.chatbuilder.ui.components.SwitchItem
-import com.vinaykpro.chatbuilder.ui.components.actionIconItem
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -201,6 +202,9 @@ fun SharedTransitionScope.HeaderStyleScreen(
                         )
                     )
                 )
+            },
+            onBackClick = {
+                navController.popBackStack()
             })
         Column(
             modifier = Modifier
@@ -219,6 +223,7 @@ fun SharedTransitionScope.HeaderStyleScreen(
                 icon2 = navIconPainters[1],
                 icon3 = navIconPainters[2],
                 icon4 = threeDotsPainter,
+                onBackClick = {}
             )
             Spacer(modifier = Modifier.height(60.dp))
         }
@@ -401,7 +406,7 @@ fun SharedTransitionScope.HeaderStyleScreen(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
                 Column(modifier = Modifier.padding(start = 16.dp)) {
-                    actionIconItem(
+                    ActionIconItem(
                         "Icon 1",
                         navIconPainters[0],
                         iconSize = previewAttrs.actionicons_size,
@@ -414,8 +419,8 @@ fun SharedTransitionScope.HeaderStyleScreen(
                             previewAttrs = previewAttrs.copy(is_icon1_visible = it)
                         }
                     )
-                    actionIconItem(
-                        "Icon 1",
+                    ActionIconItem(
+                        "Icon 2",
                         navIconPainters[1],
                         iconSize = previewAttrs.actionicons_size,
                         previewAttrs.is_icon2_visible,
@@ -427,8 +432,8 @@ fun SharedTransitionScope.HeaderStyleScreen(
                             previewAttrs = previewAttrs.copy(is_icon2_visible = it)
                         }
                     )
-                    actionIconItem(
-                        "Icon 1",
+                    ActionIconItem(
+                        "Icon 3",
                         navIconPainters[2],
                         iconSize = previewAttrs.actionicons_size,
                         previewAttrs.is_icon3_visible,
@@ -471,6 +476,13 @@ fun SharedTransitionScope.HeaderStyleScreen(
                 showColorPicker = false
             }
         )
+    }
+    BackHandler {
+        if (showColorPicker) {
+            showColorPicker = false
+        } else {
+            navController.popBackStack()
+        }
     }
 }
 

@@ -3,12 +3,15 @@ package com.vinaykpro.chatbuilder.ui.screens.chat
 import android.app.Application
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -75,6 +79,7 @@ import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPaint
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.math.min
 
@@ -159,6 +164,11 @@ fun SharedTransitionScope.ChatScreen(
     var currentUserId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
     var currentDateId by remember { mutableIntStateOf(chatDetails?.senderId ?: -1) }
 
+    var currDate by remember { mutableStateOf("") }
+    var showDate by remember { mutableStateOf(false) }
+
+    var showReceiverName by remember { mutableStateOf(false) }
+
     val messageBarUserIndex by model.messageBarSenderIndex.collectAsState()
 
     var searchVisible by remember { mutableStateOf(false) }
@@ -172,7 +182,8 @@ fun SharedTransitionScope.ChatScreen(
         delay(50)
         chatDetails.let {
             currentUserId = chatDetails?.senderId ?: -1
-            model.loadUserList(chatId, isDarkTheme)
+            showReceiverName = chatDetails?.showReceiverName == true
+            model.loadUserList(isDarkTheme)
         }
         delay(250)
         refreshKey++
@@ -205,19 +216,36 @@ fun SharedTransitionScope.ChatScreen(
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex to listState.layoutInfo.totalItemsCount }
-            .distinctUntilChanged()
-            .collect { (firstIndex, totalCount) ->
-                if (totalCount == 0) return@collect
+        launch {
+            snapshotFlow { listState.firstVisibleItemIndex to listState.layoutInfo.totalItemsCount }
+                .distinctUntilChanged()
+                .collect { (firstIndex, totalCount) ->
+                    if (totalCount == 0) return@collect
+                    val date = messages[firstIndex].date
+                    if (date != null && date != currDate) currDate = date
 
-                if (firstIndex < 15) {
-                    model.loadPrevPage()
-                }
+                    if (firstIndex < 15) {
+                        model.loadPrevPage()
+                    }
 
-                if (totalCount - firstIndex < 25) {
-                    model.loadNextPage()
+                    if (totalCount - firstIndex < 25) {
+                        model.loadNextPage()
+                    }
                 }
-            }
+        }
+        launch {
+            snapshotFlow { listState.isScrollInProgress }
+                .distinctUntilChanged()
+                .collect { scrolling ->
+                    Log.i("vkpro", "Scroll state change $scrolling")
+                    if (scrolling) {
+                        showDate = true
+                    } else {
+                        delay(1000)
+                        showDate = false
+                    }
+                }
+        }
     }
 
     LaunchedEffect(model.showToast) {
@@ -260,14 +288,14 @@ fun SharedTransitionScope.ChatScreen(
                             2 -> navController.navigate("theme/${theme.id}")
                             3 -> {
                                 if (model.userList.isEmpty()) {
-                                    model.loadUserList(chatId, isDarkTheme)
+                                    model.loadUserList(isDarkTheme)
                                 }
                                 swapUsersVisible = true
                             }
 
                             4 -> {
                                 if (model.datesList.isEmpty()) {
-                                    model.loadDatesList(chatId)
+                                    model.loadDatesList()
                                 }
                                 dateNavigatorVisible = true
                             }
@@ -278,7 +306,7 @@ fun SharedTransitionScope.ChatScreen(
                             }
 
                             6 -> {
-                                model.hideUnhideChat(chatId, hidden, onDone = {
+                                model.hideUnhideChat(hidden, onDone = {
                                     if (hidden == 0) Toast.makeText(
                                         context,
                                         "Chat hidden, view hidden chats from settings or from home menu",
@@ -301,6 +329,9 @@ fun SharedTransitionScope.ChatScreen(
                 },
                 onProfileClick = {
                     DebounceClickHandler.run(1200) { navController.navigate("chatprofile") }
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
 
@@ -335,27 +366,18 @@ fun SharedTransitionScope.ChatScreen(
         }
 
         //body
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-        AnimatedVisibility(
-            visible = !isLoading,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.weight(1f)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
         ) {
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             LazyColumn(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 5.dp)
+                    .alpha(if (isLoading) 0f else 1f)
             ) {
                 itemsIndexed(messages, key = { _, m -> m.messageId }) { i, m ->
                     when {
@@ -378,9 +400,11 @@ fun SharedTransitionScope.ChatScreen(
                                 }
                             } else null,
                             ticksIcon = blueTicksIcon,
-                            bubbleStyle = 1,
+                            bubbleStyle = bodyStyle.bubble_style,
                             bubbleRadius = bodyStyle.bubble_radius,
                             bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                            showTime = bodyStyle.show_time,
+                            showTicks = bodyStyle.showticks,
                             isFirst = (i == 0 || messages[i - 1].userid != m.userid || messages[i - 1].date != m.date),
                             color = themeBodyColors.senderBubble,
                             textColor = themeBodyColors.textPrimary,
@@ -396,7 +420,11 @@ fun SharedTransitionScope.ChatScreen(
                             },
                             onCopy = {
                                 clipboardManager.setText(AnnotatedString(it))
-                                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT)
+                                Toast.makeText(
+                                    context,
+                                    "Copied to clipboard",
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
                         )
@@ -404,9 +432,10 @@ fun SharedTransitionScope.ChatScreen(
                         else -> Message(
                             text = m.message,
                             sentTime = m.time.toString(),
-                            senderName = m.username,
-                            senderColor = model.userColorMap[m.userid]
-                                ?: MaterialTheme.colorScheme.onPrimaryContainer,
+                            senderName = if (showReceiverName) m.username else null,
+                            senderColor = if (showReceiverName) model.userColorMap[m.userid]
+                                ?: MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onPrimaryContainer,
                             date = if (i == 0 || messages[i - 1].date != m.date) {
                                 {
                                     ChatNote(
@@ -416,9 +445,10 @@ fun SharedTransitionScope.ChatScreen(
                                     )
                                 }
                             } else null,
-                            bubbleStyle = 1,
+                            bubbleStyle = bodyStyle.bubble_style,
                             bubbleRadius = bodyStyle.bubble_radius,
                             bubbleTipRadius = bodyStyle.bubble_tip_radius,
+                            showTime = bodyStyle.show_time,
                             isFirst = (i == 0 || messages[i - 1].userid != m.userid || messages[i - 1].date != m.date),
                             color = themeBodyColors.receiverBubble,
                             textColor = themeBodyColors.textPrimary,
@@ -434,15 +464,31 @@ fun SharedTransitionScope.ChatScreen(
                             },
                             onCopy = {
                                 clipboardManager.setText(AnnotatedString(it))
-                                Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT)
+                                Toast.makeText(
+                                    context,
+                                    "Copied to clipboard",
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
                         )
                     }
                 }
             }
-        }
 
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showDate,
+                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+            ) {
+                ChatNote(
+                    note = currDate,
+                    color = if (isDarkTheme) Color(0xFF2a2a2a) else Color(0xFFdddddd),
+                    textColor = themeBodyColors.textSecondary
+                )
+            }
+
+        }
         //input
         ChatMessageBar(
             user =
@@ -452,7 +498,7 @@ fun SharedTransitionScope.ChatScreen(
             onUserChange = { model.updateMessageBarUserIndex(it) },
             onAddUser = { addUserVisible = true },
             onSend = {
-                model.addNewMessage(chatId, it, model.userList[messageBarUserIndex])
+                model.addNewMessage(it, model.userList[messageBarUserIndex])
             },
             style = messageBarStyle,
             isDarkTheme = isDarkTheme,
@@ -473,11 +519,16 @@ fun SharedTransitionScope.ChatScreen(
         SwapSenderWidget(
             users = model.userList,
             currentId = currentUserId,
+            showReceiverName = showReceiverName,
             onSenderChange = {
                 currentUserId = it
             },
+            receiverNameStatusChange = {
+                model.updateReceiverNameVisibility(it)
+                showReceiverName = it
+            },
             onClose = {
-                model.updateSenderId(chatId, currentUserId)
+                model.updateSenderId(currentUserId)
                 swapUsersVisible = false
             },
         )
@@ -493,7 +544,7 @@ fun SharedTransitionScope.ChatScreen(
         else
             DateNavigationWidget(
                 dates = model.datesList,
-                currentId = currentDateId,
+                currentDate = currDate,
                 onNavigation = {
                     model.navigateToDate(it)
                     currentDateId = it
@@ -534,6 +585,17 @@ fun SharedTransitionScope.ChatScreen(
                 addUserVisible = false
             }
         )
+    }
+
+    BackHandler {
+        if (swapUsersVisible || dateNavigatorVisible || clearChatVisible || addUserVisible) {
+            swapUsersVisible = false
+            dateNavigatorVisible = false
+            clearChatVisible = false
+            addUserVisible = false
+        } else {
+            navController.popBackStack()
+        }
     }
 
     DisposableEffect(Unit) {

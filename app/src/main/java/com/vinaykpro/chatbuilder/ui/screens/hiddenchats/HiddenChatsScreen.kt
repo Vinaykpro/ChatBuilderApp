@@ -1,6 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.hiddenchats
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -50,15 +51,24 @@ fun HiddenChatsScreen(
     val chats by model.chatsList.collectAsState(emptyList())
 
     Column(
-        modifier = Modifier.fillMaxSize()
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues()
-                    .calculateBottomPadding())
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(
+                bottom = WindowInsets.navigationBars.asPaddingValues()
+                    .calculateBottomPadding()
+            )
     ) {
         BasicToolbar("Hidden chats", onBackClick = {
-            DebounceClickHandler.run { navController.popBackStack() }
+            navController.popBackStack()
         })
-        if(chats.isEmpty())
-            Box(modifier = Modifier.fillMaxSize().padding(horizontal = 30.dp), contentAlignment = Alignment.Center) {
+        if (chats.isEmpty())
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 30.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = "Chats hidden from home screen will be listed here, no chats were hidden at this time",
                     fontSize = 15.sp,
@@ -68,18 +78,18 @@ fun HiddenChatsScreen(
                 )
             }
         else
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(chats, key = { chat -> chat.chatid }) { chat ->
-                ChatListItem(
-                    id = chat.chatid,
-                    name = chat.name,
-                    lastMessage = chat.lastmsg,
-                    lastSeen = chat.lastmsgtime,
-                    onClick = {
-                        DebounceClickHandler.run { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}&hidden=${chat.hidden}") }
-                    }
-                )
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(chats, key = { chat -> chat.chatid }) { chat ->
+                    ChatListItem(
+                        id = chat.chatid,
+                        name = chat.name,
+                        lastMessage = chat.lastmsg,
+                        lastSeen = chat.lastmsgtime,
+                        onClick = {
+                            DebounceClickHandler.run { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}&hidden=${chat.hidden}") }
+                        }
+                    )
+                }
             }
-        }
     }
 }

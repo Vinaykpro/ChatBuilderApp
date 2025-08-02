@@ -1,6 +1,5 @@
 package com.vinaykpro.chatbuilder.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,19 +32,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
+import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
 fun ThemeItem(
-    context: Context = LocalContext.current,
     selected: Boolean = false,
     id: Int = 1,
     name: String = "Default theme",
     author: String = "Vinaykpro",
     iconColor: Color = LightColorScheme.primary,
     onClick: () -> Unit = {},
-    onNextClick: () -> Unit = {}
+    onNextClick: () -> Unit = {},
+    forceDark: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -54,7 +53,7 @@ fun ThemeItem(
             .fillMaxWidth()
             .clickable { onClick() }
             .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
+            .border(1.dp, if(forceDark) DarkColorScheme.secondaryContainer else MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(16.dp))
             .height(74.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -70,8 +69,8 @@ fun ThemeItem(
                 selected = selected,
                 onClick = { onClick() },
                 colors = RadioButtonColors(
-                    selectedColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    unselectedColor = MaterialTheme.colorScheme.secondaryContainer,
+                    selectedColor = if(forceDark) DarkColorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onTertiaryContainer,
+                    unselectedColor = if(forceDark) DarkColorScheme.secondaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                     disabledSelectedColor = RadioButtonDefaults.colors().disabledSelectedColor,
                     disabledUnselectedColor = RadioButtonDefaults.colors().disabledSelectedColor
                 )
@@ -92,13 +91,13 @@ fun ThemeItem(
                     text = name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight(500),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = if(forceDark) DarkColorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                     lineHeight = 20.sp
                 )
                 Text(
                     text = "Made by: $author",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = if(forceDark) DarkColorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                     lineHeight = 16.sp
                 )
             }

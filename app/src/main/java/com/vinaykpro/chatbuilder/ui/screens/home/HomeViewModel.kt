@@ -60,6 +60,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     ChatEntity(
                         chatid = id.toInt(),
                         name = res.name ?: "New Chat ${id.toInt()}",
+                        showReceiverName = res.users != null && res.users.size > 2,
                         senderId = res.senderId,
                         lastOpenedMsgId = if (beginningMsgId == 0) 0 else beginningMsgId + 1,
                         lastmsg = lastMessage.message ?: "",

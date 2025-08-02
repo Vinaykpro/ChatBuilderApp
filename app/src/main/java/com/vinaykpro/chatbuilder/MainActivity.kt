@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
             val prefs = remember { context.getSharedPreferences("my_prefs", MODE_PRIVATE) }
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
             val isDarkTheme = remember { mutableStateOf(prefs.getBoolean("isDarkEnabled", false)) }
+            themeViewModel.trySavedIdSwitch(prefs.getInt("themeId", 1))
             window.setBackgroundDrawable((if (isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
 
             val sharedFileUri = extractSharedFile(intent)

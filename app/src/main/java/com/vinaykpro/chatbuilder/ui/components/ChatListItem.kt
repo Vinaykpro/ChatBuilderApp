@@ -34,7 +34,7 @@ fun ChatListItem(
     lastMessage: String = "Somemsg",
     lastSeen: String = "12:15",
     onClick: () -> Unit = {},
-    isForceFake: Boolean = false,
+    isForceDark: Boolean = false,
 ) {
     val profilePicPainter = rememberCustomProfileIconPainter(
         chatId = id,
@@ -69,7 +69,7 @@ fun ChatListItem(
                     fontSize = 17.sp,
                     lineHeight = 25.sp,
                     fontWeight = FontWeight(500),
-                    color = if (!isForceFake) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+                    color = if (!isForceDark) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
                 )
             )
             Text(
@@ -78,7 +78,7 @@ fun ChatListItem(
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
                     fontSize = 13.sp,
-                    color = if (!isForceFake) MaterialTheme.colorScheme.onSecondaryContainer else Color.LightGray
+                    color = if (!isForceDark) MaterialTheme.colorScheme.onSecondaryContainer else Color.LightGray
                 )
             )
         }
@@ -87,7 +87,7 @@ fun ChatListItem(
             style = TextStyle(
                 fontSize = 13.sp,
                 fontWeight = FontWeight(500),
-                color = if (!isForceFake) MaterialTheme.colorScheme.onSecondaryContainer else Color.LightGray
+                color = if (!isForceDark) MaterialTheme.colorScheme.onSecondaryContainer else Color.LightGray
             ),
             modifier = Modifier.height(40.dp)
         )

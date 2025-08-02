@@ -14,6 +14,7 @@ import com.vinaykpro.chatbuilder.data.local.ImportResponse
 import com.vinaykpro.chatbuilder.data.local.MESSAGESTATUS
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
+import com.vinaykpro.chatbuilder.data.local.UserInfo
 import com.vinaykpro.chatbuilder.data.local.ZipItem
 import com.vinaykpro.chatbuilder.data.local.formatFileSize
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,7 @@ class FileIOHelper {
         """^(\d{1,4})[./-](\d{1,4})[./-](\d{1,4}),\s*(\d{1,2})[:.](\d{1,2})\s*(.*?)\s*[-–]\s*(.*)$"""
     )
     private val messagePatternIOS = Regex(
-        """^\[?(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?[\u202F\u00A0 ]*(AM|PM|am|pm)?\]?\s*(.+?):\s*(.*)$"""
+        """^\[?(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?[\u202F\u00A0 ]*(AM|PM|am|pm)?]?\s*(.+?):\s*(.*)$"""
     )
     private val mediaRefPattern = Regex("""<attached:\s*(.+?)\s*>""")
 
@@ -52,6 +53,7 @@ class FileIOHelper {
         Dispatchers.IO
     ) {
         var messages: List<MessageEntity>? = null
+        var users: List<UserInfo>? = null
         val files: MutableList<ZipItem> = mutableListOf()
         var mediaIndexes: List<Int>? = null
         var chatName = "New Chat"
@@ -80,12 +82,14 @@ class FileIOHelper {
                                 val lines = zipInputStream.bufferedReader().lineSequence().toList()
                                 val result = decodeChat(lines.asSequence(), betterFileName)
                                 messages = result.messages
+                                users = result.users
                                 mediaIndexes = result.mediaIndexes
                                 chatName = result.chatName
                                 senderId = result.senderId
                                 if (messages == null) {
                                     val result = decodeChatIOS(lines.asSequence(), betterFileName)
                                     messages = result.messages
+                                    users = result.users
                                     mediaIndexes = result.mediaIndexes
                                     chatName = result.chatName
                                     senderId = result.senderId
@@ -126,11 +130,13 @@ class FileIOHelper {
                             val lines = stream.bufferedReader().lineSequence().toList()
                             val result = decodeChat(lines.asSequence(), filename)
                             messages = result.messages
+                            users = result.users
                             chatName = result.chatName
                             senderId = result.senderId
                             if (messages == null) {
                                 val result = decodeChatIOS(lines.asSequence(), filename)
                                 messages = result.messages
+                                users = result.users
                                 chatName = result.chatName
                                 senderId = result.senderId
                             }
@@ -147,6 +153,7 @@ class FileIOHelper {
                 name = chatName,
                 senderId = senderId,
                 messages = messages,
+                users = users,
                 isMediaFound = files.isNotEmpty(),
                 mediaItems = files,
                 mediaIndexes = mediaIndexes
@@ -168,7 +175,13 @@ class FileIOHelper {
         var totalCount = 0
         var index = 0
         for (line in lines) {
-            if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(null, null, "", null)
+            if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(
+                null,
+                null,
+                null,
+                "",
+                null
+            )
             val isMessage = messagePattern.matchEntire(line)
             val isNote = if (isMessage == null) systemMessagePattern.matchEntire(line) else null
             totalCount++
@@ -265,6 +278,7 @@ class FileIOHelper {
 
         return DecodeResponse(
             messages = messageList,
+            users = userMap.map { (name, id) -> UserInfo(id, name) },
             mediaIndexes = mediaIndexes,
             chatName = chatname,
             senderId = senderId
@@ -294,7 +308,13 @@ class FileIOHelper {
                 '\u2068',
                 '\u2069'
             )
-            if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(null, null, "", null)
+            if (totalCount == 50 && (invalidCount > 45)) return DecodeResponse(
+                null,
+                null,
+                null,
+                "",
+                null
+            )
             val isMessage = messagePatternIOS.matchEntire(line)
             totalCount++
             if (isMessage != null) {
@@ -366,6 +386,7 @@ class FileIOHelper {
 
         return DecodeResponse(
             messages = messageList,
+            users = userMap.map { (name, id) -> UserInfo(id, name) },
             mediaIndexes = mediaIndexes,
             chatName = chatname,
             senderId = senderId

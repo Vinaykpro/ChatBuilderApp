@@ -6,6 +6,8 @@ import android.app.Application
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -33,7 +35,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,7 +44,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
@@ -68,7 +68,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -297,7 +296,8 @@ fun HomeScreen(
                         ) {
                             DropdownMenu(
                                 expanded = menuExpanded,
-                                onDismissRequest = { menuExpanded = false }
+                                onDismissRequest = { menuExpanded = false },
+                                containerColor = MaterialTheme.colorScheme.onSurface
                             ) {
                                 MyConstants.homeMenuList.forEachIndexed { index, item ->
                                     Text(
@@ -372,24 +372,18 @@ fun HomeScreen(
                     when (page) {
                         0 -> Box(
                             modifier = Modifier
-                                .weight(1f),
+                                .fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             if (chats.isEmpty())
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 30.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
-                                        fontSize = 15.sp,
-                                        lineHeight = 20.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                                Text(
+                                    text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
+                                    fontSize = 15.sp,
+                                    lineHeight = 20.sp,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 30.dp)
+                                )
                             else
                                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                                     items(chats, key = { chat -> chat.chatid }) { chat ->
@@ -406,33 +400,24 @@ fun HomeScreen(
                                 }
                         }
 
-                        1 -> Column(
+                        1 -> LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(
-                                    bottom = WindowInsets.systemBars.asPaddingValues()
-                                        .calculateBottomPadding()
-                                )
                         ) {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(bottom = 10.dp)
-                            ) {
-                                items(themes) { i ->
-                                    ThemeItem(
-                                        context = context,
-                                        selected = i.id == selectedTheme,
-                                        id = i.id,
-                                        name = i.name,
-                                        author = i.author,
-                                        iconColor = Color(i.appcolor.toColorInt()),
-                                        onClick = { themeViewModel.changeTheme(i.id) },
-                                        onNextClick = {
-                                            DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
-                                        })
-                                }
+                            items(themes) { i ->
+                                ThemeItem(
+                                    selected = i.id == selectedTheme,
+                                    id = i.id,
+                                    name = i.name,
+                                    author = i.author,
+                                    iconColor = Color(i.appcolor.toColorInt()),
+                                    onClick = {
+                                        themeViewModel.changeTheme(i.id)
+                                        prefs.edit().putInt("themeId", i.id).apply()
+                                    },
+                                    onNextClick = {
+                                        DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
+                                    })
                             }
                         }
 
@@ -446,24 +431,40 @@ fun HomeScreen(
                                 name = "Chat theme",
                                 context = "Create, import or customize the current chat theme",
                                 onClick = {
-                                    DebounceClickHandler.run { navController.navigate("themes") }
+                                    navController.navigate("themes")
                                 }
                             )
                             SettingsItem(
                                 icon = painterResource(R.drawable.ic_animate),
                                 name = "Animate a chat",
                                 context = "Play any chat realtime",
-                                onClick = { }
+                                onClick = {
+                                    Toast.makeText(
+                                        context,
+                                        "Update coming soon",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             )
                             SettingsItem(
                                 icon = painterResource(R.drawable.ic_lockedchats),
                                 name = "Locked chats",
-                                context = "View hidden chats"
+                                context = "View hidden chats",
+                                onClick = {
+                                    navController.navigate("hiddenchats")
+                                }
                             )
                             SettingsItem(
                                 icon = painterResource(R.drawable.ic_starredmessages),
                                 name = "Starred messages",
-                                context = "See all the starred messages"
+                                context = "See all the starred messages",
+                                onClick = {
+                                    Toast.makeText(
+                                        context,
+                                        "Update coming soon",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             )
                         }
                     }
@@ -473,7 +474,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(68.dp)
+                    .height(60.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
@@ -486,20 +487,12 @@ fun HomeScreen(
                         .clickable { scope.launch { pagerState.animateScrollToPage(0) } },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(if (selectedTabIndex.value == 0) R.drawable.ic_chats_selected else R.drawable.ic_chats_unselected),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp)
-                        )
-                        Text(
-                            text = HomeTabs.entries[0].toString(),
-                            color = Color.White,
-                            fontWeight = FontWeight(if (selectedTabIndex.value == 0) 800 else 400),
-                            fontSize = 14.sp
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(if (selectedTabIndex.value == 0) R.drawable.ic_chats_selected else R.drawable.ic_chats_unselected),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
                 Box(
                     modifier = Modifier
@@ -508,20 +501,12 @@ fun HomeScreen(
                         .clickable { scope.launch { pagerState.animateScrollToPage(1) } },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(if (selectedTabIndex.value == 1) R.drawable.ic_theme_selected else R.drawable.ic_theme_unselected),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp)
-                        )
-                        Text(
-                            text = HomeTabs.entries[1].toString(),
-                            color = Color.White,
-                            fontWeight = FontWeight(if (selectedTabIndex.value == 1) 800 else 400),
-                            fontSize = 14.sp
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(if (selectedTabIndex.value == 1) R.drawable.ic_theme_selected else R.drawable.ic_theme_unselected),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
                 Box(
                     modifier = Modifier
@@ -530,20 +515,12 @@ fun HomeScreen(
                         .clickable { scope.launch { pagerState.animateScrollToPage(2) } },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            painter = painterResource(if (selectedTabIndex.value == 2) R.drawable.ic_settings_selected else R.drawable.ic_settings_unselected),
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(26.dp)
-                        )
-                        Text(
-                            text = HomeTabs.entries[2].toString(),
-                            color = Color.White,
-                            fontWeight = FontWeight(if (selectedTabIndex.value == 2) 800 else 400),
-                            fontSize = 14.sp
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(if (selectedTabIndex.value == 2) R.drawable.ic_settings_selected else R.drawable.ic_settings_unselected),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
                 }
             }
             Spacer(
@@ -768,19 +745,49 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             when (pagerState.currentPage) {
-                                0 -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                    items(chats) { chat ->
-                                        ChatListItem(
-                                            id = chat.chatid,
-                                            name = chat.name,
-                                            lastMessage = chat.lastmsg,
-                                            lastSeen = chat.lastmsgtime,
-                                            isForceFake = true
+                                0 -> if (chats.isEmpty())
+                                    Text(
+                                        text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
+                                        fontSize = 15.sp,
+                                        lineHeight = 20.sp,
+                                        color = DarkColorScheme.onSecondaryContainer,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 30.dp)
+                                    )
+                                else
+                                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                        items(chats, key = { chat -> chat.chatid }) { chat ->
+                                            ChatListItem(
+                                                id = chat.chatid,
+                                                name = chat.name,
+                                                lastMessage = chat.lastmsg,
+                                                lastSeen = chat.lastmsgtime,
+                                                isForceDark = true
+                                            )
+                                        }
+                                    }
+
+                                1 -> LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                ) {
+                                    items(themes) { i ->
+                                        ThemeItem(
+                                            selected = i.id == selectedTheme,
+                                            id = i.id,
+                                            name = i.name,
+                                            author = i.author,
+                                            iconColor = Color(i.appcolor.toColorInt()),
+                                            forceDark = true
                                         )
                                     }
                                 }
 
-                                1 -> Column(modifier = Modifier.fillMaxSize()) {
+                                2 -> Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                ) {
                                     SettingsItem(
                                         icon = painterResource(R.drawable.ic_theme),
                                         name = "Chat theme",
@@ -790,17 +797,20 @@ fun HomeScreen(
                                     SettingsItem(
                                         icon = painterResource(R.drawable.ic_animate),
                                         name = "Animate a chat",
-                                        context = "Play any chat realtime", isForceDark = true
+                                        context = "Play any chat realtime",
+                                        isForceDark = true
                                     )
                                     SettingsItem(
                                         icon = painterResource(R.drawable.ic_lockedchats),
                                         name = "Locked chats",
-                                        context = "View hidden chats", isForceDark = true
+                                        context = "View hidden chats",
+                                        isForceDark = true
                                     )
                                     SettingsItem(
                                         icon = painterResource(R.drawable.ic_starredmessages),
                                         name = "Starred messages",
-                                        context = "See all the starred messages", isForceDark = true
+                                        context = "See all the starred messages",
+                                        isForceDark = true
                                     )
                                 }
                             }
@@ -821,30 +831,42 @@ fun HomeScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
+                                .clickable { scope.launch { pagerState.animateScrollToPage(0) } },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Chats", style = TextStyle(
-                                    color = Color.White,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight(500)
-                                ), modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .alpha(if (selectedTabIndex.value == 0) 1f else 0.7f)
+                            Icon(
+                                painter = painterResource(if (selectedTabIndex.value == 0) R.drawable.ic_chats_selected else R.drawable.ic_chats_unselected),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
+                                .clickable { scope.launch { pagerState.animateScrollToPage(1) } },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Settings", style = TextStyle(
-                                    color = Color(0xFFFFFFFF),
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight(500)
-                                ), modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .alpha(if (selectedTabIndex.value == 1) 1f else 0.7f)
+                            Icon(
+                                painter = painterResource(if (selectedTabIndex.value == 1) R.drawable.ic_theme_selected else R.drawable.ic_theme_unselected),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable { scope.launch { pagerState.animateScrollToPage(2) } },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(if (selectedTabIndex.value == 2) R.drawable.ic_settings_selected else R.drawable.ic_settings_unselected),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                     }
@@ -857,20 +879,24 @@ fun HomeScreen(
                     )
                 }
 
-                FloatingActionButton(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = bottomPadding + 90.dp, end = 24.dp),
-                    containerColor = DarkColorScheme.primary,
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(100.dp),
-                    onClick = {}
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Menu"
-                    )
-                }
+                if (pagerState.currentPage < 2)
+                    FloatingActionButton(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(bottom = bottomPadding + 90.dp, end = 24.dp),
+                        containerColor = DarkColorScheme.primary,
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(100.dp),
+                        onClick = {}
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (pagerState.currentPage == 0) R.drawable.ic_newchat
+                                else R.drawable.ic_newtheme
+                            ),
+                            contentDescription = "Menu"
+                        )
+                    }
             }
         }
     }
@@ -886,6 +912,12 @@ fun HomeScreen(
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = {})
         )
+    }
+
+    BackHandler(enabled = pagerState.currentPage != 0) {
+        scope.launch {
+            pagerState.animateScrollToPage(0)
+        }
     }
 }
 

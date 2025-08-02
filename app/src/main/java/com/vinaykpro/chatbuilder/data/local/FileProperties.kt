@@ -9,6 +9,7 @@ data class ImportResponse(
     val name: String? = null,
     val senderId: Int? = null,
     val messages: List<MessageEntity>? = null,
+    val users: List<UserInfo>? = null,
     val isMediaFound: Boolean = false,
     val mediaItems: List<ZipItem>? = null,
     val mediaIndexes: List<Int>? = null,
@@ -18,6 +19,7 @@ data class ImportResponse(
 @Immutable
 data class DecodeResponse(
     val messages: List<MessageEntity>?,
+    val users: List<UserInfo>? = null,
     val mediaIndexes: List<Int>?,
     val chatName: String,
     val senderId: Int?

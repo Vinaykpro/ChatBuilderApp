@@ -2,7 +2,6 @@ package com.vinaykpro.chatbuilder.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,7 +47,7 @@ fun SwitchItem(
             }
             .padding(6.dp), verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(verticalArrangement = Arrangement.Top) {
+        Column {
             Text(
                 text = name,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -56,12 +55,13 @@ fun SwitchItem(
                 fontSize = 16.sp,
                 lineHeight = 20.sp
             )
-            Text(
-                text = context,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontSize = 12.sp,
-                lineHeight = 20.sp
-            )
+            if (context != "")
+                Text(
+                    text = context,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp
+                )
         }
         Spacer(modifier = Modifier.weight(1f))
         if (enabled) Switch(

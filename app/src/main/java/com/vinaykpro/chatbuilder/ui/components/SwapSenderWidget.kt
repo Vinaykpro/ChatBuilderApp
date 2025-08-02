@@ -35,8 +35,10 @@ import com.vinaykpro.chatbuilder.data.local.UserInfo
 @Preview
 @Composable
 fun SwapSenderWidget(
-    users: List<UserInfo> = emptyList(),
+    users: List<UserInfo> = listOf(UserInfo(-1, "None")),
     currentId: Int = 0,
+    showReceiverName: Boolean = true,
+    receiverNameStatusChange: (Boolean) -> Unit = {},
     onSenderChange: (Int) -> Unit = {},
     onClose: () -> Unit = {}
 ) {
@@ -94,6 +96,11 @@ fun SwapSenderWidget(
                         onSenderChange(users[it].userid)
                     }
                 )
+            }
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                SwitchItem("Show receiver name", "", checked = showReceiverName, onCheckChange = {
+                    receiverNameStatusChange(!showReceiverName)
+                })
             }
         }
     }

@@ -211,7 +211,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun addNewMessage(chatId: Int, message: String, user: UserInfo) {
+    fun addNewMessage(message: String, user: UserInfo) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val (date, time) = java.util.Date().let {
@@ -250,7 +250,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun hideUnhideChat(chatId: Int, hiddenState: Int, onDone: () -> Unit) {
+    fun hideUnhideChat(hiddenState: Int, onDone: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val updatedState = if (hiddenState == 0) 1 else 0
@@ -260,10 +260,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun loadUserList(chatid: Int, darkColors: Boolean) {
+    fun loadUserList(darkColors: Boolean) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val users = dao.getUsersList(chatid)
+                val users = dao.getUsersList(chatId)
                 userList = listOf(UserInfo(-1, "None")) + users
                 _messageBarSenderIndex.value = if (userList.size > 1) 1 else 0
                 val (start, end) = if (darkColors) 128 to 256 else 0 to 128
@@ -279,10 +279,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         }
     }
 
-    fun loadDatesList(chatid: Int) {
+    fun loadDatesList() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                datesList = dao.getDatesList(chatid)
+                datesList = dao.getDatesList(chatId)
             }
         }
     }
@@ -291,6 +291,14 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         val updated = _messageBarSenderIndex.value + dir
         if (updated > 0 && updated < userList.size) {
             _messageBarSenderIndex.value = updated
+        }
+    }
+
+    fun updateReceiverNameVisibility(visible: Boolean) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                chatDao.updateReceiverVisibleState(chatId, visible)
+            }
         }
     }
 
@@ -303,10 +311,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         _messageBarSenderIndex.value = userList.size - 1
     }
 
-    fun updateSenderId(chatid: Int, senderId: Int) {
+    fun updateSenderId(senderId: Int) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                chatDao.updateSender(chatid, senderId)
+                chatDao.updateSender(chatId, senderId)
             }
         }
     }

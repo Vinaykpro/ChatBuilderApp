@@ -45,7 +45,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -53,9 +52,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.MyConstants
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-@Preview
+//@Preview
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun SharedTransitionScope.ChatToolbar(
@@ -74,7 +74,8 @@ fun SharedTransitionScope.ChatToolbar(
     previewColors: ParsedHeaderStyle = ParsedHeaderStyle(),
     previewAttrs: HeaderStyle = HeaderStyle(),
     onMenuClick: (Int) -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onBackClick: () -> Unit
 ) {
     val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
@@ -106,7 +107,11 @@ fun SharedTransitionScope.ChatToolbar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (style.showbackbtn)
-            IconButton(onClick = {}, modifier = Modifier.padding(start = style.backbtn_gap.dp)) {
+            IconButton(onClick = {
+                DebounceClickHandler.run {
+                    onBackClick()
+                }
+            }, modifier = Modifier.padding(start = style.backbtn_gap.dp)) {
                 Icon(
                     modifier = Modifier.size(style.backbtn_size.dp),
                     painter = backIcon,
@@ -207,7 +212,8 @@ fun SharedTransitionScope.ChatToolbar(
             ) {
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    containerColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     MyConstants.chatMenuList.forEachIndexed { index, item ->
                         Text(

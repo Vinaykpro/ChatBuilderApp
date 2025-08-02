@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.theme.DarkColorScheme
 
 @Preview
@@ -38,7 +39,11 @@ fun SettingsItem(
         .fillMaxWidth()
         .height(60.dp)
         .padding(top = 2.dp)
-        .clickable { onClick() }
+        .clickable {
+            DebounceClickHandler.run {
+                onClick()
+            }
+        }
         .padding(start = 16.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(modifier = Modifier
             .size(35.dp)

@@ -40,15 +40,18 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 @Composable
 fun DateNavigationWidget(
     dates: List<DateInfo> = emptyList(),
-    currentId: Int = 0,
+    currentDate: String = "2/1/2004",
     onNavigation: (Int) -> Unit = {},
     onClose: () -> Unit = {}
 ) {
     var currentIndex by remember { mutableIntStateOf(0) }
     var names = mutableListOf<String>()
-    var currentDateId by remember { mutableIntStateOf(currentId) }
+    var currentDateId by remember { mutableIntStateOf(0) }
     dates.forEachIndexed { ind, item ->
-        if (item.messageId == currentId) currentIndex = ind
+        if (item.date == currentDate) {
+            currentIndex = ind
+            currentDateId = item.messageId
+        }
         names.add(item.date)
     }
     Box(

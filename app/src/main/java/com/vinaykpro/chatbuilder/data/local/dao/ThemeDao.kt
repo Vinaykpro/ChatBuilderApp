@@ -12,6 +12,9 @@ interface ThemeDao {
     @Query("SELECT * FROM themes WHERE id = :id")
     fun getThemeByIdFlow(id: Int): Flow<ThemeEntity>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM themes WHERE id = :id)")
+    fun isThemeAvailable(id: Int): Boolean
+
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertTheme(theme: ThemeEntity): Long
 

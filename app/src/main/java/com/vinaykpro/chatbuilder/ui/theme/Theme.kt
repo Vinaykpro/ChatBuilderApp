@@ -44,6 +44,7 @@ var LightColorScheme = lightColorScheme(
 
     onSurface = Color.White
 
+
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
