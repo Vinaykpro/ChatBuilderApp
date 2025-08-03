@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +54,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
+import com.vinaykpro.chatbuilder.ui.components.BannerAdView
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
 import com.vinaykpro.chatbuilder.ui.components.ColorSelectionItem
@@ -97,6 +101,9 @@ fun EditThemeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .padding(
+                    bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                )
         ) {
             BasicToolbar(
                 name = theme.name,
@@ -220,6 +227,7 @@ fun EditThemeScreen(
                         })
                 }
             }
+            BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
         }
 
         AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {

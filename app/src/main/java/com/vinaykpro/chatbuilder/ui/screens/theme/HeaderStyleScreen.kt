@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +52,7 @@ import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.components.ActionIconItem
+import com.vinaykpro.chatbuilder.ui.components.BannerAdView
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ColorPicker
@@ -167,179 +171,185 @@ fun SharedTransitionScope.HeaderStyleScreen(
     )
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier = Modifier.padding(
+            bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+        )
     ) {
-        BasicToolbar(
-            name = "Header Style", color = MaterialTheme.colorScheme.primary,
-            icon1 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_close) else null,
-            onIcon1Click = {
-                // Discard changes
-                isColorsChanged = false
-                previewAttrs = themeStyle
-                originalColors.forEachIndexed { i, orig ->
-                    colors[i] = orig
-                }
-            },
-            icon2 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_tick) else null,
-            onIcon2Click = {
-                // Save changes
-                isColorsChanged = false
-                themeViewModel.updateTheme(
-                    theme.copy(
-                        headerstyle = Json.encodeToString(
-                            previewAttrs.copy(
-                                color_navbar = colorToHex(colors[0]),
-                                color_navicons = colorToHex(colors[1]),
-                                color_text_primary = colorToHex(colors[2]),
-                                color_text_secondary = colorToHex(colors[3]),
-                                color_navbar_dark = colorToHex(colors[4]),
-                                color_navicons_dark = colorToHex(colors[5]),
-                                color_text_primary_dark = colorToHex(colors[6]),
-                                color_text_secondary_dark = colorToHex(colors[7])
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            BasicToolbar(
+                name = "Header Style", color = MaterialTheme.colorScheme.primary,
+                icon1 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_close) else null,
+                onIcon1Click = {
+                    // Discard changes
+                    isColorsChanged = false
+                    previewAttrs = themeStyle
+                    originalColors.forEachIndexed { i, orig ->
+                        colors[i] = orig
+                    }
+                },
+                icon2 = if (isAttrsChanged || isColorsChanged) painterResource(R.drawable.ic_tick) else null,
+                onIcon2Click = {
+                    // Save changes
+                    isColorsChanged = false
+                    themeViewModel.updateTheme(
+                        theme.copy(
+                            headerstyle = Json.encodeToString(
+                                previewAttrs.copy(
+                                    color_navbar = colorToHex(colors[0]),
+                                    color_navicons = colorToHex(colors[1]),
+                                    color_text_primary = colorToHex(colors[2]),
+                                    color_text_secondary = colorToHex(colors[3]),
+                                    color_navbar_dark = colorToHex(colors[4]),
+                                    color_navicons_dark = colorToHex(colors[5]),
+                                    color_text_primary_dark = colorToHex(colors[6]),
+                                    color_text_secondary_dark = colorToHex(colors[7])
+                                )
                             )
                         )
                     )
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                })
+            Column(
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .padding(horizontal = 10.dp)
+                    .clip(shape = RoundedCornerShape(12.dp))
+                    .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
+            ) {
+                ChatToolbar(
+                    preview = true,
+                    previewColors = previewColors,
+                    previewAttrs = previewAttrs,
+                    backIcon = backIconPainter,
+                    profileIcon = profilePicPainter,
+                    icon1 = navIconPainters[0],
+                    icon2 = navIconPainters[1],
+                    icon3 = navIconPainters[2],
+                    icon4 = threeDotsPainter,
+                    onBackClick = {}
                 )
-            },
-            onBackClick = {
-                navController.popBackStack()
-            })
-        Column(
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .padding(horizontal = 10.dp)
-                .clip(shape = RoundedCornerShape(12.dp))
-                .border(1.dp, color = Color(0xFFC0C0C0), shape = RoundedCornerShape(12.dp))
-        ) {
-            ChatToolbar(
-                preview = true,
-                previewColors = previewColors,
-                previewAttrs = previewAttrs,
-                backIcon = backIconPainter,
-                profileIcon = profilePicPainter,
-                icon1 = navIconPainters[0],
-                icon2 = navIconPainters[1],
-                icon3 = navIconPainters[2],
-                icon4 = threeDotsPainter,
-                onBackClick = {}
-            )
-            Spacer(modifier = Modifier.height(60.dp))
-        }
-        Column(
-            Modifier
-                .padding(start = 18.dp, end = 10.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
-
-            Text(
-                text = "Colors:",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-            )
-            headerColorNames.forEachIndexed { i, name ->
-                ColorSelectionItem(
-                    name = name, color = colors[if (isDark) 4 + i else i],
-                    onClick = {
-                        selectedColor = colors[if (isDark) 4 + i else i]
-                        loadPicker = true
-                        showColorPicker = true
-                        pickedColorIndex = if (isDark) 4 + i else i
-                    }
-                )
+                Spacer(modifier = Modifier.height(60.dp))
             }
+            Column(
+                Modifier
+                    .padding(start = 18.dp, end = 10.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                SelectModeWidget(isDark = isDark, onUpdate = { isDark = it })
 
-            Text(
-                text = "Widgets:",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-            )
-
-            SwitchItem(checked = previewAttrs.showbackbtn, onCheckChange = {
-                previewAttrs = previewAttrs.copy(showbackbtn = it)
-            })
-            if (previewAttrs.showbackbtn) {
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .height(IntrinsicSize.Min)
-                ) {
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(start = 8.dp)
-                            .width(1.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                Text(
+                    text = "Colors:",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+                )
+                headerColorNames.forEachIndexed { i, name ->
+                    ColorSelectionItem(
+                        name = name, color = colors[if (isDark) 4 + i else i],
+                        onClick = {
+                            selectedColor = colors[if (isDark) 4 + i else i]
+                            loadPicker = true
+                            showColorPicker = true
+                            pickedColorIndex = if (isDark) 4 + i else i
+                        }
                     )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ProgressItem(
-                            name = "Icon size",
-                            value = previewAttrs.backbtn_size.toFloat(),
-                            min = 10f,
-                            max = 40f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(backbtn_size = it)
+                }
+
+                Text(
+                    text = "Widgets:",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+                )
+
+                SwitchItem(checked = previewAttrs.showbackbtn, onCheckChange = {
+                    previewAttrs = previewAttrs.copy(showbackbtn = it)
+                })
+                if (previewAttrs.showbackbtn) {
+                    Box(
+                        modifier = Modifier
+                            .padding(bottom = 12.dp)
+                            .height(IntrinsicSize.Min)
+                    ) {
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(start = 8.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            ProgressItem(
+                                name = "Icon size",
+                                value = previewAttrs.backbtn_size.toFloat(),
+                                min = 10f,
+                                max = 40f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(backbtn_size = it)
+                                })
+                            ProgressItem(
+                                name = "Left gap",
+                                value = previewAttrs.backbtn_gap.toFloat(),
+                                min = 0f,
+                                max = 15f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(backbtn_gap = it)
+                                })
+                            EditIcon(name = "Back button icon", icon = backIconPainter, onClick = {
+                                pickedIcon = 0
+                                imagePicker.launch("image/*")
                             })
-                        ProgressItem(
-                            name = "Left gap",
-                            value = previewAttrs.backbtn_gap.toFloat(),
-                            min = 0f,
-                            max = 15f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(backbtn_gap = it)
-                            })
-                        EditIcon(name = "Back button icon", icon = backIconPainter, onClick = {
-                            pickedIcon = 0
-                            imagePicker.launch("image/*")
-                        })
+                        }
                     }
                 }
-            }
 
-            SwitchItem(
-                name = "Show profile pic",
-                context = "Show/hide the profile picture and customize.",
-                checked = previewAttrs.showprofilepic,
-                onCheckChange = {
-                    previewAttrs = previewAttrs.copy(showprofilepic = it)
-                }
-            )
-            if (previewAttrs.showprofilepic) {
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .height(IntrinsicSize.Min)
-                ) {
-                    Spacer(
+                SwitchItem(
+                    name = "Show profile pic",
+                    context = "Show/hide the profile picture and customize.",
+                    checked = previewAttrs.showprofilepic,
+                    onCheckChange = {
+                        previewAttrs = previewAttrs.copy(showprofilepic = it)
+                    }
+                )
+                if (previewAttrs.showprofilepic) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(start = 8.dp)
-                            .width(1.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        ProgressItem(
-                            name = "Icon size",
-                            value = previewAttrs.profilepic_size.toFloat(),
-                            min = 20f,
-                            max = 50f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(profilepic_size = it)
-                            })
-                        ProgressItem(
-                            name = "Horizontal gap",
-                            value = previewAttrs.profilepic_gap_sides.toFloat(),
-                            min = 0f,
-                            max = 10f,
-                            onChange = {
-                                previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
-                            })
+                            .padding(bottom = 12.dp)
+                            .height(IntrinsicSize.Min)
+                    ) {
+                        Spacer(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(start = 8.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            ProgressItem(
+                                name = "Icon size",
+                                value = previewAttrs.profilepic_size.toFloat(),
+                                min = 20f,
+                                max = 50f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(profilepic_size = it)
+                                })
+                            ProgressItem(
+                                name = "Horizontal gap",
+                                value = previewAttrs.profilepic_gap_sides.toFloat(),
+                                min = 0f,
+                                max = 10f,
+                                onChange = {
+                                    previewAttrs = previewAttrs.copy(profilepic_gap_sides = it)
+                                })
 //                        EditIcon(
 //                            name = "Default profile icon",
 //                            icon = profilePicPainter,
@@ -348,122 +358,124 @@ fun SharedTransitionScope.HeaderStyleScreen(
 //                                pickedIcon = 1
 //                                imagePicker.launch("image/*")
 //                            })
+                        }
+                    }
+                }
+
+                SwitchItem(
+                    name = "Show status/username",
+                    context = "Show/hide the status as shown in the preview.",
+                    checked = previewAttrs.showstatus,
+                    onCheckChange = {
+                        previewAttrs = previewAttrs.copy(showstatus = it)
+                    }
+                )
+
+                SwitchItem(
+                    enabled = false,
+                    name = "Show three dots",
+                    context = "You can only customize the icon."
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .height(IntrinsicSize.Min)
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        EditIcon(name = "Three dots icon", icon = threeDotsPainter, onClick = {
+                            pickedIcon = 2
+                            imagePicker.launch("image/*")
+                        })
+                    }
+                }
+
+                Text(
+                    text = "Action icons:",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .height(IntrinsicSize.Min)
+                ) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(start = 8.dp)
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                    )
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        ActionIconItem(
+                            "Icon 1",
+                            navIconPainters[0],
+                            iconSize = previewAttrs.actionicons_size,
+                            previewAttrs.is_icon1_visible,
+                            {
+                                pickedIcon = 3
+                                imagePicker.launch("image/*")
+                            },
+                            {
+                                previewAttrs = previewAttrs.copy(is_icon1_visible = it)
+                            }
+                        )
+                        ActionIconItem(
+                            "Icon 2",
+                            navIconPainters[1],
+                            iconSize = previewAttrs.actionicons_size,
+                            previewAttrs.is_icon2_visible,
+                            {
+                                pickedIcon = 4
+                                imagePicker.launch("image/*")
+                            },
+                            {
+                                previewAttrs = previewAttrs.copy(is_icon2_visible = it)
+                            }
+                        )
+                        ActionIconItem(
+                            "Icon 3",
+                            navIconPainters[2],
+                            iconSize = previewAttrs.actionicons_size,
+                            previewAttrs.is_icon3_visible,
+                            {
+                                pickedIcon = 5
+                                imagePicker.launch("image/*")
+                            },
+                            {
+                                previewAttrs = previewAttrs.copy(is_icon3_visible = it)
+                            }
+                        )
+                        ProgressItem(
+                            name = "Icon size",
+                            value = previewAttrs.actionicons_size.toFloat(),
+                            min = 15f,
+                            max = 35f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(actionicons_size = it)
+                            })
+                        ProgressItem(
+                            name = "Horizontal gap",
+                            value = previewAttrs.actionicons_gap.toFloat(),
+                            min = 0f,
+                            max = 15f,
+                            onChange = {
+                                previewAttrs = previewAttrs.copy(actionicons_gap = it)
+                            })
                     }
                 }
             }
-
-            SwitchItem(
-                name = "Show status/username",
-                context = "Show/hide the status as shown in the preview.",
-                checked = previewAttrs.showstatus,
-                onCheckChange = {
-                    previewAttrs = previewAttrs.copy(showstatus = it)
-                }
-            )
-
-            SwitchItem(
-                enabled = false,
-                name = "Show three dots",
-                context = "You can only customize the icon."
-            )
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .height(IntrinsicSize.Min)
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 8.dp)
-                        .width(1.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    EditIcon(name = "Three dots icon", icon = threeDotsPainter, onClick = {
-                        pickedIcon = 2
-                        imagePicker.launch("image/*")
-                    })
-                }
-            }
-
-            Text(
-                text = "Action icons:",
-                fontSize = 17.sp,
-                fontWeight = FontWeight(500),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(top = 18.dp, bottom = 8.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .height(IntrinsicSize.Min)
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(start = 8.dp)
-                        .width(1.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                )
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                    ActionIconItem(
-                        "Icon 1",
-                        navIconPainters[0],
-                        iconSize = previewAttrs.actionicons_size,
-                        previewAttrs.is_icon1_visible,
-                        {
-                            pickedIcon = 3
-                            imagePicker.launch("image/*")
-                        },
-                        {
-                            previewAttrs = previewAttrs.copy(is_icon1_visible = it)
-                        }
-                    )
-                    ActionIconItem(
-                        "Icon 2",
-                        navIconPainters[1],
-                        iconSize = previewAttrs.actionicons_size,
-                        previewAttrs.is_icon2_visible,
-                        {
-                            pickedIcon = 4
-                            imagePicker.launch("image/*")
-                        },
-                        {
-                            previewAttrs = previewAttrs.copy(is_icon2_visible = it)
-                        }
-                    )
-                    ActionIconItem(
-                        "Icon 3",
-                        navIconPainters[2],
-                        iconSize = previewAttrs.actionicons_size,
-                        previewAttrs.is_icon3_visible,
-                        {
-                            pickedIcon = 5
-                            imagePicker.launch("image/*")
-                        },
-                        {
-                            previewAttrs = previewAttrs.copy(is_icon3_visible = it)
-                        }
-                    )
-                    ProgressItem(
-                        name = "Icon size",
-                        value = previewAttrs.actionicons_size.toFloat(),
-                        min = 15f,
-                        max = 35f,
-                        onChange = {
-                            previewAttrs = previewAttrs.copy(actionicons_size = it)
-                        })
-                    ProgressItem(
-                        name = "Horizontal gap",
-                        value = previewAttrs.actionicons_gap.toFloat(),
-                        min = 0f,
-                        max = 15f,
-                        onChange = {
-                            previewAttrs = previewAttrs.copy(actionicons_gap = it)
-                        })
-                }
-            }
         }
+        BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
     }
     AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
         ColorPicker(

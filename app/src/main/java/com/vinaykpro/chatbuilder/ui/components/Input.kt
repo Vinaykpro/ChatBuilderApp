@@ -63,7 +63,7 @@ fun Input(
         },
         label = { Text(name, color = disabledTextColor) },
         placeholder = { Text(placeholder, color = disabledTextColor) },
-        textStyle = TextStyle(fontSize = 15.sp),
+        textStyle = TextStyle(color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 15.sp),
         colors = inputFieldColors,
         singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),

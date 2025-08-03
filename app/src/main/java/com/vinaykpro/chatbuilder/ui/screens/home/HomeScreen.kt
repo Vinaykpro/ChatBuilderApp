@@ -97,6 +97,7 @@ import com.vinaykpro.chatbuilder.data.local.MyConstants
 import com.vinaykpro.chatbuilder.data.local.MyConstants.appUrl
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
+import com.vinaykpro.chatbuilder.ui.components.BannerAdView
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
@@ -121,6 +122,7 @@ fun HomeScreen(
     sharedFileUri: Uri?
 ) {
     val context = LocalContext.current
+
     val homeViewModel: HomeViewModel = viewModel(
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
     )
@@ -163,7 +165,7 @@ fun HomeScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            homeViewModel.importChatFromFile(uri)
+            homeViewModel.importChatFromFile(context, uri)
         }
     }
 
@@ -179,7 +181,7 @@ fun HomeScreen(
     LaunchedEffect(localUri.value) {
         if (localUri.value != null) {
             val uri = localUri.value!!.toUri()
-            homeViewModel.importChatFromFile(uri)
+            homeViewModel.importChatFromFile(context, uri)
             (context as? Activity)?.intent = Intent()
             localUri.value = null
         }
@@ -363,109 +365,116 @@ fun HomeScreen(
                     }
                 }
             ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                ) { page ->
-                    when (page) {
-                        0 -> Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (chats.isEmpty())
-                                Text(
-                                    text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
-                                    fontSize = 15.sp,
-                                    lineHeight = 20.sp,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(horizontal = 30.dp)
-                                )
-                            else
-                                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                                    items(chats, key = { chat -> chat.chatid }) { chat ->
-                                        ChatListItem(
-                                            id = chat.chatid,
-                                            name = chat.name,
-                                            lastMessage = chat.lastmsg,
-                                            lastSeen = chat.lastmsgtime,
-                                            onClick = {
-                                                DebounceClickHandler.run { navController.navigate("chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}") }
-                                            }
-                                        )
+                Column {
+                    BannerAdView(adId = "ca-app-pub-2813592783630195/7066679569")
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) { page ->
+                        when (page) {
+                            0 -> Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (chats.isEmpty())
+                                    Text(
+                                        text = "No chats available, You can create new ones or import from .zip or .txt files by pressing the button below",
+                                        fontSize = 15.sp,
+                                        lineHeight = 20.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 30.dp)
+                                    )
+                                else
+                                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                        items(chats, key = { chat -> chat.chatid }) { chat ->
+                                            ChatListItem(
+                                                id = chat.chatid,
+                                                name = chat.name,
+                                                lastMessage = chat.lastmsg,
+                                                lastSeen = chat.lastmsgtime,
+                                                onClick = {
+                                                    DebounceClickHandler.run {
+                                                        navController.navigate(
+                                                            "chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}"
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        }
                                     }
-                                }
-                        }
-
-                        1 -> LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            items(themes) { i ->
-                                ThemeItem(
-                                    selected = i.id == selectedTheme,
-                                    id = i.id,
-                                    name = i.name,
-                                    author = i.author,
-                                    iconColor = Color(i.appcolor.toColorInt()),
-                                    onClick = {
-                                        themeViewModel.changeTheme(i.id)
-                                        prefs.edit().putInt("themeId", i.id).apply()
-                                    },
-                                    onNextClick = {
-                                        DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
-                                    })
                             }
-                        }
 
-                        2 -> Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            SettingsItem(
-                                icon = painterResource(R.drawable.ic_theme),
-                                name = "Chat theme",
-                                context = "Create, import or customize the current chat theme",
-                                onClick = {
-                                    navController.navigate("themes")
+                            1 -> LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                items(themes) { i ->
+                                    ThemeItem(
+                                        selected = i.id == selectedTheme,
+                                        id = i.id,
+                                        name = i.name,
+                                        author = i.author,
+                                        iconColor = Color(i.appcolor.toColorInt()),
+                                        onClick = {
+                                            themeViewModel.changeTheme(i.id)
+                                            prefs.edit().putInt("themeId", i.id).apply()
+                                        },
+                                        onNextClick = {
+                                            DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
+                                        })
                                 }
-                            )
-                            SettingsItem(
-                                icon = painterResource(R.drawable.ic_animate),
-                                name = "Animate a chat",
-                                context = "Play any chat realtime",
-                                onClick = {
-                                    Toast.makeText(
-                                        context,
-                                        "Update coming soon",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
-                            SettingsItem(
-                                icon = painterResource(R.drawable.ic_lockedchats),
-                                name = "Locked chats",
-                                context = "View hidden chats",
-                                onClick = {
-                                    navController.navigate("hiddenchats")
-                                }
-                            )
-                            SettingsItem(
-                                icon = painterResource(R.drawable.ic_starredmessages),
-                                name = "Starred messages",
-                                context = "See all the starred messages",
-                                onClick = {
-                                    Toast.makeText(
-                                        context,
-                                        "Update coming soon",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
+                            }
+
+                            2 -> Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                SettingsItem(
+                                    icon = painterResource(R.drawable.ic_theme),
+                                    name = "Chat theme",
+                                    context = "Create, import or customize the current chat theme",
+                                    onClick = {
+                                        navController.navigate("themes")
+                                    }
+                                )
+                                SettingsItem(
+                                    icon = painterResource(R.drawable.ic_animate),
+                                    name = "Animate a chat",
+                                    context = "Play any chat realtime",
+                                    onClick = {
+                                        Toast.makeText(
+                                            context,
+                                            "Update coming soon",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                                SettingsItem(
+                                    icon = painterResource(R.drawable.ic_lockedchats),
+                                    name = "Locked chats",
+                                    context = "View hidden chats",
+                                    onClick = {
+                                        navController.navigate("hiddenchats")
+                                    }
+                                )
+                                SettingsItem(
+                                    icon = painterResource(R.drawable.ic_starredmessages),
+                                    name = "Starred messages",
+                                    context = "See all the starred messages",
+                                    onClick = {
+                                        Toast.makeText(
+                                            context,
+                                            "Update coming soon",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -572,8 +581,12 @@ fun HomeScreen(
             onUpdate = { homeViewModel.importedFileList = it },
             onMediaSave = {
                 if (homeViewModel.importState == IMPORTSTATE.MEDIASELECTION) {
-                    homeViewModel.keepOrSkipFiles(it)
+                    homeViewModel.importMedia = it
+                    homeViewModel.continueImport(true)
                 }
+            },
+            onWatchAdAction = {
+                homeViewModel.startRewardAd(context)
             },
             onClose = { homeViewModel.closeImport() },
             isDark = isDarkTheme.value

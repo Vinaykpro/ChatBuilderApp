@@ -137,7 +137,7 @@ fun AppNavHost(
             }
 
             composable("chatprofile") {
-                ChatProfileScreen(navController, this, chatMediaViewModel)
+                ChatProfileScreen(navController, isDarkTheme.value, this, chatMediaViewModel)
             }
 
             composable(

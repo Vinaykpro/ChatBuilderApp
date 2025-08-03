@@ -71,6 +71,10 @@ import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.nativead.NativeAd
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
@@ -78,6 +82,7 @@ import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.FileListItem
 import com.vinaykpro.chatbuilder.ui.components.Input
+import com.vinaykpro.chatbuilder.ui.components.SmallNativeAdView
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
 import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import kotlinx.coroutines.Dispatchers
@@ -92,10 +97,31 @@ import java.io.FileOutputStream
 @Composable
 fun SharedTransitionScope.ChatProfileScreen(
     navController: NavHostController = rememberNavController(),
+    isDark: Boolean,
     animatedScope: AnimatedVisibilityScope,
     model: ChatMediaViewModel,
 ) {
     val context = LocalContext.current
+
+    var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
+
+    val adLoader = remember {
+        AdLoader.Builder(context, "ca-app-pub-2813592783630195/1414897633")
+            .forNativeAd { ad ->
+                nativeAd = ad
+            }
+            .withAdListener(object : AdListener() {
+                override fun onAdLoaded() {
+                    Log.i("vkpro", "Native Ad loaded successfully")
+                }
+
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    Log.i("vkpro", "Failed Native ad: $error")
+                }
+            })
+            .build()
+    }
+
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val statusBarDp = with(density) {
@@ -105,7 +131,7 @@ fun SharedTransitionScope.ChatProfileScreen(
         WindowInsets.statusBars.getTop(this).toDp()
     }
     val heightWithoutToolbar =
-        (LocalConfiguration.current.screenHeightDp.dp - statusBarDp - navBarDp - 90.dp)
+        (LocalConfiguration.current.screenHeightDp.dp - statusBarDp - navBarDp - 90.dp - 140.dp)
 
     val imageLoader = remember {
         ImageLoader.Builder(context)
@@ -184,21 +210,6 @@ fun SharedTransitionScope.ChatProfileScreen(
             .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(vertical = 3.dp, horizontal = 8.dp)
-//        ) {
-//            IconButton(onClick = {
-//                navController.popBackStack()
-//            }) {
-//                Icon(
-//                    painter = painterResource(R.drawable.ic_back),
-//                    contentDescription = "back",
-//                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-//                )
-//            }
-//        }
         BasicToolbar(
             name = "",
             color = MaterialTheme.colorScheme.background,
@@ -309,16 +320,11 @@ fun SharedTransitionScope.ChatProfileScreen(
                     })
             }
 
-            // Media
-//        Text(
-//            text = "Media and docs (23)",
-//            fontSize = 17.sp,
-//            fontWeight = FontWeight(500),
-//            color = MaterialTheme.colorScheme.onPrimaryContainer,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(vertical = 18.dp, horizontal = 18.dp)
-//        )
+            SmallNativeAdView(
+                adLoader = adLoader,
+                ad = nativeAd,
+                isDark = isDark
+            )
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 listOf(

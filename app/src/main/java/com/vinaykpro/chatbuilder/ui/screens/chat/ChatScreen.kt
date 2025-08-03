@@ -1,6 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -328,7 +329,7 @@ fun SharedTransitionScope.ChatScreen(
                     }
                 },
                 onProfileClick = {
-                    DebounceClickHandler.run(1200) { navController.navigate("chatprofile") }
+                    DebounceClickHandler.run { navController.navigate("chatprofile") }
                 },
                 onBackClick = {
                     navController.popBackStack()
@@ -420,12 +421,13 @@ fun SharedTransitionScope.ChatScreen(
                             },
                             onCopy = {
                                 clipboardManager.setText(AnnotatedString(it))
-                                Toast.makeText(
-                                    context,
-                                    "Copied to clipboard",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                    Toast.makeText(
+                                        context,
+                                        "Copied to clipboard",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         )
 

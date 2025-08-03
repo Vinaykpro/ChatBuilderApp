@@ -57,6 +57,7 @@ import coil.request.ImageRequest
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.VideoPlayer
 import com.vinaykpro.chatbuilder.ui.components.ZoomableImage
 import java.io.File
@@ -170,7 +171,9 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val msg = chatMediaViewModel.previewMediaMessages[pagerState.currentPage]
-                IconButton(onClick = {}) {
+                IconButton(onClick = {
+                    DebounceClickHandler.run { navController.popBackStack() }
+                }) {
                     Icon(
                         modifier = Modifier.size(24.dp),
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,

@@ -57,6 +57,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2813592783630195~1359057315" />
+        <!-- TEST_ID: ca-app-pub-3940256099942544~3347511713 -->
+
     </application>
 
 </manifest>

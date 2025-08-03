@@ -19,6 +19,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.ads.MobileAds
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.navigation.AppNavHost
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(window)
 
         setContent {
+            MobileAds.initialize(this)
             val context = LocalContext.current
             val prefs = remember { context.getSharedPreferences("my_prefs", MODE_PRIVATE) }
             val theme = themeViewModel.themeEntity.collectAsState(initial = null).value
@@ -47,7 +49,6 @@ class MainActivity : ComponentActivity() {
             window.setBackgroundDrawable((if (isDarkTheme.value) Color.BLACK else Color.WHITE).toDrawable())
 
             val sharedFileUri = extractSharedFile(intent)
-            //TestMessages()
             if (theme != null) {
                 val navController = rememberNavController()
                 ChatBuilderTheme(theme = theme, darkTheme = isDarkTheme.value) {

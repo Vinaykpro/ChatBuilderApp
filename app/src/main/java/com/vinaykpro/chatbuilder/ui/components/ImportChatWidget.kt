@@ -58,6 +58,7 @@ fun ImportChatWidget(
     files: List<ZipItem> = emptyList(),
     onUpdate: (List<ZipItem>) -> Unit = {},
     onMediaSave: (Boolean) -> Unit = {},
+    onWatchAdAction: () -> Unit = {},
     isDark: Boolean = true,
 ) {
     val index = step
@@ -154,7 +155,7 @@ fun ImportChatWidget(
                         )
                     }
 
-                    2 -> {
+                    IMPORTSTATE.MEDIASELECTION -> {
                         var toggleSelectAll by remember { mutableStateOf(true) }
                         Row(
                             modifier = Modifier
@@ -253,6 +254,33 @@ fun ImportChatWidget(
                                     .padding(12.dp)
                             )
                         }
+                    }
+
+                    IMPORTSTATE.WATCHAD -> {
+                        val composition by rememberLottieComposition(
+                            LottieCompositionSpec.Asset("watchAd.json")
+                        )
+
+                        LottieAnimation(
+                            composition,
+                            iterations = LottieConstants.IterateForever,
+                            modifier = Modifier.size(250.dp)
+                        )
+
+                        Text(
+                            text = "Watch an Ad to continue",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight(500),
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .padding(4.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(LightColorScheme.primary)
+                                .clickable { onWatchAdAction() }
+                                .padding(12.dp)
+                        )
                     }
                 }
             }
