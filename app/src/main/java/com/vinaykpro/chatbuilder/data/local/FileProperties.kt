@@ -73,7 +73,7 @@ object MyConstants {
         "Theme",
         "Swap sender",
         "Go to Date",
-        "Export chat to HTML",
+        "Export to PDF/HTML",
         "Hide/Unhide chat",
         "Clear chat"
     )

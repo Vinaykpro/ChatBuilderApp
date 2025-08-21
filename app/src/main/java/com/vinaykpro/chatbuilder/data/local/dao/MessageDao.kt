@@ -7,12 +7,11 @@ import androidx.room.Query
 import com.vinaykpro.chatbuilder.data.local.DateInfo
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import com.vinaykpro.chatbuilder.data.local.UserInfo
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessageDao {
     @Query("SELECT * FROM messages where chatid = :chatID")
-    fun getAllMessages(chatID: Int): Flow<List<MessageEntity>>
+    fun getAllMessages(chatID: Int): List<MessageEntity>
 
     @Query("SELECT messageId FROM messages where chatid = :chatID and message LIKE :text")
     suspend fun getSearchResultsInChat(chatID: Int, text: String): List<Int>

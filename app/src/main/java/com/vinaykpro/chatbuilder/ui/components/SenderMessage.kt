@@ -443,12 +443,10 @@ fun BubbleShape(bubbleRadius: Float): Shape = GenericShape { size, _ ->
 
     moveTo(0f, 0f)
     lineTo(size.width - radius, 0f)
-
     quadraticBezierTo(
         size.width, 0f,
         size.width - radius / 3f, radius
     )
-
     lineTo(0f, size.height)
     close()
 }

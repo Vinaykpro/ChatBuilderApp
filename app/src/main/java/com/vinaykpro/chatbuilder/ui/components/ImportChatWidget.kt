@@ -58,8 +58,7 @@ fun ImportChatWidget(
     files: List<ZipItem> = emptyList(),
     onUpdate: (List<ZipItem>) -> Unit = {},
     onMediaSave: (Boolean) -> Unit = {},
-    onWatchAdAction: () -> Unit = {},
-    isDark: Boolean = true,
+    onWatchAdAction: () -> Unit = {}
 ) {
     val index = step
     val checkboxColors = CheckboxDefaults.colors(
@@ -87,7 +86,7 @@ fun ImportChatWidget(
                     indication = null,
                     onClick = {})
                 .clip(shape = RoundedCornerShape(14.dp, 14.dp))
-                .background(if (isDark) Color(0xFF252525) else LightColorScheme.background)
+                .background(MaterialTheme.colorScheme.onSurface)
                 .align(Alignment.BottomCenter)
                 .heightIn(max = 600.dp),
         ) {

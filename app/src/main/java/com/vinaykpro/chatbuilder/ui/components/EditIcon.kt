@@ -85,7 +85,7 @@ fun EditIcon(
             Icon(
                 painter = painterResource(R.drawable.ic_edit),
                 contentDescription = "Edit",
-                tint = Color.Unspecified,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier
                     .size(20.dp)
                     .align(Alignment.Center)

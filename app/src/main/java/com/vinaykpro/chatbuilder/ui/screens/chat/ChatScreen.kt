@@ -1,6 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.screens.chat
 
 import android.app.Application
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -36,6 +37,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +73,7 @@ import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ClearChatWidget
 import com.vinaykpro.chatbuilder.ui.components.DateNavigationWidget
+import com.vinaykpro.chatbuilder.ui.components.ExportChatWidget
 import com.vinaykpro.chatbuilder.ui.components.Message
 import com.vinaykpro.chatbuilder.ui.components.SearchBar
 import com.vinaykpro.chatbuilder.ui.components.SenderMessage
@@ -176,8 +179,10 @@ fun SharedTransitionScope.ChatScreen(
     var swapUsersVisible by remember { mutableStateOf(false) }
     var dateNavigatorVisible by remember { mutableStateOf(false) }
     var clearChatVisible by remember { mutableStateOf(false) }
-
     var addUserVisible by remember { mutableStateOf(false) }
+    var exportChatVisible by remember { mutableStateOf(false) }
+    var exportChatStep by remember { mutableIntStateOf(0) }
+    var exportProgress by remember { mutableFloatStateOf(-1f) }
 
     LaunchedEffect(Unit) {
         delay(50)
@@ -302,8 +307,7 @@ fun SharedTransitionScope.ChatScreen(
                             }
 
                             5 -> {
-                                Toast.makeText(context, "Update coming soon", Toast.LENGTH_SHORT)
-                                    .show()
+                                exportChatVisible = true
                             }
 
                             6 -> {
@@ -589,12 +593,106 @@ fun SharedTransitionScope.ChatScreen(
         )
     }
 
+    AnimatedVisibility(
+        visible = exportChatVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        ExportChatWidget(
+            model.fullMessageList,
+            step = exportChatStep,
+            progress = exportProgress,
+            onClose = { exportChatVisible = false },
+            onWatchAdAction = {
+                exportChatStep = 1
+                model.loadAndShowAd(
+                    context,
+                    onAdFinished = {
+                        exportChatStep = 2
+                        exportProgress = 0f
+                        if (it) model.loadAndExport(
+                            context,
+                            chatDetails?.name ?: "",
+                            currentUserId,
+                            onUpdate = {
+                                exportProgress = it / 100.toFloat()
+                            },
+                            onDone = {
+                                exportChatVisible = false
+                                exportProgress = -1f
+                                if (it == null) {
+                                    model.toast = "Unable to save/share the file"
+                                    model.showToast = true
+                                    return@loadAndExport
+                                }
+                                model.toast = "File saved to Downloads/ChatBuilder"
+                                model.showToast = true
+                                val uri = it
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/pdf"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        "Share chat as Pdf"
+                                    )
+                                )
+                            }
+                        )
+                        else model.loadAndExportToHTML(
+                            context,
+                            chatDetails?.name ?: "",
+                            currentUserId,
+                            onUpdate = {
+                                exportProgress = it / 100.toFloat()
+                            },
+                            onDone = {
+                                exportChatVisible = false
+                                exportProgress = -1f
+                                if (it == null) {
+                                    model.toast = "Unable to save/share the file"
+                                    model.showToast = true
+                                    return@loadAndExportToHTML
+                                }
+                                model.toast = "File saved to Downloads/ChatBuilder"
+                                model.showToast = true
+                                val uri = it
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/html"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        "Share chat as Html"
+                                    )
+                                )
+                            }
+                        )
+                    },
+                    onFailed = {
+                        exportChatStep = 0
+                        Toast.makeText(
+                            context,
+                            "Failed to load Ad! Please connect to internet and disable ad blockers",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                )
+            }
+        )
+    }
+
     BackHandler {
-        if (swapUsersVisible || dateNavigatorVisible || clearChatVisible || addUserVisible) {
+        if (swapUsersVisible || dateNavigatorVisible || clearChatVisible || addUserVisible || exportChatVisible) {
             swapUsersVisible = false
             dateNavigatorVisible = false
             clearChatVisible = false
             addUserVisible = false
+            if (exportChatStep == 0) exportChatVisible = false
         } else {
             navController.popBackStack()
         }

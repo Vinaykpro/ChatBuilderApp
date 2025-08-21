@@ -30,7 +30,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,9 +53,6 @@ import com.vinaykpro.chatbuilder.data.local.MESSAGESTATUS
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -69,8 +65,7 @@ import java.util.zip.ZipInputStream
 class MessageViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getInstance(application).messageDao()
 
-    val messages: StateFlow<List<MessageEntity>> = dao.getAllMessages(0)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val messages: List<MessageEntity> = dao.getAllMessages(0)
 
     fun insertMessages(messages: List<MessageEntity>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -108,7 +103,7 @@ fun TestMessages() {
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
     )
 
-    val messages by messageViewModel.messages.collectAsState()
+    val messages = messageViewModel.messages
 
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()

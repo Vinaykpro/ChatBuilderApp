@@ -1,11 +1,13 @@
 package com.vinaykpro.chatbuilder.ui.screens.home
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -139,6 +141,24 @@ fun HomeScreen(
     SideEffect {
         val window = activity.window
         WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(
+                context,
+                "Storage access denied! It is needed for saving chats into PDF/HTML Format!",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    // Taking write access for A10 below
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
     }
 
     val scope = rememberCoroutineScope()
@@ -588,8 +608,7 @@ fun HomeScreen(
             onWatchAdAction = {
                 homeViewModel.startRewardAd(context)
             },
-            onClose = { homeViewModel.closeImport() },
-            isDark = isDarkTheme.value
+            onClose = { homeViewModel.closeImport() }
         )
     }
 
