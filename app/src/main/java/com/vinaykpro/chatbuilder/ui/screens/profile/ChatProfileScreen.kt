@@ -232,10 +232,10 @@ fun SharedTransitionScope.ChatProfileScreen(
                 modifier = Modifier
                     .size(100.dp)
                     .alpha(if (profilePicLoading) 0f else 1f)
-                    .sharedElement(
-                        state = rememberSharedContentState(0),
-                        animatedVisibilityScope = animatedScope
-                    )
+//                    .sharedElement(
+//                        state = rememberSharedContentState(0),
+//                        animatedVisibilityScope = animatedScope
+//                    )
                     .graphicsLayer {
                         clip = true
                         shape = CircleShape
@@ -402,13 +402,7 @@ fun SharedTransitionScope.ChatProfileScreen(
                                             painter = painter,
                                             contentDescription = null,
                                             modifier = Modifier
-                                                .fillMaxSize()
-                                                .sharedElement(
-                                                    state = rememberSharedContentState(
-                                                        m.fileId ?: ""
-                                                    ),
-                                                    animatedVisibilityScope = animatedScope
-                                                ),
+                                                .fillMaxSize(),
                                             contentScale = ContentScale.Crop
                                         )
                                         if (file?.type == FILETYPE.VIDEO) {

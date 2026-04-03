@@ -91,7 +91,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startRewardAd(context: Context) {
-        rewardedAd?.show(context as Activity) {
+        val activity = context as? Activity ?: return
+        rewardedAd?.show(activity) {
             rewardedAdState = 0
             rewardedAd = null
             keepOrSkipFiles(importMedia == true)
@@ -122,7 +123,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             Log.i("vkpro", "vm res ${res.result}")
             if (res.result == IMPORTRESULT.SUCCESS) {
                 importedMesssages = res.messages ?: emptyList()
-                val lastMessage = importedMesssages[importedMesssages.size - 1]
+                val lastMessage = importedMesssages.lastOrNull()
                 val beginningMsgId = messageDao.getLastMessageId() ?: 0
                 dao.addOrUpdateChat(
                     ChatEntity(
@@ -131,8 +132,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         showReceiverName = res.users != null && res.users.size > 2,
                         senderId = res.senderId,
                         lastOpenedMsgId = if (beginningMsgId == 0) 0 else beginningMsgId + 1,
-                        lastmsg = lastMessage.message ?: "",
-                        lastmsgtime = lastMessage.date ?: "",
+                        lastmsg = lastMessage?.message ?: "",
+                        lastmsgtime = lastMessage?.date ?: "",
                     )
                 )
                 if (res.isMediaFound) {

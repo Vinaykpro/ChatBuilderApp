@@ -194,10 +194,10 @@ fun SharedTransitionScope.SenderMessage(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(Color.Black)
-                                    .sharedElement(
-                                        state = rememberSharedContentState(file.fileid),
-                                        animatedVisibilityScope = animatedVisibilityScope!!
-                                    )
+//                                    .sharedElement(
+//                                        state = rememberSharedContentState(file.fileid),
+//                                        animatedVisibilityScope = animatedVisibilityScope!!
+//                                    )
                                     .clickable {
                                         onMediaClick(file.fileid)
                                     }

@@ -127,14 +127,14 @@ fun SharedTransitionScope.ChatToolbar(
                     modifier = Modifier
                         .padding(horizontal = style.profilepic_gap_sides.dp)
                         .size(style.profilepic_size.dp)
-                        .then(
-                            if (scope != null)
-                                Modifier.sharedElement(
-                                    state = rememberSharedContentState(0),
-                                    animatedVisibilityScope = scope
-                                )
-                            else Modifier
-                        )
+//                        .then(
+//                            if (scope != null)
+//                                Modifier.sharedElement(
+//                                    state = rememberSharedContentState(0),
+//                                    animatedVisibilityScope = scope
+//                                )
+//                            else Modifier
+//                        )
                         .graphicsLayer {
                             clip = true
                             shape = CircleShape

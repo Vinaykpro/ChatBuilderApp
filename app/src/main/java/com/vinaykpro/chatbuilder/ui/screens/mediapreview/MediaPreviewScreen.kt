@@ -33,8 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,9 +77,9 @@ fun SharedTransitionScope.MediaPreviewScreen(
     val window = activity.window
     val controller = WindowInsetsControllerCompat(window, view)
 
-    SideEffect {
-        val window = activity.window
-        WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = false
+    DisposableEffect(Unit) {
+        controller.isAppearanceLightStatusBars = false
+        onDispose { }
     }
 
     val startIndex = chatMediaViewModel.previewMediaMessages.indexOfFirst { it.fileId == fileid }
@@ -118,19 +118,24 @@ fun SharedTransitionScope.MediaPreviewScreen(
             modifier = Modifier.fillMaxSize(),
             userScrollEnabled = !isZoomed
         ) { page ->
-            val item = chatMediaViewModel.previewMediaMessages[page]
-            val media = chatMediaViewModel.mediaMap[item.fileId]
+            val item =
+                chatMediaViewModel.previewMediaMessages.getOrNull(page) ?: return@HorizontalPager
+            val media = chatMediaViewModel.mediaMap[item.fileId] ?: return@HorizontalPager
 
-            val sharedModifier = if (item.fileId == fileid) {
+            val mediaFile = remember(media.filename) {
+                File(context.getExternalFilesDir(null), media.filename)
+            }
+
+            val sharedModifier = Modifier  /* if (item.fileId == fileid) {
                 Modifier.sharedElement(
                     state = rememberSharedContentState(fileid ?: ""),
                     animatedVisibilityScope = scope
                 )
-            } else Modifier
+            } else Modifier */
 
-            if (media!!.type == FILETYPE.VIDEO) {
+            if (media.type == FILETYPE.VIDEO) {
                 VideoPlayer(
-                    file = File(context.getExternalFilesDir(null), media.filename),
+                    file = mediaFile,
                     text = item.message,
                     sharedModifier = sharedModifier,
                     onVisibilityChange = { detailsVisible = it }
@@ -138,7 +143,7 @@ fun SharedTransitionScope.MediaPreviewScreen(
             } else {
                 val painter = rememberAsyncImagePainter(
                     ImageRequest.Builder(context)
-                        .data(File(context.getExternalFilesDir(null), media.filename))
+                        .data(mediaFile)
                         .size(coil.size.Size.ORIGINAL)
                         .build()
                 )

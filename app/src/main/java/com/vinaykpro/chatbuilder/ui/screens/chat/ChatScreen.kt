@@ -226,7 +226,7 @@ fun SharedTransitionScope.ChatScreen(
             snapshotFlow { listState.firstVisibleItemIndex to listState.layoutInfo.totalItemsCount }
                 .distinctUntilChanged()
                 .collect { (firstIndex, totalCount) ->
-                    if (totalCount == 0) return@collect
+                    if (totalCount == 0 || firstIndex >= messages.size) return@collect
                     val date = messages[firstIndex].date
                     if (date != null && date != currDate) currDate = date
 
@@ -361,7 +361,9 @@ fun SharedTransitionScope.ChatScreen(
                             "vkpro",
                             "PARAM index = ${listState.firstVisibleItemIndex} ; id = ${messages[listState.firstVisibleItemIndex].messageId}"
                         )
-                        model.search(it, messages[listState.firstVisibleItemIndex].messageId)
+                        val index = listState.firstVisibleItemIndex
+                        val msgId = messages.getOrNull(index)?.messageId ?: return@SearchBar
+                        model.search(it, msgId)
                     },
                     resultsLength = model.searchedResults.size,
                     currentResultIndex = model.currentSearchIndex,
@@ -619,7 +621,7 @@ fun SharedTransitionScope.ChatScreen(
                             },
                             onDone = {
                                 exportChatVisible = false
-                                exportProgress = -1f
+                                exportChatStep = 0
                                 if (it == null) {
                                     model.toast = "Unable to save/share the file"
                                     model.showToast = true
@@ -650,7 +652,7 @@ fun SharedTransitionScope.ChatScreen(
                             },
                             onDone = {
                                 exportChatVisible = false
-                                exportProgress = -1f
+                                exportChatStep = 0
                                 if (it == null) {
                                     model.toast = "Unable to save/share the file"
                                     model.showToast = true

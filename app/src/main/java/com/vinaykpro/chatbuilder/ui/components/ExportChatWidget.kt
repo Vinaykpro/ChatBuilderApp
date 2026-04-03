@@ -224,7 +224,7 @@ fun ExportChatWidget(
                     }
                 }
                 Text(
-                    text = if (step == 1) adLoadingText else "Watch an Ad to Export",
+                    text = if (step == 1) adLoadingText else "Export chat",
                     fontSize = 16.sp,
                     fontWeight = FontWeight(500),
                     color = Color.White,

@@ -16,6 +16,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.text.htmlEncode
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -158,9 +159,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         currentSearchIndex += direction
         Log.i("vkpro", "going next")
         viewModelScope.launch {
-            if (currentSearchIndex < searchedResults.size)
+            if (currentSearchIndex >= 0 && currentSearchIndex < searchedResults.size) {
                 loadMessagesAtId(searchedResults[currentSearchIndex])
-            Log.i("vkpro", "loading at id: ${searchedResults[currentSearchIndex]}")
+                Log.i("vkpro", "loading at id: ${searchedResults[currentSearchIndex]}")
+            }
         }
     }
 
@@ -911,7 +913,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                     }
                     messagesBody.append(
                         if (id == 0) {
-                            getNote(msg.date ?: "")
+                            getNote(message)
                         } else if (id == senderId) getSentMessage(
                             message,
                             name,
@@ -1001,7 +1003,12 @@ class ChatViewModel(application: Application, private val chatId: Int) :
             FileOutputStream(file).use { out ->
                 writeData(out)
             }
-            Uri.fromFile(file)
+            /* Uri.fromFile(file) */
+            FileProvider.getUriForFile(
+                activity,
+                "${activity.packageName}.provider",
+                file
+            )
         }
 
         onSaved(uri)

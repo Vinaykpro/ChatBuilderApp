@@ -17,7 +17,8 @@ import kotlinx.serialization.json.Json
 
 @Database(
     entities = [ThemeEntity::class, ChatEntity::class, MessageEntity::class, FileEntity::class],
-    version = 1
+    version = 1,
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun themeDao(): ThemeDao
