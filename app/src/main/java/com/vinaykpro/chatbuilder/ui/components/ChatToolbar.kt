@@ -71,6 +71,7 @@ fun SharedTransitionScope.ChatToolbar(
     icon3: Painter = painterResource(R.drawable.ic_starredmessages),
     icon4: Painter = painterResource(R.drawable.ic_more),
     preview: Boolean = false,
+    noTopPadding: Boolean = false,
     previewColors: ParsedHeaderStyle = ParsedHeaderStyle(),
     previewAttrs: HeaderStyle = HeaderStyle(),
     onMenuClick: (Int) -> Unit = {},
@@ -83,14 +84,16 @@ fun SharedTransitionScope.ChatToolbar(
     val style = if (preview) previewAttrs else style
 
     val view = LocalView.current
-    val activity = LocalContext.current as Activity
+    val activity = LocalContext.current as? Activity
 
     val useDarkIcons = themeColors.navBar.luminance() > 0.5f
 
     SideEffect {
         if (!preview) {
-            val window = activity.window
-            WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
+            val window = activity?.window
+            if (window != null)
+                WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars =
+                    useDarkIcons
         }
     }
 
@@ -100,7 +103,7 @@ fun SharedTransitionScope.ChatToolbar(
             .fillMaxWidth()
             .background(themeColors.navBar)
             .padding(
-                top = if (preview) 6.dp else WindowInsets.statusBars.asPaddingValues()
+                top = if (preview || noTopPadding) 6.dp else WindowInsets.statusBars.asPaddingValues()
                     .calculateTopPadding()
             )
             .padding(bottom = 6.dp, start = 2.dp, end = 2.dp),

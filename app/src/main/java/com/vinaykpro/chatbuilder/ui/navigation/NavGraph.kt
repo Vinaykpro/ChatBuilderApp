@@ -25,9 +25,11 @@ import androidx.navigation.navArgument
 import com.vinaykpro.chatbuilder.TestMessages
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.ui.screens.animatechat.AnimateChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.hiddenchats.HiddenChatsScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
+import com.vinaykpro.chatbuilder.ui.screens.livechat.LiveChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
 import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
 import com.vinaykpro.chatbuilder.ui.screens.search.SearchScreen
@@ -41,13 +43,16 @@ import com.vinaykpro.chatbuilder.ui.screens.theme.ThemeScreen
 object Routes {
     const val Splash = "splash"
     const val Home = "home"
-    const val Chat = "chat/{chatId}?messageId={messageId}&hidden={hidden}"
+    const val Chat =
+        "chat/{chatId}?messageId={messageId}&hidden={hidden}&range={range}&settings={settings}"
     const val Themes = "themes"
     const val EditTheme = "theme/{name}"
     const val HeaderStyle = "headerstyle"
     const val BodyStyle = "bodystyle"
     const val MessagebarStyle = "barstyle"
     const val HiddenChats = "hiddenchats"
+    const val AnimateChat = "animatechat"
+    const val LiveChat = "livechat"
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -95,7 +100,8 @@ fun AppNavHost(
                 arguments = listOf(
                     navArgument("chatId") { type = NavType.IntType },
                     navArgument("messageId") { type = NavType.IntType; defaultValue = -1 },
-                    navArgument("hidden") { type = NavType.IntType; defaultValue = 0 }
+                    navArgument("hidden") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("range") { type = NavType.BoolType; defaultValue = false },
                 ),
                 enterTransition = {
                     if (targetState.destination.route?.startsWith("mediapreview") == true) {
@@ -124,11 +130,13 @@ fun AppNavHost(
             ) { backStackEntry ->
                 val chatId = backStackEntry.arguments?.getInt("chatId")!!
                 val messageId = backStackEntry.arguments?.getInt("messageId") ?: -1
+                val range = backStackEntry.arguments?.getBoolean("range") == true
                 val hidden = backStackEntry.arguments?.getInt("hidden") ?: 0
                 ChatScreen(
                     chatId = chatId,
                     messageId = messageId,
                     hidden = hidden,
+                    isRange = range,
                     isDarkTheme.value,
                     navController,
                     this,
@@ -270,6 +278,62 @@ fun AppNavHost(
             }
             composable("temp") {
                 TestMessages()
+            }
+            composable(
+                route = Routes.AnimateChat,
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }
+            ) {
+                AnimateChatScreen(
+                    navController = navController,
+                    isDarkTheme = isDarkTheme.value
+                )
+            }
+            composable(
+                route = "livechat?chatId={chatId}&rStart={rStart}&rEnd={rEnd}&settings={settings}",
+                arguments = listOf(
+                    navArgument("chatId") { type = NavType.IntType; defaultValue = -1 },
+                    navArgument("rStart") { type = NavType.IntType; defaultValue = -1 },
+                    navArgument("rEnd") { type = NavType.IntType; defaultValue = -1 },
+                    navArgument("settings") { type = NavType.StringType; defaultValue = "11" }
+                ),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }
+            ) { backStackEntry ->
+                val chatId = backStackEntry.arguments?.getInt("chatId")!!
+                val rangeStart = backStackEntry.arguments?.getInt("rStart")!!
+                val rangeEnd = backStackEntry.arguments?.getInt("rEnd")!!
+                val settings = backStackEntry.arguments?.getString("settings")!!
+                LiveChatScreen(
+                    chatId = chatId,
+                    rangeStart = rangeStart,
+                    rangeEnd = rangeEnd,
+                    isTypingEnabled = settings[0] == '1',
+                    isInputTypingEnabled = settings[1] == '1',
+                    navController = navController,
+                    isDarkTheme = isDarkTheme.value,
+                    chatMediaViewModel = chatMediaViewModel
+                )
             }
         }
     }

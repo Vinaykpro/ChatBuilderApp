@@ -11,20 +11,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -61,6 +69,7 @@ fun SharedTransitionScope.Message(
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
     file: FileEntity? = null,
+    searchedString: String? = null,
     screenWidth: Int = 200,
     screenWidthDp: Dp = 250.dp,
     isFirst: Boolean = false,
@@ -68,9 +77,11 @@ fun SharedTransitionScope.Message(
     showTime: Boolean = true,
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    selectionMode: Boolean = false,
+    isSelected: Boolean = false,
     onMediaClick: (Int) -> Unit = {},
     onCopy: (String) -> Unit = {},
-    searchedString: String? = null,
+    onClick: () -> Unit = {},
 ) {
     //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
@@ -98,10 +109,12 @@ fun SharedTransitionScope.Message(
     date?.invoke()
     Box(
         modifier = Modifier
+            .then(if (selectionMode) Modifier.height(IntrinsicSize.Max) else Modifier)
             .fillMaxWidth()
             .padding(1.dp)
             .clickable {
-                if (text != null) onCopy(text)
+                onClick()
+//                if (text != null) onCopy(text)
             }
             .padding(top = if (isFirst) 2.dp else 0.dp),
         contentAlignment = Alignment.Center
@@ -109,62 +122,99 @@ fun SharedTransitionScope.Message(
         if (bubbleStyle == 1 && isFirst) Arrow(
             modifier = Modifier.align(Alignment.TopStart),
             bubbleTipRadius,
-            color = color
+            color = color,
+            selectionMode
         )
         else if (bubbleStyle == 3 && isLast) ArrowBottom(
             modifier = Modifier.align(Alignment.BottomStart),
-            color = color
+            color = color,
+            selectionMode
         )
 
+        if (selectionMode) {
+            if (isSelected) {
+                Spacer(
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .fillMaxHeight()
+                        .width(2.dp)
+                        .align(Alignment.CenterStart),
+                )
+                Spacer(
+                    modifier = Modifier
+                        .padding(start = 7.dp)
+                        .size(15.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .align(Alignment.CenterStart)
+                )
+            }
+            Image(
+                painter = painterResource(if (isSelected) R.drawable.ic_msg_selected else R.drawable.ic_msg_unselected),
+                contentDescription = "Select message",
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(20.dp)
+                    .align(Alignment.CenterStart),
+                colorFilter = ColorFilter.tint(
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                )
+            )
+        }
+
         Box(
-            modifier = bubbleModifier
-                .widthIn(max = screenWidthDp * 0.8f)
-                .align(if (bubbleStyle != 3) Alignment.TopStart else Alignment.BottomStart)
-                .then(
-                    if (file != null) {
-                        Modifier.clickable {
-                            if (isFile)
-                                try {
-                                    val filePath = File(
-                                        context.getExternalFilesDir(null),
-                                        file.filename
-                                    )
-                                    val uri = FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.provider",
-                                        filePath
-                                    )
-
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(
-                                            uri,
-                                            context.contentResolver.getType(uri) ?: "*/*"
-                                        )
-                                        flags =
-                                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-                                    }
-
+            modifier =
+                Modifier
+                    .padding(start = if (selectionMode) 30.dp else 0.dp)
+                    .then(bubbleModifier)
+                    .widthIn(max = screenWidthDp * 0.8f)
+                    .align(if (bubbleStyle != 3) Alignment.TopStart else Alignment.BottomStart)
+                    .then(
+                        if (file != null) {
+                            Modifier.clickable {
+                                if (isFile)
                                     try {
-                                        context.startActivity(intent)
-                                    } catch (e: ActivityNotFoundException) {
+                                        val filePath = File(
+                                            context.getExternalFilesDir(null),
+                                            file.filename
+                                        )
+                                        val uri = FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider",
+                                            filePath
+                                        )
+
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(
+                                                uri,
+                                                context.contentResolver.getType(uri) ?: "*/*"
+                                            )
+                                            flags =
+                                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (e: ActivityNotFoundException) {
+                                            Toast.makeText(
+                                                context,
+                                                "No app found to open this file",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    } catch (e: Exception) {
                                         Toast.makeText(
                                             context,
-                                            "No app found to open this file",
+                                            "This file doesn't exist in storage",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                                } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        "This file doesn't exist in storage",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                            }
+                        } else {
+                            Modifier
                         }
-                    } else {
-                        Modifier
-                    }
-                )
+                    )
         ) {
             Column(modifier = containerModifier) {
                 if (isFirst && senderName != null)
@@ -328,9 +378,15 @@ fun SharedTransitionScope.Message(
 }
 
 @Composable
-fun Arrow(modifier: Modifier = Modifier, bubbleRadius: Float, color: Color) {
+fun Arrow(
+    modifier: Modifier = Modifier,
+    bubbleRadius: Float,
+    color: Color,
+    selectionMode: Boolean
+) {
     Box(
         modifier = modifier
+            .padding(start = if (selectionMode) 30.dp else 0.dp)
             .size(11.dp)
             .scale(-1f, 1f)
             .background(color = color, shape = BubbleShape(bubbleRadius = bubbleRadius))
@@ -338,9 +394,10 @@ fun Arrow(modifier: Modifier = Modifier, bubbleRadius: Float, color: Color) {
 }
 
 @Composable
-fun ArrowBottom(modifier: Modifier = Modifier, color: Color) {
+fun ArrowBottom(modifier: Modifier = Modifier, color: Color, selectionMode: Boolean) {
     Box(
         modifier = modifier
+            .padding(start = if (selectionMode) 30.dp else 0.dp)
             .size(11.dp)
             .scale(-1f, 1f)
             .background(color = color, shape = BottomBubbleShape)

@@ -38,6 +38,7 @@ fun BasicToolbar(
     name: String = "Chat theme",
     color: Color = MaterialTheme.colorScheme.primary,
     textColor: Color = Color.White,
+    noPadding: Boolean = false,
     icon1: Painter? = null,
     icon2: Painter? = null,
     onIcon1Click: () -> Unit = {},
@@ -45,18 +46,19 @@ fun BasicToolbar(
     onBackClick: () -> Unit
 ) {
     val view = LocalView.current
-    val activity = LocalContext.current as Activity
+    val activity = LocalContext.current as? Activity
 
     val useDarkIcons = color.luminance() > 0.5f
 
     SideEffect {
-        val window = activity.window
-        WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
+        val window = activity?.window
+        if (window != null)
+            WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars = useDarkIcons
     }
 
     Row(modifier = Modifier.fillMaxWidth()
         .background(color)
-        .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+        .padding(top = if(noPadding) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
         .padding(bottom = 6.dp, start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         IconButton( onClick = {

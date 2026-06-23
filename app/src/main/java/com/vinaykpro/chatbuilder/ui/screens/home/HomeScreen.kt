@@ -467,11 +467,7 @@ fun HomeScreen(
                                     name = "Animate a chat",
                                     context = "Play any chat realtime",
                                     onClick = {
-                                        Toast.makeText(
-                                            context,
-                                            "Update coming soon",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        navController.navigate("animatechat")
                                     }
                                 )
                                 SettingsItem(

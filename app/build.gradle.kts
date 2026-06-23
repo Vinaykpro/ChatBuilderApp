@@ -14,8 +14,8 @@ android {
         applicationId = "com.vinaykpro.chatbuilder"
         minSdk = 21
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 7
+        versionName = "1.5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -52,7 +52,6 @@ android {
 }
 
 dependencies {
-
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
 
     implementation(composeBom)
@@ -74,7 +73,11 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-ads:23.2.0")
 
-    implementation("me.onebone:toolbar-compose:2.3.5")
+    implementation("me.onebone:toolbar-compose:2.3.5") {
+        exclude(group = "androidx.compose.ui")
+        exclude(group = "androidx.compose.foundation")
+        exclude(group = "androidx.compose.runtime")
+    }
     implementation("com.airbnb.android:lottie-compose:6.4.0")
     implementation("io.github.zj565061763.kmp:compose-wheelpicker-android:1.0.0-alpha01")
 

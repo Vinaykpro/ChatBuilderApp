@@ -73,6 +73,7 @@ object MyConstants {
         "Theme",
         "Swap sender",
         "Go to Date",
+        "Animate Chat",
         "Export to PDF/HTML",
         "Hide/Unhide chat",
         "Clear chat"
@@ -92,3 +93,5 @@ fun formatFileSize(bytes: Long): String {
         else -> "%.2f GB".format(bytes / gb)
     }
 }
+
+val Boolean.toInt get() = if (this) 1 else 0

@@ -13,7 +13,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,7 +62,6 @@ import com.vinaykpro.chatbuilder.data.local.FileEntity
 import java.io.File
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-//@Preview
 @Composable
 fun SharedTransitionScope.SenderMessage(
     text: String? = "Hii man",
@@ -73,17 +75,20 @@ fun SharedTransitionScope.SenderMessage(
     bubbleRadius: Float = 10f,
     bubbleTipRadius: Float = 8f,
     file: FileEntity? = null,
-    searchedString: String?,
+    searchedString: String? = null,
     screenWidth: Int = 200,
-    screenWidthDp: Dp,
+    screenWidthDp: Dp = 100.dp,
     isFirst: Boolean = false,
     isLast: Boolean = false,
     showTime: Boolean = true,
     showTicks: Boolean = true,
     imageLoader: ImageLoader? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    selectionMode: Boolean = false,
+    isSelected: Boolean = false,
     onMediaClick: (Int) -> Unit = {},
-    onCopy: (String) -> Unit = {}
+    onCopy: (String) -> Unit = {},
+    onClick: () -> Unit = {},
 ) {
     //var space = if (showTime) "  " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
@@ -113,10 +118,12 @@ fun SharedTransitionScope.SenderMessage(
     date?.invoke()
     Box(
         modifier = Modifier
+            .then(if (selectionMode) Modifier.height(IntrinsicSize.Max) else Modifier)
             .fillMaxWidth()
             .padding(1.dp)
             .clickable {
-                if (text != null) onCopy(text)
+                onClick()
+//                if (text != null) onCopy(text)
             }
             .padding(top = if (isFirst) 2.dp else 0.dp),
         contentAlignment = Alignment.Center
@@ -130,6 +137,38 @@ fun SharedTransitionScope.SenderMessage(
             modifier = Modifier.align(Alignment.BottomEnd),
             color
         )
+
+        if (selectionMode) {
+            if (isSelected) {
+                Spacer(
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .fillMaxHeight()
+                        .width(2.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .align(Alignment.CenterStart)
+                )
+                Spacer(
+                    modifier = Modifier
+                        .padding(start = 7.dp)
+                        .size(15.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .align(Alignment.CenterStart)
+                )
+            }
+            Image(
+                painter = painterResource(if (isSelected) R.drawable.ic_msg_selected else R.drawable.ic_msg_unselected),
+                contentDescription = "Select message",
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(20.dp)
+                    .align(Alignment.CenterStart),
+                colorFilter = ColorFilter.tint(
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                )
+            )
+        }
 
         Box(
             modifier = bubbleModifier

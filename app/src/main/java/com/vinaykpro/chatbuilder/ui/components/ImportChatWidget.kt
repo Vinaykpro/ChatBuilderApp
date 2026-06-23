@@ -53,7 +53,7 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 @Preview
 @Composable
 fun ImportChatWidget(
-    step: Int = 2,
+    step: Int = 5,
     onClose: () -> Unit = {},
     files: List<ZipItem> = emptyList(),
     onUpdate: (List<ZipItem>) -> Unit = {},

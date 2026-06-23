@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,16 +32,18 @@ import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPaint
 fun ChatListItem(
     id: Int? = null,
     name: String = "Vinay",
+    pic: Painter? = null,
     lastMessage: String = "Somemsg",
     lastSeen: String = "12:15",
     onClick: () -> Unit = {},
     isForceDark: Boolean = false,
 ) {
-    val profilePicPainter = rememberCustomProfileIconPainter(
-        chatId = id,
-        refreshKey = 0,
-        fallback = R.drawable.user
-    )
+    val profilePicPainter = pic
+        ?: rememberCustomProfileIconPainter(
+            chatId = id,
+            refreshKey = 0,
+            fallback = R.drawable.user
+        )
     Row(
         modifier = Modifier
             .fillMaxWidth()

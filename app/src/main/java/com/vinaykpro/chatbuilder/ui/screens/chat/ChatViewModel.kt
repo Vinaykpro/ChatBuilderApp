@@ -14,6 +14,9 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -74,6 +77,11 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     var currentSearchIndex = 0
     var searchTerm: String? = null
 
+    var selectedItemsSet by mutableStateOf<Set<Int>>(emptySet())
+    var isRangeSelection by mutableStateOf<Boolean>(false)
+    var rangeStart by mutableStateOf<Int?>(null)
+    var rangeEnd by mutableStateOf<Int?>(null)
+
     var scrollIndex: Int? = null
 
     var userList: List<UserInfo> = emptyList()
@@ -117,6 +125,16 @@ class ChatViewModel(application: Application, private val chatId: Int) :
                 isLoadingNext = false
                 isLoadingPrev = false
             }
+        }
+    }
+
+    fun toggleSelection(messageId: Int): Boolean {
+        selectedItemsSet = if (selectedItemsSet.contains(messageId)) {
+            selectedItemsSet - messageId
+            return false
+        } else {
+            selectedItemsSet + messageId
+            return true
         }
     }
 

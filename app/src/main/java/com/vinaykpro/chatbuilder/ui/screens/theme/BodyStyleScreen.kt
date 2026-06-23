@@ -159,7 +159,8 @@ fun SharedTransitionScope.BodyStyleScreen(
                         "ic_ticks_seen.png",
                         onDone = {
                             refreshKey++
-                        })
+                        }
+                    )
                 }
             }
         }

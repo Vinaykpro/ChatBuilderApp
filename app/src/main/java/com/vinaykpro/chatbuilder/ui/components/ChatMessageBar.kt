@@ -36,9 +36,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +67,8 @@ fun ChatMessageBar(
     style: MessageBarStyle = MessageBarStyle(),
     isDarkTheme: Boolean = false,
     preview: Boolean = false,
+    readOnly: Boolean = false,
+    noBottomPadding: Boolean = false,
     previewColors: ParsedMessageBarStyle = ParsedMessageBarStyle(),
     previewAttrs: MessageBarStyle = MessageBarStyle(),
     onSend: (String) -> Unit = {}
@@ -77,7 +81,7 @@ fun ChatMessageBar(
     Row(
         modifier = Modifier
             .padding(
-                bottom = if (preview) 0.dp else WindowInsets.navigationBars.asPaddingValues()
+                bottom = if (preview || noBottomPadding) 0.dp else WindowInsets.navigationBars.asPaddingValues()
                     .calculateBottomPadding()
             )
             .padding(vertical = 3.dp)
@@ -86,7 +90,7 @@ fun ChatMessageBar(
         verticalAlignment = Alignment.Bottom
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            if (!preview && input.isNotEmpty()) {
+            if (!readOnly && !preview && input.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,36 +182,70 @@ fun ChatMessageBar(
                             .padding(8.dp)
                     )
                 else Spacer(modifier = Modifier.width(15.dp))
-                BasicTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    textStyle = TextStyle(
-                        fontSize = 18.sp,
-                        lineHeight = 18.sp,
-                        color = themeColors.inputText
-                    ),
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(1f)
-                        .padding(start = 0.dp),
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        autoCorrect = true
-                    ),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 0.dp, vertical = 0.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (input.isEmpty()) {
-                                Text(text = placeholder, color = themeColors.hintText)
+                if (readOnly) {
+                    BasicTextField(
+                        value = TextFieldValue(
+                            text = value,
+                            selection = TextRange(value.length)
+                        ),
+                        onValueChange = {},
+                        readOnly = true,
+                        textStyle = TextStyle(
+                            fontSize = 18.sp,
+                            lineHeight = 18.sp,
+                            color = themeColors.inputText
+                        ),
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .padding(start = 0.dp),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 0.dp, vertical = 0.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (value.isEmpty()) {
+                                    Text(text = placeholder, color = themeColors.hintText)
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         }
-                    }
-                )
+                    )
+                } else {
+                    BasicTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        readOnly = false,
+                        textStyle = TextStyle(
+                            fontSize = 18.sp,
+                            lineHeight = 18.sp,
+                            color = themeColors.inputText
+                        ),
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .padding(start = 0.dp),
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            autoCorrect = true
+                        ),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 0.dp, vertical = 0.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (input.isEmpty()) {
+                                    Text(text = placeholder, color = themeColors.hintText)
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
 
 
                 if (style.is_icon1_visible)

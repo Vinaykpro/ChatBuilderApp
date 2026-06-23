@@ -14,9 +14,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -27,11 +31,14 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -46,13 +53,20 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -80,6 +94,7 @@ import com.vinaykpro.chatbuilder.ui.components.SenderMessage
 import com.vinaykpro.chatbuilder.ui.components.SwapSenderWidget
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomIconPainter
 import com.vinaykpro.chatbuilder.ui.screens.theme.rememberCustomProfileIconPainter
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -94,10 +109,11 @@ fun SharedTransitionScope.ChatScreen(
     chatId: Int = 1,
     messageId: Int = -1,
     hidden: Int = 0,
+    isRange: Boolean = false,
     isDarkTheme: Boolean = false,
     navController: NavHostController = rememberNavController(),
     animatedVisibilityScope: AnimatedVisibilityScope,
-    chatMediaViewModel: ChatMediaViewModel,
+    chatMediaViewModel: ChatMediaViewModel
 ) {
     val theme = LocalThemeEntity.current
 
@@ -184,7 +200,9 @@ fun SharedTransitionScope.ChatScreen(
     var exportChatStep by remember { mutableIntStateOf(0) }
     var exportProgress by remember { mutableFloatStateOf(-1f) }
 
+
     LaunchedEffect(Unit) {
+        model.isRangeSelection = isRange
         delay(50)
         chatDetails.let {
             currentUserId = chatDetails?.senderId ?: -1
@@ -271,7 +289,8 @@ fun SharedTransitionScope.ChatScreen(
                     .exclude(WindowInsets.navigationBars)
                     .asPaddingValues()
                     .calculateBottomPadding()
-            )
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box {
             ChatToolbar(
@@ -307,10 +326,14 @@ fun SharedTransitionScope.ChatScreen(
                             }
 
                             5 -> {
-                                exportChatVisible = true
+                                model.isRangeSelection = true
                             }
 
                             6 -> {
+                                exportChatVisible = true
+                            }
+
+                            7 -> {
                                 model.hideUnhideChat(hidden, onDone = {
                                     if (hidden == 0) Toast.makeText(
                                         context,
@@ -326,7 +349,7 @@ fun SharedTransitionScope.ChatScreen(
                                 })
                             }
 
-                            7 -> {
+                            8 -> {
                                 clearChatVisible = true
                             }
                         }
@@ -370,6 +393,61 @@ fun SharedTransitionScope.ChatScreen(
                     onNext = { model.navigateSearchedItems(1) },
                     onPrev = { model.navigateSearchedItems(-1) }
                 )
+        }
+
+        androidx.compose.animation.AnimatedVisibility(
+            visible = model.isRangeSelection,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 6.dp)
+                    .dropShadow(
+                        shape = RoundedCornerShape(8.dp),
+                        shadow = androidx.compose.ui.graphics.shadow.Shadow(
+                            radius = 5.dp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            offset = DpOffset(0.dp, 0.dp)
+                        )
+                    )
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.onSurface),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_tap),
+                    contentDescription = "Tap_icon",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(35.dp)
+                )
+                Column(modifier = Modifier.padding(end = 10.dp)) {
+                    Text(
+                        text = if (model.rangeStart == null)
+                            "Tap a message to set as start"
+                        else if (model.rangeEnd != null)
+                            "Range (" + (model.rangeEnd!! - model.rangeStart!! + 1) + ") selected successfully!"
+                        else "Now tap another to set end",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight(500),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 0.dp)
+                    )
+                    Text(
+                        text = if (model.rangeStart == null)
+                            "Then tap another message to set as end"
+                        else if (model.rangeEnd != null)
+                            "Tap below/above to extend, start/end to reset"
+                        else "You can adjust or reset range later",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        lineHeight = 13.sp,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                }
+            }
         }
 
         //body
@@ -434,6 +512,23 @@ fun SharedTransitionScope.ChatScreen(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
+                            },
+                            selectionMode = model.isRangeSelection,
+                            isSelected = (model.rangeStart != null && m.messageId == model.rangeStart) ||
+                                    (model.rangeStart != null && model.rangeEnd != null &&
+                                            m.messageId >= model.rangeStart!! && m.messageId <= model.rangeEnd!!), // range mode
+                            // model.selectedItemsSet.contains(m.messageId), // selection mode
+                            onClick = {
+                                if (m.messageId == model.rangeStart || m.messageId == model.rangeEnd) {
+                                    model.rangeStart = null
+                                    model.rangeEnd = null
+                                } else {
+                                    if (model.rangeStart == null || m.messageId < model.rangeStart!!) {
+                                        model.rangeStart = m.messageId
+                                    } else {
+                                        model.rangeEnd = m.messageId
+                                    }
+                                }
                             }
                         )
 
@@ -476,16 +571,33 @@ fun SharedTransitionScope.ChatScreen(
                                     context,
                                     "Copied to clipboard",
                                     Toast.LENGTH_SHORT
-                                )
-                                    .show()
+                                ).show()
+                            },
+                            selectionMode = model.isRangeSelection,
+                            isSelected = (model.rangeStart != null && m.messageId == model.rangeStart) ||
+                                    (model.rangeStart != null && model.rangeEnd != null &&
+                                            m.messageId >= model.rangeStart!! && m.messageId <= model.rangeEnd!!), // range mode
+                            // model.selectedItemsSet.contains(m.messageId), // selection mode
+                            onClick = {
+                                if (m.messageId == model.rangeStart || m.messageId == model.rangeEnd) {
+                                    model.rangeStart = null
+                                    model.rangeEnd = null
+                                } else {
+                                    if (model.rangeStart == null || m.messageId < model.rangeStart!!) {
+                                        model.rangeStart = m.messageId
+                                    } else {
+                                        model.rangeEnd = m.messageId
+                                    }
+                                }
                             }
+
                         )
                     }
                 }
             }
 
             androidx.compose.animation.AnimatedVisibility(
-                visible = showDate,
+                visible = showDate && !model.isRangeSelection,
                 enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
                 exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
             ) {
@@ -495,28 +607,96 @@ fun SharedTransitionScope.ChatScreen(
                     textColor = themeBodyColors.textSecondary
                 )
             }
-
         }
+
         //input
-        ChatMessageBar(
-            user =
-                if (messageBarUserIndex > 0 && messageBarUserIndex < model.userList.size)
-                    model.userList[messageBarUserIndex]
-                else null,
-            onUserChange = { model.updateMessageBarUserIndex(it) },
-            onAddUser = { addUserVisible = true },
-            onSend = {
-                model.addNewMessage(it, model.userList[messageBarUserIndex])
-            },
-            style = messageBarStyle,
-            isDarkTheme = isDarkTheme,
-            outerIcon = messageBarIcons.outerIcon,
-            leftInnerIcon = messageBarIcons.leftInnerIcon,
-            rightInnerIcon = messageBarIcons.rightInnerIcon,
-            icon1 = messageBarIcons.icon1,
-            icon2 = messageBarIcons.icon2,
-            icon3 = messageBarIcons.icon3
-        )
+        if (model.isRangeSelection) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(
+                        bottom = WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding()
+                    )
+                    .padding(5.dp)
+            ) {
+                Text(
+                    text = "Cancel",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight(500),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0x4B777777))
+                        .clickable {
+                            if (isRange)
+                                navController.popBackStack()
+                            else {
+                                model.isRangeSelection = false
+                                model.rangeStart = -1
+                                model.rangeEnd = -1
+                            }
+                        }
+                        .padding(12.dp)
+                )
+                Text(
+                    text = if (isRange) "Done" else "Start",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight(500),
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(LightColorScheme.primary)
+                        .clickable {
+                            if (model.rangeStart != null && model.rangeEnd != null) {
+                                if (isRange) {
+                                    navController.previousBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("range", "${model.rangeStart},${model.rangeEnd}")
+                                    navController.popBackStack()
+                                } else {
+                                    navController.navigate("livechat?chatId=${model.chatDetails.value?.chatid ?: -1}&rStart=${model.rangeStart}&rEnd=${model.rangeEnd}")
+                                }
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Select range start and end",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        }
+                        .padding(12.dp)
+                )
+            }
+        } else {
+            ChatMessageBar(
+                user =
+                    if (messageBarUserIndex > 0 && messageBarUserIndex < model.userList.size)
+                        model.userList[messageBarUserIndex]
+                    else null,
+                onUserChange = { model.updateMessageBarUserIndex(it) },
+                onAddUser = { addUserVisible = true },
+                onSend = {
+                    model.addNewMessage(it, model.userList[messageBarUserIndex])
+                },
+                style = messageBarStyle,
+                isDarkTheme = isDarkTheme,
+                outerIcon = messageBarIcons.outerIcon,
+                leftInnerIcon = messageBarIcons.leftInnerIcon,
+                rightInnerIcon = messageBarIcons.rightInnerIcon,
+                icon1 = messageBarIcons.icon1,
+                icon2 = messageBarIcons.icon2,
+                icon3 = messageBarIcons.icon3
+            )
+        }
     }
 
     AnimatedVisibility(
@@ -689,11 +869,15 @@ fun SharedTransitionScope.ChatScreen(
     }
 
     BackHandler {
-        if (swapUsersVisible || dateNavigatorVisible || clearChatVisible || addUserVisible || exportChatVisible) {
+        if (
+            swapUsersVisible || dateNavigatorVisible || clearChatVisible ||
+            addUserVisible || exportChatVisible || (model.isRangeSelection && !isRange)
+        ) {
             swapUsersVisible = false
             dateNavigatorVisible = false
             clearChatVisible = false
             addUserVisible = false
+            model.isRangeSelection = false
             if (exportChatStep == 0) exportChatVisible = false
         } else {
             navController.popBackStack()

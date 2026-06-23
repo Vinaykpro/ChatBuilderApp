@@ -523,4 +523,3 @@ fun HeaderStyle.isSameAttrAs(other: HeaderStyle): Boolean {
 fun colorToHex(color: Color): String {
     return String.format("#%08X", color.toArgb())
 }
-

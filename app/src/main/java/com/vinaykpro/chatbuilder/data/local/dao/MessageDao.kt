@@ -13,6 +13,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages where chatid = :chatID")
     fun getAllMessages(chatID: Int): List<MessageEntity>
 
+    @Query("SELECT * FROM messages where messageId >= :start and messageId <= :end")
+    fun getMessagesInRange(start: Int, end: Int): List<MessageEntity>
+
     @Query("SELECT messageId FROM messages where chatid = :chatID and message LIKE :text")
     suspend fun getSearchResultsInChat(chatID: Int, text: String): List<Int>
 
