@@ -31,9 +31,11 @@ import com.vinaykpro.chatbuilder.ui.screens.hiddenchats.HiddenChatsScreen
 import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.livechat.LiveChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
+import com.vinaykpro.chatbuilder.ui.screens.onboarding.OnboardingScreen
 import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
 import com.vinaykpro.chatbuilder.ui.screens.search.SearchScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
+import com.vinaykpro.chatbuilder.ui.screens.statistics.StatisticsScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.BodyStyleScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.EditThemeScreen
 import com.vinaykpro.chatbuilder.ui.screens.theme.HeaderStyleScreen
@@ -53,6 +55,8 @@ object Routes {
     const val HiddenChats = "hiddenchats"
     const val AnimateChat = "animatechat"
     const val LiveChat = "livechat"
+    const val Statistics = "stats/{chatId}"
+    const val Onboarding = "onboarding"
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -62,6 +66,7 @@ fun AppNavHost(
     navController: NavHostController,
     context: Context,
     isDarkTheme: MutableState<Boolean>,
+    isOnboarding: Boolean,
     prefs: SharedPreferences,
     sharedFileUri: Uri?
 ) {
@@ -75,10 +80,15 @@ fun AppNavHost(
     SharedTransitionLayout {
         NavHost(
             navController = navController,
-            startDestination = Routes.Home
+            startDestination =
+                if (isOnboarding) Routes.Onboarding
+                else Routes.Home
         ) {
             composable(Routes.Splash) {
                 SplashScreen(navController, isDarkTheme.value)
+            }
+            composable(Routes.Onboarding) {
+                OnboardingScreen(navController, prefs, false)
             }
             composable(route = Routes.Home) {
                 HomeScreen(
@@ -192,7 +202,7 @@ fun AppNavHost(
                         animationSpec = tween(400)
                     )
                 }) {
-                ThemeScreen(themeViewModel = themeViewModel, navController = navController)
+                ThemeScreen(themeViewModel = themeViewModel, prefs, navController = navController)
             }
             composable(
                 Routes.EditTheme,
@@ -333,6 +343,30 @@ fun AppNavHost(
                     navController = navController,
                     isDarkTheme = isDarkTheme.value,
                     chatMediaViewModel = chatMediaViewModel
+                )
+            }
+            composable(
+                route = "stats/{chatId}",
+                arguments = listOf(
+                    navArgument("chatId") { type = NavType.IntType }
+                ),
+                enterTransition = {
+                    slideInHorizontally(
+                        initialOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        targetOffsetX = { screenWidthPx },
+                        animationSpec = tween(400)
+                    )
+                }) { backStackEntry ->
+                val chatId = backStackEntry.arguments?.getInt("chatId") ?: 0
+                StatisticsScreen(
+                    chatId = chatId,
+                    navController = navController,
+                    isDarkTheme = isDarkTheme.value
                 )
             }
         }

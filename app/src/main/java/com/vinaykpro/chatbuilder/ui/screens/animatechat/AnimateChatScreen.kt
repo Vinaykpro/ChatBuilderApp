@@ -87,10 +87,6 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 import com.vinaykpro.chatbuilder.ui.theme.LocalThemeEntity
 import kotlinx.serialization.json.Json
 
-//class AnimateChatViewModel(application: Application) : AndroidViewModel(application) {
-//
-//}
-
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.AnimateChatScreen(
@@ -419,7 +415,7 @@ fun SharedTransitionScope.AnimateChatScreen(
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 30.dp)
+                        modifier = Modifier.padding(30.dp)
                     )
                 else
                     LazyColumn(modifier = Modifier.fillMaxSize()) {

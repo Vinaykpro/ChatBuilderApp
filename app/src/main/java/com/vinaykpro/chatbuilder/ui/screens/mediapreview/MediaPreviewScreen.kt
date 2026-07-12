@@ -175,7 +175,8 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val msg = chatMediaViewModel.previewMediaMessages[pagerState.currentPage]
+                val msg = chatMediaViewModel.previewMediaMessages.getOrNull(pagerState.currentPage)
+
                 IconButton(onClick = {
                     DebounceClickHandler.run { navController.popBackStack() }
                 }) {
@@ -188,14 +189,14 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 }
                 Column {
                     Text(
-                        text = (msg.username)
+                        text = (msg?.username)
                             ?: "You",
                         color = Color.White,
                         fontSize = 16.sp,
                         lineHeight = 16.sp
                     )
                     Text(
-                        text = (msg.date) + ", " + msg.time,
+                        text = (msg?.date ?: "Unknown date") + ", " + (msg?.time ?: "Unknown time"),
                         color = Color.White,
                         fontSize = 12.sp,
                         lineHeight = 12.sp
@@ -204,7 +205,8 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
                     chatMediaViewModel.showInChat =
-                        chatMediaViewModel.previewMediaMessages[pagerState.currentPage].messageId
+                        chatMediaViewModel.previewMediaMessages.getOrNull(pagerState.currentPage)?.messageId
+                            ?: -1
                     navController.popBackStack(
                         "chat/${chatMediaViewModel.currentChat?.chatid}",
                         inclusive = false
@@ -219,7 +221,7 @@ fun SharedTransitionScope.MediaPreviewScreen(
                 }
                 IconButton(onClick = {
                     try {
-                        val fileName = chatMediaViewModel.mediaMap[msg.fileId]?.filename ?: ""
+                        val fileName = chatMediaViewModel.mediaMap[msg?.fileId]?.filename ?: ""
                         shareMediaFile(context, File(context.getExternalFilesDir(null), fileName))
                     } catch (e: Exception) {
                         Toast.makeText(context, "Unable to share: $e", Toast.LENGTH_SHORT).show()

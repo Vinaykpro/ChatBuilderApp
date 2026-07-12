@@ -14,8 +14,8 @@ android {
         applicationId = "com.vinaykpro.chatbuilder"
         minSdk = 21
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.5"
+        versionCode = 8
+        versionName = "1.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -34,6 +34,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -53,6 +54,8 @@ android {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     implementation(composeBom)
     androidTestImplementation(composeBom)

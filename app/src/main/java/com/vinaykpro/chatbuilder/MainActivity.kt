@@ -3,10 +3,8 @@ package com.vinaykpro.chatbuilder
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -58,6 +56,7 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         context = context,
                         isDarkTheme = isDarkTheme,
+                        isOnboarding = prefs.getBoolean("isOnboarding", true),
                         prefs = prefs,
                         sharedFileUri = sharedFileUri
                     )

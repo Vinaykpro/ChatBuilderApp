@@ -179,7 +179,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         viewModelScope.launch {
             if (currentSearchIndex >= 0 && currentSearchIndex < searchedResults.size) {
                 loadMessagesAtId(searchedResults[currentSearchIndex])
-                Log.i("vkpro", "loading at id: ${searchedResults[currentSearchIndex]}")
+//                Log.i("vkpro", "loading at id: ${searchedResults[currentSearchIndex]}")
             }
         }
     }
@@ -375,7 +375,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 fullMessageList = dao.getAllMessages(chatId)
-                if (fullMessageList != null) {
+                if (fullMessageList != null && (fullMessageList as Collection<Any?>).isNotEmpty()) {
                     val doc = PdfDocument()
                     var ind = 0
                     var pageNo = 1

@@ -339,6 +339,10 @@ fun HomeScreen(
                                                         scope.launch { pagerState.scrollToPage(1) }
                                                     }
 
+                                                    "Animate a chat" -> {
+                                                        navController.navigate("animatechat")
+                                                    }
+
                                                     "Settings" -> {
                                                         scope.launch { pagerState.scrollToPage(2) }
                                                     }
@@ -468,6 +472,20 @@ fun HomeScreen(
                                     context = "Play any chat realtime",
                                     onClick = {
                                         navController.navigate("animatechat")
+                                    }
+                                )
+
+                                SettingsItem(
+                                    icon = painterResource(R.drawable.ic_stats),
+                                    name = "Statistics",
+                                    context = "View chat statistics",
+                                    onClick = {
+//                                        navController.navigate("stats/0") // future
+                                        Toast.makeText(
+                                            context,
+                                            "Open a chat > Three dots > View Statistics",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 )
                                 SettingsItem(
@@ -826,6 +844,12 @@ fun HomeScreen(
                                         icon = painterResource(R.drawable.ic_animate),
                                         name = "Animate a chat",
                                         context = "Play any chat realtime",
+                                        isForceDark = true
+                                    )
+                                    SettingsItem(
+                                        icon = painterResource(R.drawable.ic_stats),
+                                        name = "Statistics",
+                                        context = "View chat statistics",
                                         isForceDark = true
                                     )
                                     SettingsItem(

@@ -207,7 +207,8 @@ class FileIOHelper {
                     messageStatus = MESSAGESTATUS.SEEN,
                     replyMessageId = null
                 )
-                if (msg.contains("(file attached)")) mediaIndexes.add(index)
+                if (msg.contains("(file attached)") || msg.contains("(arquivo anexado)"))
+                    mediaIndexes.add(index)
             } else if (isNote != null) {
                 if (currMessage != null) {
                     messageList.add(currMessage); currMessage = null

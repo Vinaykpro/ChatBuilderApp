@@ -37,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "localdb"
                 )
+//                    .addMigrations(MIGRATION_1_2)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -71,5 +72,28 @@ abstract class AppDatabase : RoomDatabase() {
                     }).build().also { INSTANCE = it }
             }
         }
+//
+//        val MIGRATION_1_2 = object : Migration(1, 2) {
+//            override fun migrate(database: SupportSQLiteDatabase) {
+//                database.execSQL(
+//                    """
+//            CREATE TABLE IF NOT EXISTS `stats` (
+//                `chatid` INTEGER NOT NULL,
+//                `messageCount` INTEGER NOT NULL,
+//                `streak` INTEGER NOT NULL,
+//                `mediaCount` INTEGER NOT NULL,
+//                `messageCountByDatePairs` TEXT NOT NULL,
+//                `messageCountByWeekDay` TEXT NOT NULL,
+//                `messageCountByHour` TEXT NOT NULL,
+//                `userStatsList` TEXT NOT NULL,
+//                `longestConversationsList` TEXT NOT NULL,
+//                `topWords` TEXT NOT NULL,
+//                `topEmojis` TEXT NOT NULL,
+//                PRIMARY KEY(`chatid`)
+//            )
+//        """.trimIndent()
+//                )
+//            }
+//        }
     }
 }

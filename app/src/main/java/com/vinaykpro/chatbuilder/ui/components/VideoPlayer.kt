@@ -91,14 +91,13 @@ fun VideoPlayer(
                 onVisibilityChange(showControls)
             },
             onDoubleTap = { offset ->
-                val width = context.resources.displayMetrics.widthPixels
-                if (offset.x < width / 2) {
-                    // Left side: rewind 5s
+                val midPoint = size.width / 2
+                if (offset.x < midPoint) {
                     val target = (videoView.currentPosition - 5000).coerceAtLeast(0)
                     videoView.seekTo(target)
                 } else {
-                    // Right side: forward 5s
-                    val target = (videoView.currentPosition + 5000).coerceAtMost(duration)
+                    val safeDuration = duration.coerceAtLeast(0)
+                    val target = (videoView.currentPosition + 5000).coerceAtMost(safeDuration)
                     videoView.seekTo(target)
                 }
                 showControls = true
@@ -222,26 +221,35 @@ fun VideoPlayer(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        val safeCurrentPos = currentPosition.coerceAtLeast(0)
+                        val safeDuration = duration.coerceAtLeast(0)
+
                         Text(
-                            text = formatTime(currentPosition),
+                            text = formatTime(safeCurrentPos),
                             color = Color.White,
                             fontSize = 14.sp
                         )
+
+                        val sliderMaxRange = safeDuration.toFloat().coerceAtLeast(0.01f)
+                        val sliderValue = safeCurrentPos.toFloat().coerceAtMost(sliderMaxRange)
+
                         Slider(
-                            value = currentPosition.toFloat(),
+                            value = sliderValue,
                             onValueChange = {
                                 currentPosition = it.toInt()
                                 videoView.seekTo(currentPosition)
                             },
-                            valueRange = 0f..duration.toFloat(),
+                            valueRange = 0f..sliderMaxRange,
+                            enabled = duration > 0, // 3. Disable track until metadata loads
                             modifier = Modifier.weight(1f),
                             colors = SliderDefaults.colors(
                                 thumbColor = Color.White,
                                 activeTrackColor = Color.White
                             )
                         )
+
                         Text(
-                            text = formatTime(duration),
+                            text = formatTime(safeDuration),
                             color = Color.White,
                             fontSize = 14.sp
                         )

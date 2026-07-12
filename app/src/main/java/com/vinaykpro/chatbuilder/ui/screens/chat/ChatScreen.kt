@@ -312,28 +312,39 @@ fun SharedTransitionScope.ChatScreen(
                             1 -> searchVisible = true
                             2 -> navController.navigate("theme/${theme.id}")
                             3 -> {
+                                Log.d("------CHATID------", "stats/${chatId}")
+                                if (navController.currentBackStack.value.any {
+                                        it.destination.route?.startsWith("stats") == true
+                                    }
+                                )
+                                    navController.popBackStack()
+                                else
+                                    navController.navigate("stats/${chatId}")
+                            }
+
+                            4 -> {
                                 if (model.userList.isEmpty()) {
                                     model.loadUserList(isDarkTheme)
                                 }
                                 swapUsersVisible = true
                             }
 
-                            4 -> {
+                            5 -> {
                                 if (model.datesList.isEmpty()) {
                                     model.loadDatesList()
                                 }
                                 dateNavigatorVisible = true
                             }
 
-                            5 -> {
+                            6 -> {
                                 model.isRangeSelection = true
                             }
 
-                            6 -> {
+                            7 -> {
                                 exportChatVisible = true
                             }
 
-                            7 -> {
+                            8 -> {
                                 model.hideUnhideChat(hidden, onDone = {
                                     if (hidden == 0) Toast.makeText(
                                         context,
@@ -349,7 +360,7 @@ fun SharedTransitionScope.ChatScreen(
                                 })
                             }
 
-                            8 -> {
+                            9 -> {
                                 clearChatVisible = true
                             }
                         }
@@ -380,10 +391,10 @@ fun SharedTransitionScope.ChatScreen(
                         model.resetSearch()
                     },
                     onSearch = {
-                        Log.i(
-                            "vkpro",
-                            "PARAM index = ${listState.firstVisibleItemIndex} ; id = ${messages[listState.firstVisibleItemIndex].messageId}"
-                        )
+//                        Log.i(
+//                            "vkpro",
+//                            "PARAM index = ${listState.firstVisibleItemIndex} ; id = ${messages[listState.firstVisibleItemIndex].messageId}"
+//                        )
                         val index = listState.firstVisibleItemIndex
                         val msgId = messages.getOrNull(index)?.messageId ?: return@SearchBar
                         model.search(it, msgId)

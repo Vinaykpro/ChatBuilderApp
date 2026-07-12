@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.screens.theme
 
+import android.content.SharedPreferences
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 @Composable
 fun ThemeScreen(
     themeViewModel: ThemeViewModel,
+    prefs: SharedPreferences,
     navController: NavController = rememberNavController()
 ) {
     val themes by themeViewModel.themes.collectAsState()
@@ -67,9 +69,14 @@ fun ThemeScreen(
                         name = i.name,
                         author = i.author,
                         iconColor = Color(i.appcolor.toColorInt()),
-                        onClick = { themeViewModel.changeTheme(i.id) },
+                        onClick = {
+                            themeViewModel.changeTheme(i.id)
+                            prefs.edit().putInt("themeId", i.id).apply()
+                        },
                         onNextClick = {
-                            DebounceClickHandler.run { navController.navigate("theme/${i.name}") }
+                            DebounceClickHandler.run {
+                                navController.navigate("theme/${i.name}")
+                            }
                         }
                     )
                 }
