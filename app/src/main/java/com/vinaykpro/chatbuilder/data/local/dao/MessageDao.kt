@@ -10,7 +10,7 @@ import com.vinaykpro.chatbuilder.data.local.UserInfo
 
 @Dao
 interface MessageDao {
-    @Query("SELECT * FROM messages where chatid = :chatID")
+    @Query("SELECT * FROM messages where chatid = :chatID ORDER BY messageId ASC")
     fun getAllMessages(chatID: Int): List<MessageEntity>
 
     @Query("SELECT * FROM messages where messageId >= :start and messageId <= :end")

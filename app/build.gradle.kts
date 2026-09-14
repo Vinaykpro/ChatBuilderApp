@@ -14,8 +14,8 @@ android {
         applicationId = "com.vinaykpro.chatbuilder"
         minSdk = 21
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.6"
+        versionCode = 11
+        versionName = "1.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -75,6 +75,8 @@ dependencies {
     implementation("io.coil-kt:coil-video:2.6.0")
 
     implementation("com.google.android.gms:play-services-ads:23.2.0")
+
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
 
     implementation("me.onebone:toolbar-compose:2.3.5") {
         exclude(group = "androidx.compose.ui")

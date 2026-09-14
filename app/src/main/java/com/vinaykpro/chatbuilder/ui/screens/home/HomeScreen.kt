@@ -354,6 +354,10 @@ fun HomeScreen(
                                                         )
                                                         context.startActivity(intent)
                                                     }
+
+                                                    "Help" -> {
+                                                        navController.navigate("onboarding")
+                                                    }
                                                 }
                                             }
                                             .padding(horizontal = 18.dp, vertical = 12.dp)

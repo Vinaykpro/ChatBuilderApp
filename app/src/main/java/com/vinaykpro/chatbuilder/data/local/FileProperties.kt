@@ -83,6 +83,7 @@ object MyConstants {
         "Animate a chat",
         "Rate this app",
         "Settings",
+        "Help"
     )
     val appUrl = "https://play.google.com/store/apps/details?id=com.vinaykpro.chatbuilder"
     val chatMenuList = listOf(

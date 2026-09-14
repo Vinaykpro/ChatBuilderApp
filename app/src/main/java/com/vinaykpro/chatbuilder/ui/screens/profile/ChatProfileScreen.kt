@@ -296,7 +296,8 @@ fun SharedTransitionScope.ChatProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.65f)
                     .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Input(
                     value = model.currentChat?.name ?: "",
@@ -318,6 +319,34 @@ fun SharedTransitionScope.ChatProfileScreen(
                             model.currentChat = chat
                         }
                     })
+                Row(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clickable {
+                            navController.navigate("stats/${model.currentChat?.chatid ?: 0}")
+                        }
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(vertical = 7.dp, horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_stats),
+                        contentDescription = "View stats",
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .size(30.dp)
+                    )
+                    Text(
+                        "View statistics",
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
 
             SmallNativeAdView(

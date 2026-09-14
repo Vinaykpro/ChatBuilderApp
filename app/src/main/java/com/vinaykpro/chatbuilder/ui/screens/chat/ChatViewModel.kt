@@ -7,12 +7,16 @@ import android.app.Application
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.text.TextPaint
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,9 +36,11 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
 import com.vinaykpro.chatbuilder.data.local.DateInfo
+import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.local.MESSAGETYPE
 import com.vinaykpro.chatbuilder.data.local.MessageEntity
 import com.vinaykpro.chatbuilder.data.local.UserInfo
+import com.vinaykpro.chatbuilder.data.utils.PDFBuilder
 import com.vinaykpro.chatbuilder.densityCompat
 import com.vinaykpro.chatbuilder.drawBubble
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +54,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -261,10 +272,10 @@ class ChatViewModel(application: Application, private val chatId: Int) :
     fun addNewMessage(message: String, user: UserInfo) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val (date, time) = java.util.Date().let {
-                    java.text.SimpleDateFormat("d/M/yy", java.util.Locale.getDefault())
+                val (date, time) = Date().let {
+                    SimpleDateFormat("d/M/yy", Locale.getDefault())
                         .format(it) to
-                            java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                            SimpleDateFormat("h:mm a", Locale.getDefault())
                                 .format(it)
                 }
                 val message = MessageEntity(
@@ -364,6 +375,329 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         )
     }
 
+    fun incrementFreePdfExportCount() {
+        Thread {
+            try {
+                val url = URL(
+                    "https://abacus.jasoncameron.dev/hit/" +
+                            "com.vinaykpro.chatbuilder/freepdfexport"
+                )
+
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+
+                connection.inputStream.close()
+                connection.disconnect()
+
+            } catch (e: Exception) {
+                Log.e("Abacus", "Failed to increment PDF count", e)
+            }
+        }.start()
+    }
+
+    fun loadAndExportPdfWithMedia(
+        context: Context,
+        chatName: String,
+        senderId: Int,
+        onUpdate: (Int) -> Unit,
+        onDone: (Uri?) -> Unit
+    ) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val mediaMap = fileDao.getFilesByChatId(chatId).associateBy { it.fileid }
+                fullMessageList = dao.getAllMessages(chatId)
+
+                if (!fullMessageList.isNullOrEmpty()) {
+
+                    val pdf = PDFBuilder(595f, 842f)
+
+                    var ind = 0
+                    var pageNo = 1
+                    var progress = 0
+                    var lastUserId = -1
+
+                    val chatInfo =
+                        if (chatName.contains("Chat with"))
+                            chatName
+                        else
+                            "Chat with $chatName"
+
+                    var remainingMsgLines: List<String>? = null
+
+                    while (ind < fullMessageList!!.size || remainingMsgLines != null) {
+
+                        pdf.addPage()
+
+                        var startY = 780f
+
+                        // Header
+                        pdf.addText(
+                            text = "$chatInfo | Page $pageNo",
+                            x = 16f,
+                            y = 815f,
+                            size = 18f,
+                            bold = true
+                        )
+
+                        while (true) {
+
+                            if (startY < 80f || (ind >= fullMessageList!!.size && remainingMsgLines == null))
+                                break
+
+                            val currentMsg = fullMessageList!![ind]
+                            val file = mediaMap[currentMsg.fileId]
+
+                            val outgoing = senderId == currentMsg.userid
+                            val isPageStart = startY == 780f
+                            val firstMessage =
+                                if (remainingMsgLines == null) (lastUserId != currentMsg.userid || isPageStart) else false
+
+                            if (firstMessage && lastUserId != -1 && !isPageStart) {
+                                startY -= 8f
+                            } else {
+                                startY -= 3f
+                            }
+
+                            val result = if (file != null && remainingMsgLines == null) {
+                                // Load bitmap for image/video
+                                val bitmap = when (file.type) {
+                                    FILETYPE.IMAGE -> {
+                                        val f =
+                                            File(context.getExternalFilesDir(null), file.filename)
+                                        if (f.exists()) BitmapFactory.decodeFile(f.absolutePath) else null
+                                    }
+
+                                    FILETYPE.VIDEO -> {
+                                        val f =
+                                            File(context.getExternalFilesDir(null), file.filename)
+                                        if (f.exists()) {
+                                            val retriever = MediaMetadataRetriever()
+                                            try {
+                                                retriever.setDataSource(f.absolutePath)
+                                                retriever.getFrameAtTime(1000000) // 1 second
+                                            } catch (e: Exception) {
+                                                null
+                                            } finally {
+                                                retriever.release()
+                                            }
+                                        } else null
+                                    }
+
+                                    else -> null
+                                }
+
+                                val res = pdf.addMediaBubble(
+                                    file = file,
+                                    bitmap = bitmap,
+                                    outgoing = outgoing,
+                                    first = firstMessage,
+                                    name = if (firstMessage) currentMsg.username else null,
+                                    message = currentMsg.message,
+                                    time = "${currentMsg.date}, ${currentMsg.time}",
+                                    maxWidth = 400f,
+                                    y = startY,
+                                    x = if (outgoing) 595f - 20f else 20f,
+                                    availableHeight = startY - 60f
+                                )
+                                bitmap?.recycle()
+                                res
+                            } else {
+                                pdf.addBubble(
+                                    outgoing = outgoing,
+                                    first = firstMessage,
+                                    name = if (remainingMsgLines == null && firstMessage) currentMsg.username else null,
+                                    message = currentMsg.message ?: "",
+                                    time = "${currentMsg.date}, ${currentMsg.time}",
+                                    maxWidth = 400f,
+                                    y = startY,
+                                    x = if (outgoing) 595f - 20f else 20f,
+                                    availableHeight = startY - 60f,
+                                    preWrappedLines = remainingMsgLines
+                                )
+                            }
+
+                            remainingMsgLines = result.remainingLines
+
+                            if (result.lastBubbleHeight > 0f) {
+                                startY -= result.lastBubbleHeight
+                                if (remainingMsgLines == null) {
+                                    lastUserId = currentMsg.userid ?: 0
+                                    ind++
+                                }
+                            } else {
+                                // Message doesn't fit on this page at all
+                                break
+                            }
+                        }
+
+                        // Footer
+                        pdf.addText(
+                            text = "Exported by ChatBuilder - https://play.google.com/store/apps/details?id=com.vinaykpro.chatbuilder",
+                            x = 16f,
+                            y = 28f,
+                            size = 12f
+                        )
+
+                        pageNo++
+
+                        val total = fullMessageList!!.size
+
+                        if (ind >= total * (progress / 100f)) {
+                            if (progress < 100)
+                                progress++
+
+                            onUpdate(progress)
+                        }
+                    }
+
+                    saveFileToDownloads(
+                        context as Activity,
+                        "$chatInfo.pdf",
+                        "application/pdf",
+                        writeData = { out ->
+                            pdf.writeTo(out)
+                        },
+                        onSaved = { uri ->
+                            onDone(uri)
+                        },
+                        onDenied = {
+                            onDone(null)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadAndExportPdf(
+        context: Context,
+        chatName: String,
+        senderId: Int,
+        onUpdate: (Int) -> Unit,
+        onDone: (Uri?) -> Unit
+    ) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+
+                fullMessageList = dao.getAllMessages(chatId)
+
+                if (!fullMessageList.isNullOrEmpty()) {
+
+                    val pdf = PDFBuilder(595f, 842f)
+
+                    var ind = 0
+                    var pageNo = 1
+                    var progress = 0
+                    var lastUserId = -1
+
+                    val chatInfo =
+                        if (chatName.contains("Chat with"))
+                            chatName
+                        else
+                            "Chat with $chatName"
+
+                    var remainingMsgLines: List<String>? = null
+
+                    while (ind < fullMessageList!!.size || remainingMsgLines != null) {
+
+                        pdf.addPage()
+
+                        var startY = 780f
+
+                        // Header
+                        pdf.addText(
+                            text = "$chatInfo | Page $pageNo",
+                            x = 16f,
+                            y = 815f,
+                            size = 18f,
+                            bold = true
+                        )
+
+                        while (true) {
+
+                            if (startY < 80f || (ind >= fullMessageList!!.size && remainingMsgLines == null))
+                                break
+
+                            val currentMsg = fullMessageList!![ind]
+
+                            val outgoing = senderId == currentMsg.userid
+                            val isPageStart = startY == 780f
+                            val firstMessage =
+                                if (remainingMsgLines == null) (lastUserId != currentMsg.userid || isPageStart) else false
+
+                            if (firstMessage && lastUserId != -1 && !isPageStart) {
+                                startY -= 8f
+                            } else {
+                                startY -= 3f
+                            }
+
+                            val result = pdf.addBubble(
+                                outgoing = outgoing,
+                                first = firstMessage,
+                                name = if (remainingMsgLines == null) currentMsg.username else null,
+                                message = currentMsg.message ?: "",
+                                time = "${currentMsg.date}, ${currentMsg.time}",
+                                maxWidth = 400f,
+                                y = startY,
+                                x = if (outgoing) 595f - 20f else 20f,
+                                availableHeight = startY - 60f,
+                                preWrappedLines = remainingMsgLines
+                            )
+
+                            remainingMsgLines = result.remainingLines
+
+                            if (result.lastBubbleHeight > 0f) {
+                                startY -= result.lastBubbleHeight
+                                if (remainingMsgLines == null) {
+                                    lastUserId = currentMsg.userid ?: 0
+                                    ind++
+                                }
+                            } else {
+                                // Not even one line fit, or break
+                                break
+                            }
+                        }
+
+                        // Footer
+                        pdf.addText(
+                            text = "Exported by ChatBuilder - https://play.google.com/store/apps/details?id=com.vinaykpro.chatbuilder",
+                            x = 16f,
+                            y = 28f,
+                            size = 12f
+                        )
+
+                        pageNo++
+
+                        val total = fullMessageList!!.size
+
+                        if (ind >= total * (progress / 100f)) {
+                            if (progress < 100)
+                                progress++
+
+                            onUpdate(progress)
+                        }
+                    }
+
+                    saveFileToDownloads(
+                        context as Activity,
+                        "$chatInfo.pdf",
+                        "application/pdf",
+                        writeData = { out ->
+                            pdf.writeTo(out)
+                        },
+                        onSaved = { uri ->
+                            onDone(uri)
+                        },
+                        onDenied = {
+                            onDone(null)
+                        }
+                    )
+                }
+            }
+        }
+    }
 
     fun loadAndExport(
         context: Context,
@@ -391,7 +725,7 @@ class ChatViewModel(application: Application, private val chatId: Int) :
 
                         var startY = 30f
 
-                        val infoPaint = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                        val infoPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                             color = android.graphics.Color.GRAY
                             textSize = 14f * canvas.densityCompat()
                             isFakeBoldText = true

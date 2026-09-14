@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,10 +64,10 @@ fun ExportChatWidget(
     messages: List<MessageEntity>? = null,
     step: Int = 0,
     progress: Float = 0f,
-    onWatchAdAction: (Boolean) -> Unit = {},
+    onWatchAdAction: (Int) -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    var isPDF by remember { mutableStateOf(true) }
+    var exportType by remember { mutableIntStateOf(0) }
     var adLoadingText by remember { mutableStateOf("Loading Ad") }
 
     LaunchedEffect(step) {
@@ -133,9 +134,9 @@ fun ExportChatWidget(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
                         .clip(RoundedCornerShape(15.dp))
-                        .clickable { if (step != 2) isPDF = true }
+                        .clickable { if (step != 2) exportType = 0 }
                         .then(
-                            if (isPDF)
+                            if (exportType == 0)
                                 Modifier
                                     .border(
                                         2.dp,
@@ -168,7 +169,103 @@ fun ExportChatWidget(
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                         Text(
-                            text = "High quality, Printable, Larger size",
+                            text = "No Media, Printable, Fast",
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .padding(top = 12.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .clickable { if (step != 2) exportType = 1 }
+                        .then(
+                            if (exportType == 1)
+                                Modifier
+                                    .border(
+                                        2.dp,
+                                        LightColorScheme.primary,
+                                        RoundedCornerShape(15.dp)
+                                    )
+                                    .background(color = LightColorScheme.primary.copy(alpha = 0.1f))
+                            else
+                                Modifier.border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    RoundedCornerShape(15.dp)
+                                )
+                        )
+                        .padding(vertical = 15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_pdficon),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .padding(horizontal = 15.dp)
+                            .size(44.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Export to PDF [with Media]",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Text(
+                            text = "All Media, Printable, Compressed",
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .padding(top = 12.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .clickable { if (step != 2) exportType = 2 }
+                        .then(
+                            if (exportType == 2)
+                                Modifier
+                                    .border(
+                                        2.dp,
+                                        LightColorScheme.primary,
+                                        RoundedCornerShape(15.dp)
+                                    )
+                                    .background(color = LightColorScheme.primary.copy(alpha = 0.1f))
+                            else
+                                Modifier.border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    RoundedCornerShape(15.dp)
+                                )
+                        )
+                        .padding(vertical = 15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_pdficon),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier
+                            .padding(horizontal = 15.dp)
+                            .size(44.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Export to PDF [Legacy]",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Text(
+                            text = "All languages, HD, Larger size",
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -181,9 +278,9 @@ fun ExportChatWidget(
                         .padding(vertical = 12.dp)
                         .fillMaxWidth(0.9f)
                         .clip(RoundedCornerShape(15.dp))
-                        .clickable { if (step != 2) isPDF = false }
+                        .clickable { if (step != 2) exportType = 3 }
                         .then(
-                            if (!isPDF)
+                            if (exportType == 3)
                                 Modifier
                                     .border(
                                         2.dp,
@@ -224,7 +321,7 @@ fun ExportChatWidget(
                     }
                 }
                 Text(
-                    text = if (step == 1) adLoadingText else "Export chat",
+                    text = if (step == 1) adLoadingText else "Export chat" + if (exportType != 0) " [Ad]" else "",
                     fontSize = 16.sp,
                     fontWeight = FontWeight(500),
                     color = Color.White,
@@ -234,7 +331,7 @@ fun ExportChatWidget(
                         .padding(4.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(LightColorScheme.primary)
-                        .clickable { onWatchAdAction(isPDF) }
+                        .clickable { onWatchAdAction(exportType) }
                         .padding(12.dp)
                 )
             } else {
@@ -247,7 +344,7 @@ fun ExportChatWidget(
                     modifier = Modifier.size(250.dp)
                 )
                 Text(
-                    if (messages == null) "Preparing messages for Export" else if (progress < 1f) "Exporting chat to ${if (isPDF) "PDF" else "HTML"}" else "Almost completed, please wait",
+                    if (messages == null) "Preparing messages for Export" else if (progress < 1f) "Exporting chat to ${if (exportType <= 2) "PDF" else "HTML"}" else "Almost completed, please wait",
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontSize = 20.sp,
                     fontWeight = FontWeight(500),

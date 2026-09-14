@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -53,6 +55,7 @@ import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.HeaderStyle
 import com.vinaykpro.chatbuilder.data.local.MyConstants
 import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 //@Preview
@@ -76,7 +79,8 @@ fun SharedTransitionScope.ChatToolbar(
     previewAttrs: HeaderStyle = HeaderStyle(),
     onMenuClick: (Int) -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    isNew: Boolean = false,
 ) {
     val themeColors = if (preview) previewColors else remember(style, isDarkTheme) {
         style.toParsed(isDarkTheme)
@@ -203,12 +207,25 @@ fun SharedTransitionScope.ChatToolbar(
                 }
             }
             IconButton(onClick = { expanded = true }) {
-                Icon(
-                    modifier = Modifier.size(style.actionicons_size.dp),
-                    painter = icon4,
-                    contentDescription = null,
-                    tint = themeColors.navIcons
-                )
+                Box(contentAlignment = Alignment.TopEnd) {
+                    Icon(
+                        modifier = Modifier.size(style.actionicons_size.dp),
+                        painter = icon4,
+                        contentDescription = null,
+                        tint = themeColors.navIcons
+                    )
+                    if (isNew) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .offset(x = 2.dp, y = (-2.dp))
+                                .background(
+                                    color = themeColors.navIcons,
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
             }
             AnimatedVisibility(
                 visible = expanded
@@ -219,18 +236,42 @@ fun SharedTransitionScope.ChatToolbar(
                     containerColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     MyConstants.chatMenuList.forEachIndexed { index, item ->
-                        Text(
-                            text = item,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    expanded = false
-                                    onMenuClick(index)
-                                }
-                                .padding(horizontal = 18.dp, vertical = 12.dp)
-                        )
+                        if (isNew && item == "View statistics") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        expanded = false
+                                        onMenuClick(index)
+                                    }
+                                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = item,
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(LightColorScheme.primary)
+                                )
+                            }
+                        } else
+                            Text(
+                                text = item,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        expanded = false
+                                        onMenuClick(index)
+                                    }
+                                    .padding(horizontal = 18.dp, vertical = 12.dp)
+                            )
                     }
                 }
             }

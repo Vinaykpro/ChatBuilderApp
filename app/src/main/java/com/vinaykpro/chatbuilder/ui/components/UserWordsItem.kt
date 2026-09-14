@@ -1,7 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,8 +38,7 @@ fun UserWordsItem(
         Pair("\uD83E\uDD73", 12),
     ),
     isDark: Boolean = false,
-    isEmoji: Boolean = false,
-    onClick: () -> Unit = {}
+    isEmoji: Boolean = false
 ) {
     val colors = listOf(
         Color(0xFFE7F8FC),
@@ -54,7 +52,6 @@ fun UserWordsItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Box(

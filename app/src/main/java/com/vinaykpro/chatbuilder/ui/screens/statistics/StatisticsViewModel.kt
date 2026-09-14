@@ -10,6 +10,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.nativead.NativeAd
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
 import com.vinaykpro.chatbuilder.data.local.BarGraphItem
 import com.vinaykpro.chatbuilder.data.local.ChatEntity
@@ -19,6 +22,9 @@ import com.vinaykpro.chatbuilder.data.local.MessageEntity
 //import com.vinaykpro.chatbuilder.data.local.StatEntity
 import com.vinaykpro.chatbuilder.data.local.generateRandomDarkColor
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -28,6 +34,7 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Locale
+import java.util.PriorityQueue
 
 class StatisticsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -77,6 +84,54 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
     var emojiCount = 0
     var deletedCount = 0
 
+    private val _nativeAdSlot1 = MutableStateFlow<NativeAd?>(null)
+    val nativeAdSlot1: StateFlow<NativeAd?> = _nativeAdSlot1.asStateFlow()
+
+    private val _nativeAdSlot2 = MutableStateFlow<NativeAd?>(null)
+    val nativeAdSlot2: StateFlow<NativeAd?> = _nativeAdSlot2.asStateFlow()
+
+    private val _nativeAdSlot3 = MutableStateFlow<NativeAd?>(null)
+    val nativeAdSlot3: StateFlow<NativeAd?> = _nativeAdSlot3.asStateFlow()
+
+    fun loadAdForSlot1(context: Context, adUnitId: String) {
+        if (_nativeAdSlot1.value != null) return
+
+        val adLoader = AdLoader.Builder(context, adUnitId)
+            .forNativeAd { nativeAd ->
+                _nativeAdSlot1.value = nativeAd
+            }
+            .build()
+        adLoader.loadAd(AdRequest.Builder().build())
+    }
+
+    fun loadAdForSlot2(context: Context, adUnitId: String) {
+        if (_nativeAdSlot2.value != null) return
+
+        val adLoader = AdLoader.Builder(context, adUnitId)
+            .forNativeAd { nativeAd ->
+                _nativeAdSlot2.value = nativeAd
+            }
+            .build()
+        adLoader.loadAd(AdRequest.Builder().build())
+    }
+
+    fun loadAdForSlot3(context: Context, adUnitId: String) {
+        if (_nativeAdSlot3.value != null) return
+
+        val adLoader = AdLoader.Builder(context, adUnitId)
+            .forNativeAd { nativeAd ->
+                _nativeAdSlot3.value = nativeAd
+            }
+            .build()
+        adLoader.loadAd(AdRequest.Builder().build())
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        _nativeAdSlot1.value?.destroy()
+        _nativeAdSlot2.value?.destroy()
+    }
+
     fun loadStats(context: Context, chatId: Int, isDark: Boolean) {
         if (!isInitial) return
         isInitial = false
@@ -86,10 +141,13 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                 chatDetails = chatDao.getChatEntityById(chatId)
 
                 if (chatStatistics == null) {
+//                    logMemory("Before loading messages")
                     messages = messageDao.getAllMessages(chatId)
 
-                    Log.d("Message count", "-------COUNTTTTT ($chatId) -------")
-                    Log.d("Message count", "${messages.size}")
+//                    logMemory("After loading messages")
+
+//                    Log.d("Message count", "-------COUNTTTTT ($chatId) -------")
+//                    Log.d("Message count", "${messages.size}")
 
                     val dateFormat = detectDateFormat(messages)
 
@@ -106,11 +164,11 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
 
                     Log.d("statdebug", "------------- date format ------------")
                     Log.d("statdebug", dateFormat.toString())
-                    if (dateFormat != null)
-                        Log.d(
-                            "statdebug",
-                            "dateFormat: ${dateFormat.dayIndex}/${dateFormat.monthIndex}/${dateFormat.yearIndex}"
-                        )
+//                    if (dateFormat != null)
+//                        Log.d(
+//                            "statdebug",
+//                            "dateFormat: ${dateFormat.dayIndex}/${dateFormat.monthIndex}/${dateFormat.yearIndex}"
+//                        )
 
                     var messageCountByDateMap: MutableMap<String, Int> = mutableMapOf()
                     var messageIdByDate: MutableMap<String, Int> = mutableMapOf()
@@ -121,7 +179,8 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
 
                     var userStatsMap: MutableMap<Int, UserStatsTemp> = mutableMapOf()
 
-                    val conversations = mutableListOf<ConversationInfo>()
+                    val conversations =
+                        PriorityQueue<ConversationInfo>(11, compareBy { it.messageCount })
 
                     val wordCounts = mutableMapOf<String, Int>()
                     val emojiCounts = mutableMapOf<String, Int>()
@@ -358,6 +417,10 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                                             currentConversation?.let {
                                                 if (it.messageCount > 1) {
                                                     conversations.add(it)
+
+                                                    if (conversations.size > 10) {
+                                                        conversations.poll()
+                                                    }
                                                 }
                                             }
                                             currentConversation = ConversationInfo(
@@ -387,12 +450,14 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                                     }
                                     prevDateTime = todayWithTime
                                 }
-                            } catch (e: Error) {
+                            } catch (e: Exception) {
                             }
                         }
                     }
 
-                    Log.d("statdebug", "------------ Message count by date -----------")
+//                    logMemory("After stats loop calculation")
+
+                    /*Log.d("statdebug", "------------ Message count by date -----------")
                     for (m in messageCountByDateMap) {
                         Log.d("statdebug", "date: ${m.key} , count: ${m.value}")
                     }
@@ -406,13 +471,13 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
 
                     for (m in messageCountByHourOfDay) {
                         Log.d("statdebug", "day --- value = $m")
-                    }
+                    }*/
 
                     activeDays = messageCountByDateMap.size
 
                     topDatesWithMessages = messageCountByDateMap.entries
                         .sortedByDescending { it.value }
-                        .take(5)
+                        .take(10)
                         .map {
                             PeakDay(
                                 startMessageId = messageIdByDate[it.key] ?: 0,
@@ -463,6 +528,7 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                         Pair("10PM - 11PM", messageCountByHourOfDay[22]),
                         Pair("11PM - 12AM", messageCountByHourOfDay[23])
                     )
+//                    logMemory("After building topDates")
 
                     messageCountByUser = userStatsMap.entries
                         .sortedByDescending { it.value.messageCount }
@@ -504,9 +570,15 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                             )
                         }
 
-                    longestConversatins = conversations
-                        .sortedByDescending { it.messageCount }
-                        .take(5)
+//                    logMemory("After building bar graphs")
+
+                    val finalConvList = mutableListOf<ConversationInfo>()
+                    while (conversations.isNotEmpty()) {
+                        finalConvList.add(conversations.poll())
+                    }
+                    longestConversatins = finalConvList.sortedByDescending { it.messageCount }
+
+//                    logMemory("After building longest conversations")
 
                     mostUsedWords = wordCounts.entries
                         .filter {
@@ -521,12 +593,17 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                             Pair(it.key, it.value)
                         }
 
+//                    logMemory("After building top words")
+
                     mostUsedEmojis = emojiCounts.entries
                         .sortedByDescending { it.value }
                         .take(20)
                         .map {
                             Pair(it.key, it.value)
                         }
+
+//                    logMemory("After building top emojis")
+
 
                     mostUsedEmojisByUser = userStatsMap.entries
                         .sortedByDescending { it.value.emojiCount }
@@ -541,6 +618,8 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                                     }
                             )
                         }
+
+//                    logMemory("After building top empjis per user")
 
                     mostUsedWordsByUser = userStatsMap.entries
                         .sortedByDescending { it.value.emojiCount }
@@ -562,6 +641,9 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                             )
                         }
 
+
+//                    logMemory("After building top words per user")
+
                     overallChatGrowth = groupMessageCounts(
                         data = messageCountByDateMap,
                         separator = (dateFormat?.separator ?: '/').toString(),
@@ -569,7 +651,10 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                         monthIndex = dateFormat?.monthIndex ?: 1,
                         yearIndex = dateFormat?.yearIndex ?: 2
                     )
+
+//                    logMemory("After building overall chat growth and this is also eng ig")
                 }
+//                logMemory("After filtering calculated loop maps and stuff")
                 isLoading = false
             }
         }
@@ -713,34 +798,31 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
         monthIndex: Int,
         yearIndex: Int
     ): List<Pair<String, Int>> {
-
         if (data.isEmpty()) return emptyList()
 
-        fun parse(date: String): LocalDate {
-            val p = date.split(separator)
+        fun parse(date: String): LocalDate? {
+            return runCatching {
+                val p = date.split(separator)
+                val day = p[dayIndex].trim().toInt()
+                val month = p[monthIndex].trim().toInt()
+                var year = p[yearIndex].trim()
+                if (year.length == 2) year = "20$year"
 
-            val day = p[dayIndex].trim().toInt()
-            val month = p[monthIndex].trim().toInt()
-
-            var year = p[yearIndex].trim()
-            if (year.length == 2)
-                year = "20$year"
-
-            return LocalDate.of(year.toInt(), month, day)
+                LocalDate.of(year.toInt(), month, day)
+            }.getOrNull()
         }
 
-        val sorted = data.map { parse(it.key) to it.value }
-            .sortedBy { it.first }
+        val sorted = data.mapNotNull { entry ->
+            val parsedDate = parse(entry.key)
+            if (parsedDate != null) parsedDate to entry.value else null
+        }.sortedBy { it.first }
+
+        if (sorted.isEmpty()) return emptyList()
 
         val start = sorted.first().first
         val end = sorted.last().first
-
-        val totalMonths =
-            (end.year - start.year) * 12 +
-                    (end.monthValue - start.monthValue) + 1
-
-        val totalDays =
-            ChronoUnit.DAYS.between(start, end).toInt() + 1
+        val totalMonths = (end.year - start.year) * 12 + (end.monthValue - start.monthValue) + 1
+        val totalDays = ChronoUnit.DAYS.between(start, end).toInt() + 1
 
         val mode = when {
             totalDays <= 31 -> Mode.DAYS3
@@ -755,56 +837,47 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
         val result = linkedMapOf<String, Int>()
 
         when (mode) {
-
-            Mode.DAYS3,
-            Mode.DAYS15 -> {
-
+            Mode.DAYS3, Mode.DAYS15 -> {
                 val size = when {
                     totalDays <= 7 -> 1
                     mode == Mode.DAYS3 -> 3
                     else -> maxOf(
-                        1,
-                        kotlin.math.ceil(totalDays / 12.0).toInt()
+                        1, kotlin.math.ceil(totalDays / 12.0).toInt()
                     )
                 }
 
                 val buckets = linkedMapOf<LocalDate, Int>()
-
                 sorted.forEach { (date, count) ->
-
-                    val startDay =
-                        ((date.dayOfMonth - 1) / size) * size + 1
-
-                    val bucketStart =
-                        LocalDate.of(date.year, date.month, startDay)
-
-                    buckets[bucketStart] =
-                        (buckets[bucketStart] ?: 0) + count
+                    val startDay = ((date.dayOfMonth - 1) / size) * size + 1
+                    val bucketStart = LocalDate.of(date.year, date.month, startDay)
+                    buckets[bucketStart] = (buckets[bucketStart] ?: 0) + count
                 }
 
                 buckets.forEach { (bucket, count) ->
-
                     val endDay = minOf(
                         bucket.dayOfMonth + size - 1,
-                        YearMonth.of(bucket.year, bucket.month)
-                            .lengthOfMonth()
+                        YearMonth.of(bucket.year, bucket.month).lengthOfMonth()
                     )
-
-
-                    val label =
-                        if (size == 1)
-                            "${bucket.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} " +
-                                    "${bucket.dayOfMonth} ${bucket.year}"
-                        else
-                            "${bucket.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} " +
-                                    "${bucket.dayOfMonth} - $endDay ${bucket.year}"
-
+                    val label = if (size == 1) {
+                        "${
+                            bucket.month.getDisplayName(
+                                TextStyle.SHORT,
+                                Locale.ENGLISH
+                            )
+                        } ${bucket.dayOfMonth} ${bucket.year}"
+                    } else {
+                        "${
+                            bucket.month.getDisplayName(
+                                TextStyle.SHORT,
+                                Locale.ENGLISH
+                            )
+                        } ${bucket.dayOfMonth} - $endDay ${bucket.year}"
+                    }
                     result[label] = count
                 }
             }
 
             else -> {
-
                 val monthsPerGroup = when (mode) {
                     Mode.MONTH1 -> 1
                     Mode.MONTH2 -> 2
@@ -815,54 +888,34 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
                 }
 
                 val buckets = linkedMapOf<Pair<Int, Int>, Int>()
-
                 sorted.forEach { (date, count) ->
-
                     val absoluteMonth = date.year * 12 + (date.monthValue - 1)
-
                     val group = absoluteMonth / monthsPerGroup
-
                     buckets[group to monthsPerGroup] =
                         (buckets[group to monthsPerGroup] ?: 0) + count
                 }
 
                 buckets.forEach { (key, count) ->
-
                     val group = key.first
                     val size = key.second
-
                     val startAbsolute = group * size
                     val startYear = startAbsolute / 12
                     val startMonth = startAbsolute % 12 + 1
-
                     val endAbsolute = startAbsolute + size - 1
                     val endYear = endAbsolute / 12
                     val endMonth = endAbsolute % 12 + 1
 
-                    val label =
-                        if (size == 1) {
-
-                            "${
-                                Month.of(startMonth)
-                                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
-                            } $startYear"
-
-                        } else {
-
-                            val first =
-                                Month.of(startMonth)
-                                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
-
-                            val last =
-                                Month.of(endMonth)
-                                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
-
-                            if (startYear == endYear)
-                                "$first - $last $startYear"
-                            else
-                                "$first $startYear - $last $endYear"
-                        }
-
+                    val label = if (size == 1) {
+                        "${
+                            Month.of(startMonth).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                        } $startYear"
+                    } else {
+                        val first =
+                            Month.of(startMonth).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                        val last =
+                            Month.of(endMonth).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                        if (startYear == endYear) "$first - $last $startYear" else "$first $startYear - $last $endYear"
+                    }
                     result[label] = count
                 }
             }
@@ -870,6 +923,7 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
 
         return result.entries.map { it.key to it.value }
     }
+
 
     fun formatCustomDate(
         dateStr: String,
@@ -911,6 +965,20 @@ class StatisticsViewModel(application: Application) : AndroidViewModel(applicati
             // Returns original string on format errors or array out of bounds
             dateStr
         }
+    }
+
+    internal fun logMemory(tag: String) {
+        val runtime = Runtime.getRuntime()
+
+        val used = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+        val free = runtime.freeMemory() / (1024 * 1024)
+        val total = runtime.totalMemory() / (1024 * 1024)
+        val max = runtime.maxMemory() / (1024 * 1024)
+
+        Log.d(
+            "Memory",
+            "$tag -> Used: ${used}MB, Free: ${free}MB, Total: ${total}MB, Max Heap: ${max}MB"
+        )
     }
 }
 

@@ -15,6 +15,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -147,6 +148,7 @@ fun AppNavHost(
                     messageId = messageId,
                     hidden = hidden,
                     isRange = range,
+                    isNew = prefs.getBoolean("isNew", true),
                     isDarkTheme.value,
                     navController,
                     this,
@@ -368,6 +370,9 @@ fun AppNavHost(
                     navController = navController,
                     isDarkTheme = isDarkTheme.value
                 )
+                if (prefs.getBoolean("isNew", true)) {
+                    prefs.edit { putBoolean("isNew", false) }
+                }
             }
         }
     }

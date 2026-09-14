@@ -110,6 +110,7 @@ fun SharedTransitionScope.ChatScreen(
     messageId: Int = -1,
     hidden: Int = 0,
     isRange: Boolean = false,
+    isNew: Boolean = false,
     isDarkTheme: Boolean = false,
     navController: NavHostController = rememberNavController(),
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -312,14 +313,13 @@ fun SharedTransitionScope.ChatScreen(
                             1 -> searchVisible = true
                             2 -> navController.navigate("theme/${theme.id}")
                             3 -> {
-                                Log.d("------CHATID------", "stats/${chatId}")
-                                if (navController.currentBackStack.value.any {
-                                        it.destination.route?.startsWith("stats") == true
-                                    }
-                                )
+//                                Log.d("------CHATID------", "stats/${chatId}")
+                                val currentRoute = navController.currentDestination?.route
+                                if (currentRoute?.startsWith("stats") == true) {
                                     navController.popBackStack()
-                                else
+                                } else {
                                     navController.navigate("stats/${chatId}")
+                                }
                             }
 
                             4 -> {
@@ -371,7 +371,8 @@ fun SharedTransitionScope.ChatScreen(
                 },
                 onBackClick = {
                     navController.popBackStack()
-                }
+                },
+                isNew = isNew
             )
 
             if (searchVisible)
@@ -797,13 +798,84 @@ fun SharedTransitionScope.ChatScreen(
             progress = exportProgress,
             onClose = { exportChatVisible = false },
             onWatchAdAction = {
+                //-----------TEMPORARILY FREE PDF EXPORT WITHOUT MEDIA---------------
+                if (it == 0) {
+                    model.incrementFreePdfExportCount()
+                    exportChatStep = 2
+                    exportProgress = 0f
+                    model.loadAndExportPdf(
+                        context,
+                        chatDetails?.name ?: "",
+                        currentUserId,
+                        onUpdate = {
+                            exportProgress = it / 100.toFloat()
+                        },
+                        onDone = {
+                            exportChatVisible = false
+                            exportChatStep = 0
+                            if (it == null) {
+                                model.toast = "Unable to save/share the file"
+                                model.showToast = true
+                                return@loadAndExportPdf
+                            }
+                            model.toast = "File saved to Downloads/ChatBuilder"
+                            model.showToast = true
+                            val uri = it
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    "Share chat as Pdf"
+                                )
+                            )
+                        }
+                    )
+                    return@ExportChatWidget
+                }
+                //-----------TEMPORARY FREE PDF EXPORT END-----------------
+
                 exportChatStep = 1
                 model.loadAndShowAd(
                     context,
                     onAdFinished = {
                         exportChatStep = 2
                         exportProgress = 0f
-                        if (it) model.loadAndExport(
+                        if (it == 1) model.loadAndExportPdfWithMedia(
+                            context,
+                            chatDetails?.name ?: "",
+                            currentUserId,
+                            onUpdate = {
+                                exportProgress = it / 100.toFloat()
+                            },
+                            onDone = {
+                                exportChatVisible = false
+                                exportChatStep = 0
+                                if (it == null) {
+                                    model.toast = "Unable to save/share the file"
+                                    model.showToast = true
+                                    return@loadAndExportPdfWithMedia
+                                }
+                                model.toast = "File saved to Downloads/ChatBuilder"
+                                model.showToast = true
+                                val uri = it
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/pdf"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        "Share chat as Pdf"
+                                    )
+                                )
+                            }
+                        )
+                        else if (it == 2) model.loadAndExport(
                             context,
                             chatDetails?.name ?: "",
                             currentUserId,

@@ -67,6 +67,7 @@ import com.vinaykpro.chatbuilder.data.local.MessageBarStyle
 import com.vinaykpro.chatbuilder.data.local.ThemeEntity
 import com.vinaykpro.chatbuilder.data.local.toInt
 import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
+import com.vinaykpro.chatbuilder.ui.components.BannerAdView
 import com.vinaykpro.chatbuilder.ui.components.BasicToolbar
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
@@ -214,8 +215,10 @@ fun SharedTransitionScope.AnimateChatScreen(
                     icon3 = headerIcons.icon3,
                     icon4 = headerIcons.icon4,
                     style = headerStyle,
-                    isDarkTheme = isDarkTheme
-                ) { }
+                    isDarkTheme = isDarkTheme,
+                    onBackClick = {},
+                    isNew = false
+                )
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
                     modifier = Modifier.height(120.dp)
@@ -348,7 +351,7 @@ fun SharedTransitionScope.AnimateChatScreen(
                 .clip(RoundedCornerShape(12.dp))
                 .background(LightColorScheme.primary)
                 .clickable {
-                    Log.d("vkpro3", "navigating using ${model.rangeStart},${model.rangeEnd}")
+//                    Log.d("vkpro3", "navigating using ${model.rangeStart},${model.rangeEnd}")
                     if (model.selectedChat != null && model.rangeStart != -1 && model.rangeEnd != -1) {
                         val settingsStr =
                             "${model.isTypingEnabled.toInt}${model.isInputTypingEnabled.toInt}"
@@ -360,6 +363,10 @@ fun SharedTransitionScope.AnimateChatScreen(
                 }
                 .padding(12.dp)
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        BannerAdView(adId = "ca-app-pub-2813592783630195/7402430564")
     }
 
     if (selectChatVisible) {
