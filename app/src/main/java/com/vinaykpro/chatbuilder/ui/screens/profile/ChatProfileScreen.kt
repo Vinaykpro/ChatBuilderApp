@@ -98,6 +98,7 @@ import java.io.FileOutputStream
 fun SharedTransitionScope.ChatProfileScreen(
     navController: NavHostController = rememberNavController(),
     isDark: Boolean,
+    isPremium: Boolean,
     animatedScope: AnimatedVisibilityScope,
     model: ChatMediaViewModel,
 ) {
@@ -349,11 +350,12 @@ fun SharedTransitionScope.ChatProfileScreen(
                 }
             }
 
-            SmallNativeAdView(
-                adLoader = adLoader,
-                ad = nativeAd,
-                isDark = isDark
-            )
+            if (!isPremium)
+                SmallNativeAdView(
+                    adLoader = adLoader,
+                    ad = nativeAd,
+                    isDark = isDark
+                )
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 listOf(

@@ -14,8 +14,8 @@ android {
         applicationId = "com.vinaykpro.chatbuilder"
         minSdk = 21
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.9"
+        versionCode = 13
+        versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }

@@ -1,6 +1,7 @@
 package com.vinaykpro.chatbuilder.ui.components
 
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -9,7 +10,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -27,7 +27,6 @@ fun SmallNativeAdView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val adView = remember { NativeAdView(context) }
 
     val bgColor = if (isDark) 0xFF2C2C2E.toInt() else 0xFFFFFFFF.toInt()
     val textColor = if (isDark) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
@@ -40,16 +39,26 @@ fun SmallNativeAdView(
     if (ad != null)
         AndroidView(
             factory = {
-                adView.apply {
+                NativeAdView(context).apply {
+                    val adView = this
                     val layout = LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL
                         setPadding(40, 40, 40, 40)
-                        background = bgColor.toDrawable()
+                        background = if (adLoader != null) bgColor.toDrawable()
+                        else GradientDrawable().apply {
+                            shape = GradientDrawable.RECTANGLE
+                            setColor(bgColor)
+                            cornerRadius = 24f
+                        }
+                        clipToOutline = true
                         elevation = 8f
-                        layoutParams = ViewGroup.LayoutParams(
+                        layoutParams = ViewGroup.MarginLayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT
-                        )
+                        ).apply {
+                            topMargin = if (adLoader != null) 0 else 32
+                            bottomMargin = if (adLoader != null) 0 else 32
+                        }
 
                         // Top Row (Icon + Texts)
                         val topRow = LinearLayout(context).apply {

@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -40,6 +41,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val fileHelper = FileIOHelper(context = getApplication<Application>())
     private var importJob: Job? = null
     private var saveJob: Job? = null
+
+    private var isPremium: Boolean = false
 
     var importState by mutableIntStateOf(IMPORTSTATE.NONE)
     var importedMesssages: List<MessageEntity> = emptyList()
@@ -53,6 +56,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     var rewardedAdState: Int = 0 // 0 -> loading, 1 -> adAvailable, -1 failedToLoad
     var importMedia: Boolean? = null
     var chatId: Int? = null
+
+    var isSelectionMode by mutableStateOf(false)
+        private set
+    var selectedChatIds by mutableStateOf(setOf<Int>())
+        private set
+
+    var clearChatsVisible by mutableStateOf(false)
+        private set
 
     fun loadRewardedAd(context: Context, onLoaded: () -> Unit, onFailed: (String) -> Unit) {
         val adRequest = AdRequest.Builder().build()
@@ -82,7 +93,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         if (atMedia) importState = IMPORTSTATE.ALMOSTCOMPLETED
         if (importedMesssages.isNotEmpty() && rewardedAdState != 0 && importMedia != null) {
             val state = rewardedAdState
-            if (state == 1) importState = IMPORTSTATE.WATCHAD
+            if (state == 1 && !isPremium) importState = IMPORTSTATE.WATCHAD
             else {
                 keepOrSkipFiles(importMedia == true)
                 importMedia = null
@@ -100,14 +111,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun importChatFromFile(context: Context, file: Uri) {
+    fun startWithoutAd() {
+        rewardedAdState = 0
+        rewardedAd = null
+        keepOrSkipFiles(importMedia == true)
+        importMedia = null
+    }
+
+    fun importChatFromFile(context: Context, file: Uri, premium: Boolean) {
+        Log.d("ImportChatFromFile", "isPremium = $premium")
+        this.isPremium = premium
         if (rewardedAd == null) {
             rewardedAdState = 0
-            loadRewardedAd(context, onLoaded = {
-                rewardedAdState = 1
-            }, onFailed = {
-                rewardedAdState = -1
-            })
+            if (!isPremium) {
+                loadRewardedAd(context, onLoaded = {
+                    rewardedAdState = 1
+                }, onFailed = {
+                    rewardedAdState = -1
+                })
+            } else rewardedAdState = -1
         }
         importJob = viewModelScope.launch {
             val id = dao.addOrUpdateChat(
@@ -149,7 +171,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 importState = IMPORTSTATE.UNSUPPORTEDFILE
             }
 
-            Log.i("vkpro", res.response)
+//            Log.i("vkpro", res.response)
         }
     }
 
@@ -160,37 +182,31 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (keep) {
                     val filesRes = fileHelper.saveFiles(importedFileList)
                     val fileIDs = filesDao.addFiles(filesRes)
-                    var ids = ""
-                    var mIxs = ""
-                    fileIDs.forEach { l -> ids += ",${l.toInt()}" }
-                    mediaIndexes.forEach { x -> mIxs += "$x," }
-                    Log.i("vkpro", "added ids: $ids")
-                    Log.i("vkpro", "media idxs we got: $mIxs")
                     if (filesRes.isNotEmpty()) {
-                        Log.i("vkpro", "inside modifying messages")
+                        Log.i("vkpro", "inside modifying messages with dynamic filename matching")
                         try {
                             val messages = importedMesssages.toMutableList()
-                            for (i in mediaIndexes) {
-                                val message = messages[i].message!!
-                                Log.i("vkpro", "inside checking messages \nmsg: $message")
-                                for (ind in 0 until filesRes.size) {
-                                    val file = filesRes[ind]
-                                    if (message.contains(file.displayname)) {
-                                        val newMsg = message.lines().takeIf { it.size > 1 }?.drop(1)
+                            val sortedFiles = filesRes.sortedByDescending { it.displayname.length }
+
+                            for (i in messages.indices) {
+                                val msgText = messages[i].message ?: continue
+                                for (file in sortedFiles) {
+                                    if (msgText.contains(file.displayname, ignoreCase = true)) {
+                                        val matchingIndex = filesRes.indexOf(file)
+                                        val newMsg = msgText.lines().takeIf { it.size > 1 }?.drop(1)
                                             ?.joinToString("\n")
-                                        messages[i] =
-                                            messages[i].copy(
-                                                fileId = fileIDs[ind].toInt(),
-                                                message = newMsg
-                                            )
-                                        Log.i("vkpro", "Found!! oldMsg $message ; newMsg $newMsg")
+                                        messages[i] = messages[i].copy(
+                                            fileId = fileIDs[matchingIndex].toInt(),
+                                            message = newMsg
+                                        )
+                                        Log.i("vkpro", "Matched media file: ${file.displayname} -> message index $i")
                                         break
                                     }
                                 }
                             }
                             importedMesssages = messages
                         } catch (e: Exception) {
-                            Log.i("vkpro", "Error matching: ${e.toString()}")
+                            Log.e("HomeViewModel", "Error matching files to messages: $e")
                         }
                     }
                 }
@@ -242,5 +258,110 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         importedMesssages = emptyList()
         importedFileList = emptyList()
         mediaIndexes = emptyList()
+    }
+
+    fun toggleChatSelection(chatId: Int) {
+        val currentSet = selectedChatIds
+
+        selectedChatIds = if (currentSet.contains(chatId)) {
+            currentSet - chatId
+        } else {
+            currentSet + chatId
+        }
+        isSelectionMode = selectedChatIds.isNotEmpty()
+    }
+
+    fun clearSelection() {
+        selectedChatIds = emptySet()
+        isSelectionMode = false
+    }
+
+    fun hideChats() {
+        if (selectedChatIds.isEmpty()) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                dao.updateHiddenStateBulk(selectedChatIds, 1)
+                clearSelection()
+            }
+        }
+    }
+
+    fun pinSelectedChats() {
+        if (selectedChatIds.isEmpty()) return
+        val targetIds = selectedChatIds.toSet()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val currentChats = chatsList.value.filter { it.chatid in targetIds }
+                val allPinned = currentChats.isNotEmpty() && currentChats.all { it.isPinned }
+                dao.updatePinnedStateBulk(targetIds, !allPinned)
+                withContext(Dispatchers.Main) {
+                    clearSelection()
+                }
+            }
+        }
+    }
+
+    fun favoriteSelectedChats() {
+        if (selectedChatIds.isEmpty()) return
+        val targetIds = selectedChatIds.toSet()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val currentChats = chatsList.value.filter { it.chatid in targetIds }
+                val allFavorite = currentChats.isNotEmpty() && currentChats.all { it.isFavorite }
+                dao.updateFavoriteStateBulk(targetIds, !allFavorite)
+                withContext(Dispatchers.Main) {
+                    clearSelection()
+                }
+            }
+        }
+    }
+
+    fun setClearChatsVisibility(visible: Boolean) {
+        clearChatsVisible = visible
+    }
+
+
+    fun deleteChats() {
+        if (selectedChatIds.isEmpty()) return
+        val chatIdsToDelete = selectedChatIds.toSet()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // 1. Delete associated media files on disk
+                try {
+                    val mediaFiles = filesDao.getFilesByChatIds(chatIdsToDelete)
+                    for (file in mediaFiles) {
+                        val diskFile = File(context.getExternalFilesDir(null), file.filename)
+                        if (diskFile.exists()) {
+                            diskFile.delete()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("HomeViewModel", "Error deleting media files from disk", e)
+                }
+
+                // 2. Delete profile icon files on disk
+                try {
+                    for (id in chatIdsToDelete) {
+                        val iconFile = File(context.filesDir, "icons/icon$id.jpg")
+                        if (iconFile.exists()) {
+                            iconFile.delete()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("HomeViewModel", "Error deleting chat icons from disk", e)
+                }
+
+                // 3. Delete database records for files, messages, and chats
+                filesDao.deleteFilesBulk(chatIdsToDelete)
+                messageDao.deleteMessagesBulk(chatIdsToDelete)
+                dao.deleteChatsByIds(chatIdsToDelete)
+
+                // 4. Reset selection mode
+                withContext(Dispatchers.Main) {
+                    clearSelection()
+                }
+            }
+            setClearChatsVisibility(false)
+        }
     }
 }

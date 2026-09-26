@@ -69,7 +69,8 @@ fun EditThemeScreen(
     themename: String = "Default theme",
     navController: NavController = rememberNavController(),
     themeViewModel: ThemeViewModel,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    isPremium: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -227,7 +228,10 @@ fun EditThemeScreen(
                         })
                 }
             }
-            BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
+            BannerAdView(
+                adId = "ca-app-pub-2813592783630195/8283590134",
+                isPremium = isPremium
+            )
         }
 
         AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {

@@ -19,6 +19,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.ads.MobileAds
+import com.vinaykpro.chatbuilder.billing.BillingManager
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
 import com.vinaykpro.chatbuilder.ui.navigation.AppNavHost
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
@@ -26,6 +27,8 @@ import com.vinaykpro.chatbuilder.ui.theme.ChatBuilderTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var themeViewModel: ThemeViewModel
+    private val billingManager: BillingManager
+        get() = (application as ChatBuilderApplication).billingManager
 
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +60,7 @@ class MainActivity : ComponentActivity() {
                         context = context,
                         isDarkTheme = isDarkTheme,
                         isOnboarding = prefs.getBoolean("isOnboarding", true),
+                        billingManager = billingManager,
                         prefs = prefs,
                         sharedFileUri = sharedFileUri
                     )

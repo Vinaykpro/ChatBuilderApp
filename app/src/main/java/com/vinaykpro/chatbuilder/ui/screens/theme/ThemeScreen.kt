@@ -33,7 +33,8 @@ import com.vinaykpro.chatbuilder.ui.components.ThemeItem
 fun ThemeScreen(
     themeViewModel: ThemeViewModel,
     prefs: SharedPreferences,
-    navController: NavController = rememberNavController()
+    navController: NavController = rememberNavController(),
+    isPremium: Boolean = false
 ) {
     val themes by themeViewModel.themes.collectAsState()
     val selectedTheme by themeViewModel.selectedThemeId.collectAsState()
@@ -81,7 +82,10 @@ fun ThemeScreen(
                     )
                 }
             }
-            BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
+            BannerAdView(
+                adId = "ca-app-pub-2813592783630195/8283590134",
+                isPremium = isPremium
+            )
         }
         //BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
     }

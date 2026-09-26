@@ -92,7 +92,8 @@ import kotlinx.serialization.json.Json
 @Composable
 fun SharedTransitionScope.AnimateChatScreen(
     navController: NavController = rememberNavController(),
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    isPremium: Boolean = false
 ) {
     val context = LocalContext.current
     val theme = LocalThemeEntity.current
@@ -366,7 +367,10 @@ fun SharedTransitionScope.AnimateChatScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        BannerAdView(adId = "ca-app-pub-2813592783630195/7402430564")
+        BannerAdView(
+            adId = "ca-app-pub-2813592783630195/7402430564",
+            isPremium = isPremium
+        )
     }
 
     if (selectChatVisible) {

@@ -16,8 +16,11 @@ import com.google.android.gms.ads.AdView
 @Composable
 fun BannerAdView(
     adId: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPremium: Boolean = false
 ) {
+    if (isPremium) return
+
     val context = LocalContext.current
 
     AndroidView(

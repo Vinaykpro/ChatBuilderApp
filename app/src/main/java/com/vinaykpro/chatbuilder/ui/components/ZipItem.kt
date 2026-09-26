@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
@@ -19,15 +20,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vinaykpro.chatbuilder.R
 import com.vinaykpro.chatbuilder.data.local.FILETYPE
 import com.vinaykpro.chatbuilder.data.local.ZipItem
+import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Preview
 @Composable
@@ -53,22 +58,28 @@ fun ZipListItem(
             else -> R.drawable.ic_anyfile
         }
     )
+    val bgColor = if (isSelected) LightColorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 1.dp)
-            .background(color = if (isSelected) Color(0x518D8D8D) else Color.Transparent)
+            .padding(horizontal = 10.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(color = bgColor)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = { onCheckChange(!isSelected) })
-            .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically
+                onClick = { onCheckChange(!isSelected) }
+            )
+            .padding(vertical = 6.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = "${index + 1}.",
-            modifier = Modifier.weight(0.2f),
+            modifier = Modifier.weight(0.15f),
             textAlign = TextAlign.Center,
-            fontSize = 15.sp,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onPrimaryContainer
         )
         Icon(
@@ -76,25 +87,25 @@ fun ZipListItem(
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier
-                .padding(end = 7.dp)
-                .size(30.dp)
+                .padding(end = 8.dp)
+                .size(28.dp)
         )
-        Column(modifier = Modifier.weight(0.5f)) {
+        Column(modifier = Modifier.weight(0.65f)) {
             Text(
-                text = item.name,//+"sdvbdsvuidsbvdsbuviscgcghchgcdbvbd",
+                text = item.name,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                softWrap = false
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = item.size,
                 fontSize = 12.sp,
-                lineHeight = 12.sp,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
-        Box(modifier = Modifier.weight(0.2f), contentAlignment = Alignment.CenterStart) {
+        Box(modifier = Modifier.weight(0.2f), contentAlignment = Alignment.Center) {
             Checkbox(checked = isSelected, onCheckedChange = onCheckChange, colors = checkboxColors)
         }
     }

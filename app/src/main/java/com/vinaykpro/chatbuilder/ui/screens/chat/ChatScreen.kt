@@ -83,6 +83,7 @@ import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.AddUserWidget
 import com.vinaykpro.chatbuilder.ui.components.ChatMessageBar
+import com.vinaykpro.chatbuilder.ui.components.ChatNativeAdView
 import com.vinaykpro.chatbuilder.ui.components.ChatNote
 import com.vinaykpro.chatbuilder.ui.components.ChatToolbar
 import com.vinaykpro.chatbuilder.ui.components.ClearChatWidget
@@ -112,6 +113,7 @@ fun SharedTransitionScope.ChatScreen(
     isRange: Boolean = false,
     isNew: Boolean = false,
     isDarkTheme: Boolean = false,
+    isPremium: Boolean = false,
     navController: NavHostController = rememberNavController(),
     animatedVisibilityScope: AnimatedVisibilityScope,
     chatMediaViewModel: ChatMediaViewModel
@@ -201,6 +203,7 @@ fun SharedTransitionScope.ChatScreen(
     var exportChatStep by remember { mutableIntStateOf(0) }
     var exportProgress by remember { mutableFloatStateOf(-1f) }
 
+    val nativeAds by model.nativeAds.collectAsState()
 
     LaunchedEffect(Unit) {
         model.isRangeSelection = isRange
@@ -489,11 +492,39 @@ fun SharedTransitionScope.ChatScreen(
                             sentTime = m.time.toString(),
                             date = if (i == 0 || messages[i - 1].date != m.date) {
                                 {
-                                    ChatNote(
-                                        m.date.toString(),
-                                        color = themeBodyColors.dateBubble,
-                                        textColor = themeBodyColors.textSecondary
-                                    )
+                                    if (isPremium)
+                                        ChatNote(
+                                            m.date.toString(),
+                                            color = themeBodyColors.dateBubble,
+                                            textColor = themeBodyColors.textSecondary
+                                        )
+                                    else {
+                                        val adKey = m.messageId
+
+                                        LaunchedEffect(adKey) {
+                                            model.loadNativeAd(
+                                                context = context,
+                                                adKey = adKey
+                                            )
+                                        }
+
+                                        val nativeAd = nativeAds[adKey]
+
+                                        Column {
+                                            if (nativeAd != null) {
+                                                ChatNativeAdView(
+                                                    ad = nativeAd,
+                                                    isDark = isDarkTheme
+                                                )
+                                            }
+
+                                            ChatNote(
+                                                m.date.toString(),
+                                                color = themeBodyColors.dateBubble,
+                                                textColor = themeBodyColors.textSecondary
+                                            )
+                                        }
+                                    }
                                 }
                             } else null,
                             ticksIcon = blueTicksIcon,
@@ -553,11 +584,39 @@ fun SharedTransitionScope.ChatScreen(
                             else MaterialTheme.colorScheme.onPrimaryContainer,
                             date = if (i == 0 || messages[i - 1].date != m.date) {
                                 {
-                                    ChatNote(
-                                        m.date.toString(),
-                                        color = themeBodyColors.dateBubble,
-                                        textColor = themeBodyColors.textSecondary
-                                    )
+                                    if (isPremium)
+                                        ChatNote(
+                                            m.date.toString(),
+                                            color = themeBodyColors.dateBubble,
+                                            textColor = themeBodyColors.textSecondary
+                                        )
+                                    else {
+                                        val adKey = m.messageId
+
+                                        LaunchedEffect(adKey) {
+                                            model.loadNativeAd(
+                                                context = context,
+                                                adKey = adKey
+                                            )
+                                        }
+
+                                        val nativeAd = nativeAds[adKey]
+
+                                        Column {
+                                            if (nativeAd != null) {
+                                                ChatNativeAdView(
+                                                    ad = nativeAd,
+                                                    isDark = isDarkTheme
+                                                )
+                                            }
+
+                                            ChatNote(
+                                                m.date.toString(),
+                                                color = themeBodyColors.dateBubble,
+                                                textColor = themeBodyColors.textSecondary
+                                            )
+                                        }
+                                    }
                                 }
                             } else null,
                             bubbleStyle = bodyStyle.bubble_style,
@@ -796,6 +855,7 @@ fun SharedTransitionScope.ChatScreen(
             model.fullMessageList,
             step = exportChatStep,
             progress = exportProgress,
+            isPremium = isPremium,
             onClose = { exportChatVisible = false },
             onWatchAdAction = {
                 //-----------TEMPORARILY FREE PDF EXPORT WITHOUT MEDIA---------------
@@ -837,6 +897,106 @@ fun SharedTransitionScope.ChatScreen(
                     return@ExportChatWidget
                 }
                 //-----------TEMPORARY FREE PDF EXPORT END-----------------
+
+
+                if (isPremium) {
+                    exportChatStep = 2
+                    exportProgress = 0f
+                    if (it == 1) model.loadAndExportPdfWithMedia(
+                        context,
+                        chatDetails?.name ?: "",
+                        currentUserId,
+                        onUpdate = {
+                            exportProgress = it / 100.toFloat()
+                        },
+                        onDone = {
+                            exportChatVisible = false
+                            exportChatStep = 0
+                            if (it == null) {
+                                model.toast = "Unable to save/share the file"
+                                model.showToast = true
+                                return@loadAndExportPdfWithMedia
+                            }
+                            model.toast = "File saved to Downloads/ChatBuilder"
+                            model.showToast = true
+                            val uri = it
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    "Share chat as Pdf"
+                                )
+                            )
+                        }
+                    )
+                    else if (it == 2) model.loadAndExport(
+                        context,
+                        chatDetails?.name ?: "",
+                        currentUserId,
+                        onUpdate = {
+                            exportProgress = it / 100.toFloat()
+                        },
+                        onDone = {
+                            exportChatVisible = false
+                            exportChatStep = 0
+                            if (it == null) {
+                                model.toast = "Unable to save/share the file"
+                                model.showToast = true
+                                return@loadAndExport
+                            }
+                            model.toast = "File saved to Downloads/ChatBuilder"
+                            model.showToast = true
+                            val uri = it
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    "Share chat as Pdf"
+                                )
+                            )
+                        }
+                    )
+                    else model.loadAndExportToHTML(
+                        context,
+                        chatDetails?.name ?: "",
+                        currentUserId,
+                        onUpdate = {
+                            exportProgress = it / 100.toFloat()
+                        },
+                        onDone = {
+                            exportChatVisible = false
+                            exportChatStep = 0
+                            if (it == null) {
+                                model.toast = "Unable to save/share the file"
+                                model.showToast = true
+                                return@loadAndExportToHTML
+                            }
+                            model.toast = "File saved to Downloads/ChatBuilder"
+                            model.showToast = true
+                            val uri = it
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/html"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    "Share chat as Html"
+                                )
+                            )
+                        }
+                    )
+                    return@ExportChatWidget
+                }
 
                 exportChatStep = 1
                 model.loadAndShowAd(
@@ -947,6 +1107,9 @@ fun SharedTransitionScope.ChatScreen(
                         ).show()
                     }
                 )
+            },
+            onGoPremiumClick = {
+                navController.navigate("premium")
             }
         )
     }

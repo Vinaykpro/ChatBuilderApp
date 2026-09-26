@@ -12,6 +12,9 @@ interface FileDao {
     @Query("SELECT * FROM files WHERE chatid = :chatid")
     fun getFilesByChatId(chatid: Int): List<FileEntity>
 
+    @Query("SELECT * FROM files WHERE chatid IN (:chatIds)")
+    suspend fun getFilesByChatIds(chatIds: Collection<Int>): List<FileEntity>
+
     @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun addFile(file: FileEntity): Long
 
@@ -20,6 +23,9 @@ interface FileDao {
 
     @Query("DELETE FROM files WHERE chatid = :chatId")
     suspend fun deleteAllFiles(chatId: Int)
+
+    @Query("DELETE FROM files WHERE chatid IN (:chatIds)")
+    suspend fun deleteFilesBulk(chatIds: Collection<Int>)
 
     @Query("SELECT * FROM files")
     fun getAllFiles(): Flow<List<FileEntity>>

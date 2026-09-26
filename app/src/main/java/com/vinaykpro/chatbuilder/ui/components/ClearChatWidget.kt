@@ -33,6 +33,7 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 @Preview
 @Composable
 fun ClearChatWidget(
+    multiple: Boolean = false,
     onClear: () -> Unit = {},
     onCancel: () -> Unit = {},
 ) {
@@ -75,13 +76,13 @@ fun ClearChatWidget(
                 }
             } else {
                 Text(
-                    text = "Clear this chat?",
+                    text = if(multiple) "Delete selected chats?" else "Clear this chat?",
                     fontSize = 20.sp,
                     lineHeight = 20.sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "This action removes all the messages and media in this chat from your device",
+                    text = if(multiple) "This action removes all the messages and media included in these chats from your device" else "This action removes all the messages and media in this chat from your device",
                     fontSize = 15.sp,
                     lineHeight = 20.sp,
                     color = MaterialTheme.colorScheme.onSecondaryContainer

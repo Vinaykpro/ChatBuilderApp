@@ -18,9 +18,18 @@ import com.vinaykpro.chatbuilder.ui.theme.LightColorScheme
 
 @Composable
 fun SplashScreen(navController: NavController? = null, isDarkTheme: Boolean = false) {
-    val colors = if(isDarkTheme) DarkColorScheme else LightColorScheme
-    Box(modifier = Modifier.fillMaxSize().background(colors.background), contentAlignment = Alignment.Center) {
-        Icon(painter = painterResource(R.drawable.logo), contentDescription = null, tint = Color.Unspecified)
+    val colors = if (isDarkTheme) DarkColorScheme else LightColorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.logo),
+            contentDescription = null,
+            tint = Color.Unspecified
+        )
 //        val composition by rememberLottieComposition(
 //            LottieCompositionSpec.Asset("intro.json")
 //        )

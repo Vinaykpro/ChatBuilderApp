@@ -7,7 +7,6 @@ import android.app.Application
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
@@ -28,9 +27,12 @@ import androidx.core.text.htmlEncode
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.vinaykpro.chatbuilder.data.local.AppDatabase
@@ -47,6 +49,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -114,6 +117,13 @@ class ChatViewModel(application: Application, private val chatId: Int) :
 
     var showToast = false
     var toast: String? = null
+
+    private val MAX_NATIVE_ADS = 5
+    private val MIN_AD_DISTANCE = 20
+    private val loadingAdKeys = mutableSetOf<Int>()
+    private val _nativeAds =
+        MutableStateFlow<LinkedHashMap<Int, NativeAd>>(linkedMapOf())
+    val nativeAds = _nativeAds.asStateFlow()
 
     fun initialLoad(lastOpenedMsgId: Int?) {
         if (!isInitialLoad) return
@@ -420,9 +430,9 @@ class ChatViewModel(application: Application, private val chatId: Int) :
 
                     val chatInfo =
                         if (chatName.contains("Chat with"))
-                            chatName
+                            chatName + "with Media"
                         else
-                            "Chat with $chatName"
+                            "Chat with $chatName with Media"
 
                     var remainingMsgLines: List<String>? = null
 
@@ -1423,5 +1433,70 @@ class ChatViewModel(application: Application, private val chatId: Int) :
         viewModelScope.launch {
             chatDao.addOrUpdateChat(current.copy(lastOpenedMsgId = msgId))
         }
+    }
+
+    fun loadNativeAd(context: Context, adKey: Int) {
+
+        if (_nativeAds.value.containsKey(adKey)) return
+
+        val tooClose1 = _nativeAds.value.keys.any {
+            abs(it - adKey) < MIN_AD_DISTANCE
+        }
+        val tooClose2 = loadingAdKeys.any {
+            abs(it - adKey) < MIN_AD_DISTANCE
+        }
+
+        if (tooClose1 || tooClose2) return
+
+        if (!loadingAdKeys.add(adKey)) {
+            return
+        }
+
+        AdLoader.Builder(
+            context.applicationContext,
+            "ca-app-pub-2813592783630195/2766832314"
+        )
+            .forNativeAd { ad ->
+
+                loadingAdKeys.remove(adKey)
+
+                _nativeAds.update { current ->
+
+                    val updated = LinkedHashMap(current)
+
+                    // If cache is full, remove oldest ad
+                    if (updated.size >= MAX_NATIVE_ADS) {
+                        val oldestKey = updated.keys.first()
+                        updated.remove(oldestKey)?.destroy()
+                    }
+
+                    updated[adKey]?.destroy()
+                    updated[adKey] = ad
+
+                    updated
+                }
+            }
+            .withAdListener(object : AdListener() {
+
+                override fun onAdLoaded() {
+                    Log.i("vkpro", "Native ad loaded: $adKey")
+                }
+
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    loadingAdKeys.remove(adKey)
+                    Log.i("vkpro", "Native ad failed [$adKey]: $error")
+                }
+            })
+            .build()
+            .loadAd(AdRequest.Builder().build())
+    }
+
+    override fun onCleared() {
+        _nativeAds.value.values.forEach { it.destroy() }
+
+        _nativeAds.value.clear()
+        loadingAdKeys.clear()
+
+        super.onCleared()
     }
 }

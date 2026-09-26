@@ -1,5 +1,6 @@
 package com.vinaykpro.chatbuilder.ui.navigation
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
@@ -12,6 +13,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -23,9 +26,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.vinaykpro.chatbuilder.ChatBuilderApplication
 import com.vinaykpro.chatbuilder.TestMessages
+import com.vinaykpro.chatbuilder.billing.BillingManager
 import com.vinaykpro.chatbuilder.data.models.ChatMediaViewModel
 import com.vinaykpro.chatbuilder.data.models.ThemeViewModel
+import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.screens.animatechat.AnimateChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.chat.ChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.hiddenchats.HiddenChatsScreen
@@ -33,6 +39,7 @@ import com.vinaykpro.chatbuilder.ui.screens.home.HomeScreen
 import com.vinaykpro.chatbuilder.ui.screens.livechat.LiveChatScreen
 import com.vinaykpro.chatbuilder.ui.screens.mediapreview.MediaPreviewScreen
 import com.vinaykpro.chatbuilder.ui.screens.onboarding.OnboardingScreen
+import com.vinaykpro.chatbuilder.ui.screens.premium.PremiumScreen
 import com.vinaykpro.chatbuilder.ui.screens.profile.ChatProfileScreen
 import com.vinaykpro.chatbuilder.ui.screens.search.SearchScreen
 import com.vinaykpro.chatbuilder.ui.screens.splash.SplashScreen
@@ -58,6 +65,7 @@ object Routes {
     const val LiveChat = "livechat"
     const val Statistics = "stats/{chatId}"
     const val Onboarding = "onboarding"
+    const val Premium = "premium"
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
@@ -68,11 +76,18 @@ fun AppNavHost(
     context: Context,
     isDarkTheme: MutableState<Boolean>,
     isOnboarding: Boolean,
+    billingManager: BillingManager,
     prefs: SharedPreferences,
     sharedFileUri: Uri?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val screenWidthPx = with(LocalDensity.current) { screenWidth.toPx().toInt() }
+
+    val activity = context as Activity
+
+    val app = context.applicationContext as ChatBuilderApplication
+
+    val isPremium by app.billingManager.isPremium.collectAsState()
 
     val chatMediaViewModel: ChatMediaViewModel = viewModel(
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
@@ -83,7 +98,7 @@ fun AppNavHost(
             navController = navController,
             startDestination =
                 if (isOnboarding) Routes.Onboarding
-                else Routes.Home
+                else Routes.Home//Routes.Home
         ) {
             composable(Routes.Splash) {
                 SplashScreen(navController, isDarkTheme.value)
@@ -95,6 +110,7 @@ fun AppNavHost(
                 HomeScreen(
                     navController = navController,
                     isDarkTheme = isDarkTheme,
+                    isPremium = isPremium,
                     themeViewModel = themeViewModel,
                     prefs = prefs,
                     sharedFileUri = sharedFileUri
@@ -150,6 +166,7 @@ fun AppNavHost(
                     isRange = range,
                     isNew = prefs.getBoolean("isNew", true),
                     isDarkTheme.value,
+                    isPremium = isPremium,
                     navController,
                     this,
                     chatMediaViewModel
@@ -157,7 +174,24 @@ fun AppNavHost(
             }
 
             composable("chatprofile") {
-                ChatProfileScreen(navController, isDarkTheme.value, this, chatMediaViewModel)
+                ChatProfileScreen(
+                    navController, isDarkTheme.value,
+                    isPremium, this, chatMediaViewModel
+                )
+            }
+
+            composable(route = "premium") {
+                PremiumScreen(
+                    isPurchasing = false,
+                    onBack = {
+                        DebounceClickHandler.run {
+                            navController.popBackStack()
+                        }
+                    },
+                    isPremium = isPremium,
+                    billingManager = billingManager,
+                    isDarkTheme = isDarkTheme.value
+                )
             }
 
             composable(
@@ -204,7 +238,12 @@ fun AppNavHost(
                         animationSpec = tween(400)
                     )
                 }) {
-                ThemeScreen(themeViewModel = themeViewModel, prefs, navController = navController)
+                ThemeScreen(
+                    themeViewModel = themeViewModel,
+                    prefs,
+                    navController = navController,
+                    isPremium = isPremium
+                )
             }
             composable(
                 Routes.EditTheme,
@@ -225,7 +264,8 @@ fun AppNavHost(
                         ?: "Default"),
                     navController = navController,
                     themeViewModel = themeViewModel,
-                    isDark = isDarkTheme.value
+                    isDark = isDarkTheme.value,
+                    isPremium = isPremium
                 )
             }
             composable(
@@ -245,7 +285,8 @@ fun AppNavHost(
                 HeaderStyleScreen(
                     navController = navController,
                     themeViewModel = themeViewModel,
-                    isDarkTheme = isDarkTheme.value
+                    isDarkTheme = isDarkTheme.value,
+                    isPremium = isPremium
                 )
             }
             composable(
@@ -265,7 +306,8 @@ fun AppNavHost(
                 BodyStyleScreen(
                     navController = navController,
                     themeViewModel = themeViewModel,
-                    isDarkTheme = isDarkTheme.value
+                    isDarkTheme = isDarkTheme.value,
+                    isPremium = isPremium
                 )
             }
             composable(
@@ -285,7 +327,8 @@ fun AppNavHost(
                 MessageBarStyleScreen(
                     navController = navController,
                     themeViewModel = themeViewModel,
-                    isDarkTheme = isDarkTheme.value
+                    isDarkTheme = isDarkTheme.value,
+                    isPremium = isPremium
                 )
             }
             composable("temp") {
@@ -308,7 +351,8 @@ fun AppNavHost(
             ) {
                 AnimateChatScreen(
                     navController = navController,
-                    isDarkTheme = isDarkTheme.value
+                    isDarkTheme = isDarkTheme.value,
+                    isPremium = isPremium
                 )
             }
             composable(
@@ -368,7 +412,8 @@ fun AppNavHost(
                 StatisticsScreen(
                     chatId = chatId,
                     navController = navController,
-                    isDarkTheme = isDarkTheme.value
+                    isDarkTheme = isDarkTheme.value,
+                    isPremium = isPremium
                 )
                 if (prefs.getBoolean("isNew", true)) {
                     prefs.edit { putBoolean("isNew", false) }

@@ -19,6 +19,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,6 +47,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
@@ -102,6 +104,7 @@ import com.vinaykpro.chatbuilder.data.utils.DebounceClickHandler
 import com.vinaykpro.chatbuilder.ui.components.BannerAdView
 import com.vinaykpro.chatbuilder.ui.components.ChatListItem
 import com.vinaykpro.chatbuilder.ui.components.CircularRevealWrapper
+import com.vinaykpro.chatbuilder.ui.components.ClearChatWidget
 import com.vinaykpro.chatbuilder.ui.components.FloatingMenu
 import com.vinaykpro.chatbuilder.ui.components.ImportChatWidget
 import com.vinaykpro.chatbuilder.ui.components.SettingsItem
@@ -119,6 +122,7 @@ import me.onebone.toolbar.rememberCollapsingToolbarScaffoldState
 fun HomeScreen(
     navController: NavController,
     isDarkTheme: MutableState<Boolean> = mutableStateOf(false),
+    isPremium: Boolean,
     themeViewModel: ThemeViewModel,
     prefs: SharedPreferences,
     sharedFileUri: Uri?
@@ -185,7 +189,7 @@ fun HomeScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            homeViewModel.importChatFromFile(context, uri)
+            homeViewModel.importChatFromFile(context, uri, isPremium)
         }
     }
 
@@ -201,11 +205,16 @@ fun HomeScreen(
     LaunchedEffect(localUri.value) {
         if (localUri.value != null) {
             val uri = localUri.value!!.toUri()
-            homeViewModel.importChatFromFile(context, uri)
+            homeViewModel.importChatFromFile(context, uri, isPremium)
             (context as? Activity)?.intent = Intent()
             localUri.value = null
         }
     }
+
+    val isSelectionMode = homeViewModel.isSelectionMode
+    val selectedIds = homeViewModel.selectedChatIds
+
+    var clearChatVisible = homeViewModel.clearChatsVisible
 
     Box(
         modifier = Modifier
@@ -251,6 +260,21 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val scope = rememberCoroutineScope()
+
+                        if (!isPremium)
+                            IconButton(onClick = {
+                                navController.navigate("premium")
+                            }) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_go_pro_crown),
+                                    contentDescription = "Search",
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .padding(bottom = 5.dp)
+                                )
+                            }
+
+                        Spacer(modifier = Modifier.width(2.dp))
 
                         IconButton(
                             onClick = {
@@ -366,6 +390,127 @@ fun HomeScreen(
                             }
                         }
                     }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = isSelectionMode,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.road(
+                            whenCollapsed = Alignment.BottomCenter,
+                            whenExpanded = Alignment.BottomCenter
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .background(color = colors.background)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(
+                                        bottomStart = 15.dp,
+                                        bottomEnd = 15.dp
+                                    )
+                                ),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (isPremium) {
+                                        homeViewModel.pinSelectedChats()
+                                    } else {
+                                        navController.navigate("premium")
+                                    }
+                                }
+                            ) {
+                                Box {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_pin),
+                                        contentDescription = "Pin",
+                                        tint = Color.White,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                    )
+                                    if (!isPremium)
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_go_pro_crown),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(15.dp)
+                                                .align(Alignment.TopStart),
+                                            tint = Color(212, 160, 23)
+                                        )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            IconButton(
+                                onClick = {
+                                    if (isPremium) {
+                                        homeViewModel.favoriteSelectedChats()
+                                    } else {
+                                        navController.navigate("premium")
+                                    }
+                                }
+                            ) {
+                                Box {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_heart_fav),
+                                        contentDescription = "Favourite",
+                                        tint = Color.White,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                    )
+                                    if (!isPremium)
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_go_pro_crown),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(15.dp)
+                                                .align(Alignment.TopStart),
+                                            tint = Color(212, 160, 23)
+                                        )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            IconButton(
+                                onClick = {
+                                    homeViewModel.hideChats()
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_eyeoff),
+                                    contentDescription = "Hide",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(2.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            IconButton(
+                                onClick = {
+                                    homeViewModel.setClearChatsVisibility(true)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(1.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+                        }
+                    }
                     Row(
                         modifier = Modifier
                             .height(60.dp)
@@ -376,12 +521,22 @@ fun HomeScreen(
                             ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.logo),
-                            contentDescription = "brand",
-                            modifier = Modifier.size(iconSize),
-                            tint = Color.White
-                        )
+                        if (isPremium)
+                            Image(
+                                painter = painterResource(id = R.drawable.logo_premium2),
+                                contentDescription = "brand",
+                                modifier = Modifier
+                                    .height(iconSize + (iconSize / 2))
+                                    .width(iconSize)
+                                    .padding(bottom = 5.dp)
+                            )
+                        else
+                            Icon(
+                                painter = painterResource(id = R.drawable.logo),
+                                contentDescription = "brand",
+                                modifier = Modifier.size(iconSize),
+                                tint = Color.White
+                            )
                         Text(
                             "ChatBuilder",
                             style = TextStyle(
@@ -394,7 +549,8 @@ fun HomeScreen(
                 }
             ) {
                 Column {
-                    BannerAdView(adId = "ca-app-pub-2813592783630195/7066679569")
+                    if (!isPremium)
+                        BannerAdView(adId = "ca-app-pub-2813592783630195/7066679569")
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
@@ -424,12 +580,22 @@ fun HomeScreen(
                                                 name = chat.name,
                                                 lastMessage = chat.lastmsg,
                                                 lastSeen = chat.lastmsgtime,
+                                                isSelected = selectedIds.contains(chat.chatid),
+                                                showRipple = !isSelectionMode,
+                                                isPinned = chat.isPinned,
+                                                isFavorite = chat.isFavorite,
+                                                onLongPress = {
+                                                    homeViewModel.toggleChatSelection(chat.chatid)
+                                                },
                                                 onClick = {
-                                                    DebounceClickHandler.run {
-                                                        navController.navigate(
-                                                            "chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}"
-                                                        )
-                                                    }
+                                                    if (isSelectionMode)
+                                                        homeViewModel.toggleChatSelection(chat.chatid)
+                                                    else
+                                                        DebounceClickHandler.run {
+                                                            navController.navigate(
+                                                                "chat/${chat.chatid}?messageId=${chat.lastOpenedMsgId ?: -1}"
+                                                            )
+                                                        }
                                                 }
                                             )
                                         }
@@ -626,6 +792,10 @@ fun HomeScreen(
             onWatchAdAction = {
                 homeViewModel.startRewardAd(context)
             },
+            onGoPremiumClick = {
+                if (isPremium) homeViewModel.startWithoutAd()
+                else navController.navigate("premium")
+            },
             onClose = { homeViewModel.closeImport() }
         )
     }
@@ -699,6 +869,20 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                if (!isPremium)
+                                    IconButton(onClick = {
+                                        navController.navigate("premium")
+                                    }) {
+                                        Image(
+                                            painter = painterResource(R.drawable.ic_go_pro_crown),
+                                            contentDescription = "Search",
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .padding(bottom = 5.dp)
+                                        )
+                                    }
+                                Spacer(modifier = Modifier.width(2.dp))
+
                                 IconButton(onClick = {}) {
                                     Icon(
                                         imageVector = Icons.Default.Search,
@@ -771,12 +955,22 @@ fun HomeScreen(
                                     ),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.logo),
-                                    contentDescription = "brand",
-                                    modifier = Modifier.size(iconSize),
-                                    tint = Color.White
-                                )
+                                if (isPremium)
+                                    Image(
+                                        painter = painterResource(id = R.drawable.logo_premium2),
+                                        contentDescription = "brand",
+                                        modifier = Modifier
+                                            .height(iconSize + (iconSize / 2))
+                                            .width(iconSize)
+                                            .padding(bottom = 5.dp)
+                                    )
+                                else
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.logo),
+                                        contentDescription = "brand",
+                                        modifier = Modifier.size(iconSize),
+                                        tint = Color.White
+                                    )
                                 Text(
                                     "ChatBuilder",
                                     style = TextStyle(
@@ -957,6 +1151,22 @@ fun HomeScreen(
         }
     }
 
+    AnimatedVisibility(
+        visible = clearChatVisible,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        ClearChatWidget(
+            multiple = true,
+            onCancel = {
+                homeViewModel.setClearChatsVisibility(false)
+            },
+            onClear = {
+                homeViewModel.deleteChats()
+            }
+        )
+    }
+
     // block touches on screen
     if (blockTouches) {
         Box(
@@ -970,10 +1180,13 @@ fun HomeScreen(
         )
     }
 
-    BackHandler(enabled = pagerState.currentPage != 0) {
-        scope.launch {
-            pagerState.animateScrollToPage(0)
-        }
+    BackHandler(enabled = (pagerState.currentPage != 0 || isSelectionMode)) {
+        if (pagerState.currentPage != 0)
+            scope.launch {
+                pagerState.animateScrollToPage(0)
+            }
+        else if (isSelectionMode)
+            homeViewModel.clearSelection()
     }
 }
 

@@ -72,7 +72,8 @@ import kotlinx.serialization.json.Json
 fun SharedTransitionScope.HeaderStyleScreen(
     navController: NavController = rememberNavController(),
     isDarkTheme: Boolean = false,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    isPremium: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -475,7 +476,10 @@ fun SharedTransitionScope.HeaderStyleScreen(
                 }
             }
         }
-        BannerAdView(adId = "ca-app-pub-2813592783630195/8283590134")
+        BannerAdView(
+            adId = "ca-app-pub-2813592783630195/8283590134",
+            isPremium = isPremium
+        )
     }
     AnimatedVisibility(visible = showColorPicker, enter = fadeIn(), exit = fadeOut()) {
         ColorPicker(

@@ -9,6 +9,7 @@
     <uses-permission android:name="com.android.vending.BILLING" />
 
     <application
+        android:name=".ChatBuilderApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

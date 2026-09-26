@@ -3,6 +3,7 @@ package com.vinaykpro.chatbuilder.ui.components
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.icu.text.BreakIterator
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -11,6 +12,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -31,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,14 +42,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
@@ -94,7 +102,6 @@ fun SharedTransitionScope.SenderMessage(
     val spaceCount = (sentTime.length * 0.6f).toInt()
     var space = if (showTime) "  " + "⠀".repeat(spaceCount) else ""
     if (showTicks) space += "⠀"
-    val containsEmoji = text != null && containsEmoji(text)
     val context = LocalContext.current
 
     val painter = rememberAsyncImagePainter(
@@ -320,22 +327,29 @@ fun SharedTransitionScope.SenderMessage(
                 }
 
                 if (text != null || isFile) {
+                    val safeText = text ?: ""
                     if (searchedString != null)
                         HighlightedText(
-                            fullText = if (isFile) " " else "$text$space",
+                            fullText = if (isFile) " " else "$safeText$space",
                             searchedText = searchedString,
                             textColor = textColor,
                         )
-                    else if (containsEmoji)
+                    else if (text != null && containsUrl(safeText))
+                        LinkifiedText(
+                            fullText = if (isFile) " " else "$safeText$space",
+                            textColor = textColor,
+                            onClick = onClick
+                        )
+                    else if (text != null && containsEmoji(safeText))
                         EmojiStyledText(
-                            fullText = text!!,
+                            fullText = safeText,
                             textColor = textColor,
                             emojiFontSize = 22.sp,
                             space = space
                         )
                     else
                         Text(
-                            text = if (isFile) " " else "$text$space", // Extra spaces for spacing
+                            text = if (isFile) " " else "$safeText$space", // Extra spaces for spacing
                             color = textColor,
                             fontSize = 16.sp,
                             lineHeight = 20.sp,
@@ -553,6 +567,122 @@ fun getContainerModifier(
     return imageContainerModifier to
             if (imageWidthDp > 0) Modifier.width(imageWidthDp.dp)
             else Modifier.wrapContentWidth()
+}
+
+val URL_REGEX =
+    Regex("""(?i)\b(https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)""")
+
+fun containsUrl(text: String): Boolean = URL_REGEX.containsMatchIn(text)
+
+fun cleanUrl(rawUrl: String): String {
+    var url = rawUrl
+    while (url.isNotEmpty() && url.last() in ".,!?:;)]}\"'") {
+        url = url.substring(0, url.length - 1)
+    }
+    return url
+}
+
+fun formatUrlForIntent(rawUrl: String): String {
+    val cleaned = cleanUrl(rawUrl)
+    return if (cleaned.startsWith("http://", ignoreCase = true) || cleaned.startsWith(
+            "https://",
+            ignoreCase = true
+        )
+    ) {
+        cleaned
+    } else {
+        "http://$cleaned"
+    }
+}
+
+private data class UrlMatchInfo(val start: Int, val end: Int, val urlIntent: String)
+
+@Composable
+fun LinkifiedText(
+    fullText: String,
+    textColor: Color = Color.Black,
+    fontSize: TextUnit = 16.sp,
+    linkColor: Color = Color(0xFF1E88E5),
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+
+    val urlMatches = remember(fullText) {
+        URL_REGEX.findAll(fullText).map { match ->
+            val cleaned = cleanUrl(match.value)
+            val end = match.range.first + cleaned.length
+            UrlMatchInfo(match.range.first, end, formatUrlForIntent(cleaned))
+        }.toList()
+    }
+
+    val annotatedString = remember(fullText, textColor, linkColor) {
+        buildAnnotatedString {
+            append(fullText)
+
+            for (match in urlMatches) {
+                if (match.start < length && match.end <= length && match.start < match.end) {
+                    addStyle(
+                        style = SpanStyle(
+                            color = linkColor,
+                            textDecoration = TextDecoration.Underline,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        start = match.start,
+                        end = match.end
+                    )
+                    addStringAnnotation(
+                        tag = "URL",
+                        annotation = match.urlIntent,
+                        start = match.start,
+                        end = match.end
+                    )
+                }
+            }
+        }
+    }
+
+    val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    Text(
+        text = annotatedString,
+        color = textColor,
+        fontSize = fontSize,
+        lineHeight = 20.sp,
+        onTextLayout = { layoutResult.value = it },
+        modifier = modifier
+            .padding(top = 1.dp, bottom = 1.dp, start = 5.dp, end = 3.dp)
+            .pointerInput(annotatedString) {
+                detectTapGestures { pos ->
+                    val layout = layoutResult.value
+                    var urlClicked = false
+                    if (layout != null) {
+                        val offset = layout.getOffsetForPosition(pos)
+                        val annotations = annotatedString.getStringAnnotations(
+                            tag = "URL",
+                            start = offset,
+                            end = offset
+                        )
+                        if (annotations.isNotEmpty()) {
+                            urlClicked = true
+                            val url = annotations.first().item
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
+                    }
+                    if (!urlClicked) {
+                        onClick()
+                    }
+                }
+            }
+    )
 }
 
 @Composable

@@ -16,4 +16,6 @@ data class ChatEntity(
     val lastmsgtime: String = "",
     val users: String? = null,
     val lastopened: Long = System.currentTimeMillis(),
+    val isPinned: Boolean = false,
+    val isFavorite: Boolean = false,
 )

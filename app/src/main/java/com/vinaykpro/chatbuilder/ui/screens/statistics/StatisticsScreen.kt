@@ -2,7 +2,6 @@ package com.vinaykpro.chatbuilder.ui.screens.statistics
 
 import android.app.Application
 import android.content.Intent
-import android.content.SharedPreferences
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -74,7 +73,8 @@ fun //SharedTransitionScope.
         StatisticsScreen(
     chatId: Int = 1,
     navController: NavController = rememberNavController(),
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    isPremium: Boolean = false,
 ) {
     val context = LocalContext.current
 
@@ -297,15 +297,17 @@ fun //SharedTransitionScope.
                 }
             }
 
-            item(contentType = "big_ad") {
-                ElevatedCard {
-                    BigNativeAdView(
-                        ad = adState1,
-                        isDark = isDarkTheme,
-                        onLoadAdRequested = {
-                            model.loadAdForSlot1(context, "ca-app-pub-2813592783630195/8308318124")
-                        }
-                    )
+            if (!isPremium) {
+                item(contentType = "big_ad") {
+                    ElevatedCard {
+                        BigNativeAdView(
+                            ad = adState1,
+                            isDark = isDarkTheme,
+                            onLoadAdRequested = {
+                                model.loadAdForSlot1(context, "ca-app-pub-2813592783630195/8308318124")
+                            }
+                        )
+                    }
                 }
             }
 
@@ -503,15 +505,17 @@ fun //SharedTransitionScope.
                 }
             }
 
-            item(contentType = "big_ad") {
-                ElevatedCard {
-                    BigNativeAdView(
-                        ad = adState2,
-                        isDark = isDarkTheme,
-                        onLoadAdRequested = {
-                            model.loadAdForSlot2(context, "ca-app-pub-2813592783630195/8308318124")
-                        }
-                    )
+            if (!isPremium) {
+                item(contentType = "big_ad") {
+                    ElevatedCard {
+                        BigNativeAdView(
+                            ad = adState2,
+                            isDark = isDarkTheme,
+                            onLoadAdRequested = {
+                                model.loadAdForSlot2(context, "ca-app-pub-2813592783630195/8308318124")
+                            }
+                        )
+                    }
                 }
             }
 
@@ -601,15 +605,17 @@ fun //SharedTransitionScope.
                 }
             }
 
-            item(contentType = "big_ad") {
-                ElevatedCard {
-                    BigNativeAdView(
-                        ad = adState3,
-                        isDark = isDarkTheme,
-                        onLoadAdRequested = {
-                            model.loadAdForSlot3(context, "ca-app-pub-2813592783630195/8308318124")
-                        }
-                    )
+            if (!isPremium) {
+                item(contentType = "big_ad") {
+                    ElevatedCard {
+                        BigNativeAdView(
+                            ad = adState3,
+                            isDark = isDarkTheme,
+                            onLoadAdRequested = {
+                                model.loadAdForSlot3(context, "ca-app-pub-2813592783630195/8308318124")
+                            }
+                        )
+                    }
                 }
             }
 

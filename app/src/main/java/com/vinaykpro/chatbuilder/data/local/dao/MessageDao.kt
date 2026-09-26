@@ -53,6 +53,9 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE chatid = :chatId")
     suspend fun deleteMessages(chatId: Int)
 
+    @Query("DELETE FROM messages WHERE chatid IN (:chatIds)")
+    suspend fun deleteMessagesBulk(chatIds: Collection<Int>)
+
     @Query("SELECT messageId FROM messages ORDER BY messageId DESC LIMIT 1")
     suspend fun getLastMessageId(): Int?
 }

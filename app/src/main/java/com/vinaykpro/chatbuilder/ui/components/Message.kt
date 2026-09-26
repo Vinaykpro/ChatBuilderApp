@@ -86,7 +86,6 @@ fun SharedTransitionScope.Message(
     //val space = if (showTime) " " + "\u2004".repeat(sentTime.length) else ""
     val spaceCount = (sentTime.length * 0.6f).toInt()
     val space = if (showTime) " " + "⠀".repeat(spaceCount) else ""
-    val containsEmoji = text != null && containsEmoji(text)
     val context = LocalContext.current
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
@@ -328,22 +327,29 @@ fun SharedTransitionScope.Message(
                         }
                     }
                 if (text != null || isFile) {
+                    val safeText = text ?: ""
                     if (searchedString != null) {
                         HighlightedText(
-                            fullText = if (isFile) " " else "$text$space",
+                            fullText = if (isFile) " " else "$safeText$space",
                             searchedText = searchedString,
                             textColor = textColor,
                         )
-                    } else if (containsEmoji) {
+                    } else if (text != null && containsUrl(safeText)) {
+                        LinkifiedText(
+                            fullText = if (isFile) " " else "$safeText$space",
+                            textColor = textColor,
+                            onClick = onClick
+                        )
+                    } else if (text != null && containsEmoji(safeText)) {
                         EmojiStyledText(
-                            fullText = text!!,
+                            fullText = safeText,
                             textColor = textColor,
                             emojiFontSize = 22.sp,
                             space = space
                         )
                     } else {
                         Text(
-                            text = "$text$space",
+                            text = if (isFile) " " else "$safeText$space",
                             color = textColor,
                             fontSize = 16.sp,
                             lineHeight = 20.sp,
